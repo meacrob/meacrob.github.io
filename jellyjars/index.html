@@ -135,6 +135,7 @@ button:focus-visible{outline:3px solid #fff;outline-offset:3px}
 .dots i.on{background:var(--ink);width:22px}
 .tutBtns{display:flex;gap:10px}.tutBtns .btn{flex:1}
 /* world toast */
+#card .mx{position:sticky;top:-6px;align-self:flex-end;margin:-12px -8px -40px 0;width:38px;height:38px;flex:none;border:0;border-radius:50%;background:rgba(122,98,170,.14);color:var(--ink);font-size:24px;font-weight:900;line-height:38px;padding:0;z-index:2;cursor:pointer}
 #toast{position:absolute;left:50%;top:22%;transform:translateX(-50%);text-align:center;color:#fff;pointer-events:none;z-index:5}
 #toast small{display:block;font-weight:900;letter-spacing:.14em;text-transform:uppercase;font-size:12px;opacity:.9;text-shadow:0 1px 3px rgba(0,0,0,.3)}
 #toast b{display:block;font-family:var(--display);font-weight:800;font-size:44px;line-height:1;text-shadow:0 3px 0 rgba(0,0,0,.15),0 8px 24px rgba(0,0,0,.3);white-space:nowrap}
@@ -194,7 +195,7 @@ button:focus-visible{outline:3px solid #fff;outline-offset:3px}
 .pnode .here{font-family:var(--display);font-size:13px;color:#fff;background:linear-gradient(180deg,#ffd36b,#ff9d1f);border-radius:10px;padding:3px 9px;text-shadow:0 1px 0 rgba(120,50,0,.35)}
 .pnode:not(:last-child)::after{content:"";position:absolute;left:30px;top:50px;width:4px;height:28px;background:#e4dafa;border-radius:2px}
 .pnode.done:not(:last-child)::after{background:#ffc83d}
-#toast.sm b{font-size:26px}
+#toast.sm b{font-size:26px}#toast.sm{background:rgba(30,16,60,.62);padding:9px 20px 11px;border-radius:20px;box-shadow:0 8px 24px rgba(20,8,50,.25)}#toast.sm small{opacity:1;color:#ffd96b}
 .shelfviz{display:flex;gap:6px;justify-content:center;background:#f1eaff;border-radius:16px;padding:8px}.shelfviz i{width:30px;height:30px;border-radius:9px;box-shadow:inset 0 -3px 0 rgba(0,0,0,.15)}.shelfviz i.plus{background:linear-gradient(180deg,#ffe08a,#ffb21f);color:#5a3200;font-style:normal;font-weight:900;font-size:12px;display:grid;place-items:center;border:2px dashed #fff;box-sizing:border-box}
 .help{display:flex;gap:10px;align-items:center;text-align:left;background:#fff;border-radius:16px;padding:9px 12px;box-shadow:0 2px 8px rgba(40,10,80,.07);font-weight:800;color:var(--ink2);font-size:14px;line-height:1.35}.help b{color:var(--ink)}.help .hi{flex:none;width:34px;height:34px;display:grid;place-items:center;border-radius:12px;background:#f1eaff;font-family:var(--display);font-weight:800;color:var(--p2);font-size:18px}.help .hi svg{width:26px;height:26px}
 .wtile{position:relative}.wslot{font-size:10px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:var(--p2)}
@@ -906,6 +907,10 @@ function setMusic(on){G.music=on;save();if(A.mus)A.mus.gain.setTargetAtTime(on?m
 function setSfx(on){G.sfx=on;save();if(A.sfx)A.sfx.gain.setTargetAtTime(on?1:0,A.ctx.currentTime,0.05)}
 function duck(on){if(A.mus&&G.music)A.mus.gain.setTargetAtTime(on?0.04:musVol(),A.ctx.currentTime,0.2)}
 document.addEventListener('visibilitychange',()=>{if(!A.ctx)return;if(document.hidden)A.ctx.suspend();else A.ctx.resume()});
+let jsErrs=0;
+function logErr(msg,src,line){if(jsErrs>=3)return;jsErrs++;try{track('js_error',{msg:String(msg||'unknown').slice(0,100),src:String(src||'').split('/').pop().slice(0,40),line:+line||0,mode:typeof mode==='string'?mode:''})}catch(e){}}
+window.addEventListener('error',e=>logErr(e.message,e.filename,e.lineno));
+window.addEventListener('unhandledrejection',e=>{const r=e.reason;logErr('promise: '+(r&&r.message||r),'',0)});
 const track=(n,p)=>{try{const NB=window.NativeBridge;if(NB&&NB.track)NB.track(n,Object.assign({level:G.level},p||{}))}catch(e){}};
 const buzz=p=>{try{const NB=window.NativeBridge;if(NB&&NB.native&&NB.haptic){NB.haptic(Array.isArray(p)?p[0]:p)}else if(navigator.vibrate)navigator.vibrate(p)}catch(e){}};
 
@@ -1537,7 +1542,7 @@ $('dcBtn').onclick=()=>{audioInit();sfx.click();showChallenge()};
 
 function setQuality(home){R.setPixelRatio(home?Math.min(DPR,2):DPR)}
 function showHome(){ch=null;mode='home';homeMusicStart();setQuality(true);busy=true;closeModal();$('home').hidden=false;$('bar').hidden=true;$('prog').hidden=true;$('dev').hidden=true;$('tut').hidden=true;hideHand();
-  setWorld(worldOf(G.level),curWorld==null);$('playBtn').innerHTML='Level '+G.level+(streakTier(G.streak)>=1?`<span class="streakTag">${flameSvg()}${G.streak}</span>`:'');$('worldChip').textContent=`World ${worldOf(G.level)+1} · ${WORLDS[worldOf(G.level)].name}  ›`;questDot();bookDot();if(G.refund){const rf=G.refund;delete G.refund;save();setTimeout(()=>{if($('modal').hidden&&mode==='home'){busy=true;modal(`<h2>New Wardrobe!</h2><p>Outfits got a big upgrade: bigger hats, new eye styles and 8 new jellies to dress. We refunded <b>${rf.toLocaleString()} coins</b> for what you bought before.</p>`,[{t:'Nice!',fn:()=>{closeModal();busy=false;bookDot()}}])}},400)}const pos=(G.level-1)%PER_WORLD;$('worldDots').innerHTML=Array.from({length:PER_WORLD},(_,i)=>`<i class="${i<pos?'on':i===pos?'cur':''}"></i>`).join('');fitCamera();hud();$('spinDot').hidden=!spinState().free;dcDot();if(dailyDue())setTimeout(()=>{if(mode==='home'&&$('modal').hidden)showDaily()},700);else setTimeout(()=>{if(mode==='home'&&$('modal').hidden)starterOffer()},1200)}
+  setWorld(worldOf(G.level),curWorld==null);$('playBtn').innerHTML='Level '+G.level+(streakTier(G.streak)>=1?`<span class="streakTag">${flameSvg()}${G.streak}</span>`:'');$('worldChip').textContent=`World ${worldOf(G.level)+1} · ${WORLDS[worldOf(G.level)].name}  ›`;questDot();bookDot();if(G.refund){const rf=G.refund;delete G.refund;save();setTimeout(()=>{if($('modal').hidden&&mode==='home'){busy=true;modal(`<h2>New Wardrobe!</h2><p>Outfits got a big upgrade: bigger hats, new eye styles and 8 new jellies to dress. We refunded <b>${rf.toLocaleString()} coins</b> for what you bought before.</p>`,[{t:'Nice!',fn:()=>{closeModal();busy=false;bookDot()}}])}},400)}const pos=(G.level-1)%PER_WORLD;$('worldDots').innerHTML=Array.from({length:PER_WORLD},(_,i)=>`<i class="${i<pos?'on':i===pos?'cur':''}"></i>`).join('');fitCamera();hud();$('spinDot').hidden=!spinState().free;dcDot();if(dailyDue())setTimeout(()=>{if(mode==='home'&&$('modal').hidden)showDaily()},700);else setTimeout(()=>{if(mode==='home'&&$('modal').hidden&&!starterOffer())dressTip()},1200)}
 function pregen(){const n=G.level,f=G.fails[n]||0,ph=sessionPhase();setTimeout(()=>{pre={n,f,ph,L:genLevel(n,f,sessAdj(ph))}},60)}
 function startLevel(){
   closeModal();tickHearts();
@@ -1559,10 +1564,13 @@ function startLevel(){
   const fresh=[...new Set(L.triples)].filter(c=>!G.seen.includes(c));
   hud();
   const perks=[freeGrab?'Grab':'',freeMag?'Magnet':'',xSpot?'Extra spot':''].filter(Boolean);
-  if(perks.length)setTimeout(()=>{if(mode==='game'&&G.level===n)showToast(`Hot Streak · ${G.streak} wins`,'Free '+perks.join(' + '),true)},newWorld&&n>1?2700:350);
+  const toasts=[];
+  if(L.tier!=='normal')toasts.push(()=>showToast(L.tier==='super'?'Tough level':'Tricky level',(L.tier==='super'?'3x':'2x')+' coins',true));
+  if(perks.length)toasts.push(()=>showToast(`Hot Streak · ${G.streak} wins`,'Free '+perks.join(' + '),true));
+  const playToasts=d=>toasts.forEach((f,i)=>setTimeout(()=>{if(mode==='game'&&G.level===n)f()},d+i*2700));
   busy=false;hintK=null;
-  if(fresh.length&&!ch){busy=true;meetJellies(fresh,()=>{busy=false;if(n===1)setTimeout(()=>{hintK=firstHint()},300)})}
-  else if(n===1)setTimeout(()=>{hintK=firstHint();},500);
+  if(fresh.length&&!ch){busy=true;meetJellies(fresh,()=>{busy=false;playToasts(300);if(n===1)setTimeout(()=>{hintK=firstHint()},300)})}
+  else{playToasts(newWorld&&n>1?2700:350);if(n===1)setTimeout(()=>{hintK=firstHint();},500)}
 
 }
 function firstHint(){const act=S.active.filter(Boolean).map(j=>j.color);for(let k=0;k<tapMask.length;k++)if(tapMask[k]&&act.includes(S.grid[k]))return k;return null}
@@ -1640,20 +1648,26 @@ function showQuests(was){if(was==null)was=busy;busy=true;const Q=ensureQuests();
 /* ---------- Jelly Wardrobe ---------- */
 const ownsOutfit=(ci,oi)=>(G.outfits[ci]||[]).includes(oi);
 function canAffordOutfit(){return G.seen.some(ci=>OUTFITS[ci].some((o,oi)=>!ownsOutfit(ci,oi)&&G.coins>=o.p))}
+function dressTip(){if(G.dressTip||G.seen.length<5||!canAffordOutfit()||Object.values(G.outfits||{}).some(a=>a&&a.length))return false;
+  G.dressTip=true;save();busy=true;track('dress_tip');let ci=G.seen.find(c=>OUTFITS[c].some(o=>o.slot==='head'));if(ci==null)ci=G.seen[0];const oi=Math.max(0,OUTFITS[ci].findIndex(o=>o.slot==='head'));
+  modal(`<p class="step">Did you know?</p><h2>Dress up your jellies!</h2><div class="wprev">${thumbImg(ci,136,false,{[OUTFITS[ci][oi].slot]:oi})}</div><p>Spend your coins on hats, glasses and more. Outfits show up in every level.</p><p style="font-size:13px">You have <b>${coinSvg(16)} ${G.coins.toLocaleString()}</b>, enough for your first outfit.</p>`,
+    [{t:'Dress them up',fn:()=>{track('dress_tip_open');jellyBook(false)}},{t:'Later',cls:'ghost',back:true,fn:()=>{closeModal();busy=false}}]);return true}
 function bookDot(){const d=$('bookDot');if(d)d.hidden=!canAffordOutfit()}
 function redressAll(){[mascot.hero,mascot.a,mascot.b,mascot.c,mascot.d].forEach(dress)}
 function jellyBook(was){if(was==null)was=busy;busy=true;
   const rows=INTRO.map(([c,lv])=>{const got=G.seen.includes(c);const own=(G.outfits[c]||[]).length;const deal=got&&OUTFITS[c].some((o,oi)=>!ownsOutfit(c,oi)&&G.coins>=o.p);
     return `<div class="shopitem jrow" ${got?`data-j="${c}"`:''} style="align-items:center;gap:12px">${got?thumbImg(c,64):thumbImg(c,64,true,{})}<div style="flex:1;min-width:0"><b style="font-family:var(--display);font-size:20px;line-height:1;color:${got?nameCol(c):'var(--ink2)'}">${got?JELLIES[c].name:'???'}${deal?'<span class="ribbon">NEW</span>':''}</b><span style="display:block;font-weight:900;color:var(--ink)">${got?JELLIES[c].flavor:`Joins at level ${lv}`}</span>${got?`<span>${own}/3 outfits</span>`:''}</div>${got?'<button>Dress up</button>':''}</div>`}).join('');
-  modal(`<p class="step">${G.seen.length} of ${PAL.length} collected</p><h2>Meet Your Jellies</h2>${rows}`,[{t:'Close',cls:'ghost',back:true,fn:()=>{closeModal();busy=was;bookDot()}}]);
+  modal(`<button class="mx" aria-label="Close">×</button><p class="step">${G.seen.length} of ${PAL.length} collected</p><h2>Meet Your Jellies</h2>${rows}`,[{t:'Close',cls:'ghost',back:true,fn:()=>{closeModal();busy=was;bookDot()}}]);
+  $('card').querySelector('.mx').onclick=()=>{sfx.click();closeModal();busy=was;bookDot()};
   $('card').querySelectorAll('[data-j]').forEach(r=>r.onclick=()=>{sfx.click();wardrobe(+r.dataset.j,was)})}
 function wardrobe(ci,was){busy=true;const w=wornOf(ci);
   const tiles=OUTFITS[ci].map((o,oi)=>{const has=ownsOutfit(ci,oi),on=w[o.slot]===oi,ok=G.coins>=o.p;
     return `<div class="wtile${on?' on':''}"><span class="wslot">${o.slot==='face'?'Eyes':'Head'}</span>${thumbImg(ci,80,false,{[o.slot]:oi})}<b>${o.n}</b>${on?`<button class="qbtn wear-on" data-off="${oi}">Wearing</button>`:has?`<button class="qbtn" data-wear="${oi}">Wear</button>`:`<button class="qbtn buy" data-buy="${oi}"${ok?'':' disabled'}>${coinSvg(16)} ${o.p.toLocaleString()}</button>`}</div>`}).join('');
   const next=OUTFITS[ci].filter((o,oi)=>!ownsOutfit(ci,oi)).map(o=>o.p).sort((a,b)=>a-b)[0];
-  modal(`<p class="step">Wardrobe</p><div class="wprev">${thumbImg(ci,136)}</div><h2 style="color:${nameCol(ci)}">${JELLIES[ci].name}</h2><div class="wtiles">${tiles}</div><p style="font-size:12px">${next&&G.coins<next?`${(next-G.coins).toLocaleString()} more coins for the next outfit. Win levels, finish quests and claim bonus coins to get there.`:'Wear one Eyes item and one Head item at the same time. They show up in every level.'}</p>`,
+  modal(`<button class="mx" aria-label="Close">×</button><p class="step">Wardrobe</p><div class="wprev">${thumbImg(ci,136)}</div><h2 style="color:${nameCol(ci)}">${JELLIES[ci].name}</h2><div class="wtiles">${tiles}</div><p style="font-size:12px">${next&&G.coins<next?`${(next-G.coins).toLocaleString()} more coins for the next outfit. Win levels, finish quests and claim bonus coins to get there.`:'Wear one Eyes item and one Head item at the same time. They show up in every level.'}</p>`,
     [{t:'Back',cls:'ghost',back:true,fn:()=>jellyBook(was)}]);
   const c=$('card');const put=()=>{G.wear[ci]=w;save();redressAll()};
+  c.querySelector('.mx').onclick=()=>{sfx.click();closeModal();busy=was;bookDot()};
   c.querySelectorAll('[data-buy]').forEach(b=>b.onclick=()=>{const oi=+b.dataset.buy,o=OUTFITS[ci][oi];if(G.coins<o.p)return;G.coins-=o.p;(G.outfits[ci]=G.outfits[ci]||[]).push(oi);w[o.slot]=oi;put();hud();sfx.win();confetti();buzz([30,40,30]);track('outfit_buy',{jelly:JELLIES[ci].name,outfit:o.n,price:o.p});wardrobe(ci,was)});
   c.querySelectorAll('[data-wear]').forEach(b=>b.onclick=()=>{const oi=+b.dataset.wear;w[OUTFITS[ci][oi].slot]=oi;put();sfx.jar(1);wardrobe(ci,was)});
   c.querySelectorAll('[data-off]').forEach(b=>b.onclick=()=>{const oi=+b.dataset.off;delete w[OUTFITS[ci][oi].slot];put();sfx.click();wardrobe(ci,was)})}
