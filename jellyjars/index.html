@@ -428,8 +428,10 @@ function evaluate(L,P,seed){const r=mulberry(seed);let w=0,ten=0;for(let i=0;i<P
    Session logic (from the video): warm-up win at session start, a spike right before your usual quit point. */
 function bandFor(n,adj=0){
   /* targets are first-try win rates for a typical player (no boosters, no revives) */
-  const tier=tierOf(n);const base=Math.max(0.4,0.58-Math.max(0,n-10)*0.004);
-  let b=n<=3?[0.85,1]:n<=10&&tier==='normal'?[0.7,0.9]:n===5?[0.6,0.75]:n===10?[0.42,0.58]:tier==='super'?(n<=30?[0.25,0.38]:[0.15,0.27]):tier==='hard'?(n<=20?[0.35,0.5]:[0.25,0.37]):(n%5===1&&n>10)?[base+0.08,base+0.2]:[base-0.07,base+0.07];
+  const tier=tierOf(n);const old=Math.max(0.4,0.58-Math.max(0,n-10)*0.004);
+  /* normal levels: ~70% first-try wins for 11-30 (where retention is won), easing down to the old curve by level 50 */
+  const base=n<=30?0.70:n<=50?0.70-(n-30)*(0.70-old)/20:old;
+  let b=n<=3?[0.85,1]:n<=10&&tier==='normal'?[0.7,0.9]:n===5?[0.6,0.75]:n===10?[0.42,0.58]:tier==='super'?(n<=30?[0.25,0.38]:[0.15,0.27]):tier==='hard'?(n<=20?[0.35,0.5]:[0.25,0.37]):(n%5===1&&n>10)?[base+0.06,Math.min(0.92,base+0.16)]:[base-0.06,base+0.06];
   if(n>3&&adj)b=[Math.min(0.9,Math.max(0.03,b[0]+adj)),Math.min(0.97,Math.max(0.1,b[1]+adj))];
   return b;
 }
@@ -1856,6 +1858,7 @@ function next(){
   const NBx=window.NativeBridge;
   if(done>=3&&!G.notifAsked&&NBx&&NBx.askNotifications){G.notifAsked=true;save();return modal(`<div class="icon">${bellSvg()}</div><h2>Want a heads-up?</h2><p>We'll tell you when your lives are full and your daily reward is ready. No spam.</p>`,[{t:'Yes, notify me',fn:()=>{NBx.askNotifications().then(ok=>{track('notif_optin',{granted:ok?1:0});closeModal();next()})}},{t:'Not now',cls:'ghost',back:true,fn:()=>{closeModal();next()}}])}
   if([12,30,60].includes(done)&&!G.reviewAsked.includes(done)&&NBx&&NBx.requestReview){G.reviewAsked.push(done);save();setTimeout(()=>NBx.requestReview(),1800)}
+  if(!G.noAds&&done>=10&&done%PER_WORLD===0&&adGapOk()){G.sinceAd=0;save();track('world_ad',{world:worldOf(done+1)+1});return showAd('inter',startLevel)}
   if(!G.noAds&&G.level-1>=6&&!usedRewarded){G.sinceAd++;if(G.sinceAd>=interEvery()&&adGapOk()){G.sinceAd=0;save();return showAd('inter',startLevel)}}
   save();startLevel();
 }
@@ -1884,7 +1887,8 @@ function onLose(){
     if(reviveCount<2)btns.push({t:`+${sp} Shelf Spot${sp>1?'s':''} ${tvTag()}`,cls:'v',fn:()=>showAd('rew',()=>{track('revive',{method:'ad',n:reviveCount+1,spots:sp,progress_pct:pct});revive(sp)})});
     if(G.coins>=cost)btns.push({t:`+1 Shelf Spot · ${coinSvg(22)} ${cost}`,cls:'o',fn:()=>{G.coins-=cost;save();sfx.coin();track('revive',{method:'coins',n:reviveCount+1,cost});revive()}});
     else{const need=cost-G.coins;btns.push({t:`+1 Shelf Spot · ${coinSvg(22)} ${cost}`,cls:'o',dis:true,fn:()=>{}});
-      btns.push({t:`Get ${need} coins ${tvTag()}`,cls:'p',fn:()=>showAd('rew',()=>{G.coins+=need;save();hud();sfx.coin();onLose()})})}
+      /* only one video option per screen: the coins video appears once the free shelf-spot videos are used up */
+      if(reviveCount>=2)btns.push({t:`Get ${need} coins ${tvTag()}`,cls:'p',fn:()=>showAd('rew',()=>{G.coins+=need;save();hud();sfx.coin();onLose()})})}
   }
   btns.push({t:'Give up',cls:'ghost',fn:giveUpConfirm});
   const last=reviveCount>=MAX_REVIVES?'<p style="font-size:13px">No more extra spots for this attempt.</p>':reviveCount===MAX_REVIVES-1?'<p style="font-size:13px">Last extra spot available this attempt.</p>':'';
