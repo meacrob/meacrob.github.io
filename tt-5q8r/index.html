@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta name="referrer" content="no-referrer">
+<title>Engine test connection</title>
+<style>
+:root{color-scheme:light dark;--bg:light-dark(#fff,#111513);--ink:light-dark(#141714,#e9ece9);--soft:light-dark(#5b625c,#a7b0a9);--go:light-dark(#11633f,#5cc98f)}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 system-ui,sans-serif}
+main{max-width:560px;margin:0 auto;padding:48px 20px}h1{font-size:28px;line-height:1.15}
+a.btn{display:inline-block;background:var(--go);color:var(--bg);padding:14px 20px;border-radius:10px;text-decoration:none;font-weight:600}
+.soft{color:var(--soft);font-size:14px}
+</style>
+</head>
+<body>
+<main>
+<h1>Engine test connection</h1>
+<p>Owner-only plumbing test. This connects your Twitch account to the clip engine with one permission: <b>Manage Clips</b> (download clips and create clips from your past broadcasts). Nothing is posted anywhere.</p>
+<p><a class="btn" id="connect" href="#">Connect Twitch</a></p>
+<p class="soft">Each click creates a new one-time security code. To undo later: Twitch Settings &gt; Connections &gt; Other Connections &gt; disconnect.</p>
+</main>
+<script>
+{
+const CLIENT_ID = "eb2is6iipvmbxv6vjydevpbwgrb6qm";
+const REDIRECT = "https://meacrob.github.io/tt-5q8r/callback.html";
+document.getElementById("connect").addEventListener("click", ev => {
+  ev.preventDefault();
+  const b = new Uint8Array(32); crypto.getRandomValues(b);
+  const state = Array.from(b, x => x.toString(16).padStart(2, "0")).join("");
+  try { sessionStorage.setItem("oauth_state", JSON.stringify({state, t: Date.now()})); }
+  catch (e) { document.getElementById("connect").textContent = "Please allow site storage and try again"; return; }
+  const q = new URLSearchParams({response_type: "token", client_id: CLIENT_ID, redirect_uri: REDIRECT,
+                                 scope: "channel:manage:clips", state, force_verify: "true"});
+  location.href = "https://id.twitch.tv/oauth2/authorize?" + q;
+});
+}
+</script>
+</body>
+</html>
