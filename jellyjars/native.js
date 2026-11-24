@@ -10,7 +10,9 @@
     REWARDED_ID: 'ca-app-pub-9018020377555599/9566307240',
     INTERSTITIAL_ID: 'ca-app-pub-9018020377555599/6425138586',
     // Google Play Games leaderboard for the Daily Challenge (Play Console > Play Games Services > Leaderboards)
-    LB_DAILY: 'CgkI2Ie8sp0YEAIQAQ'
+    LB_DAILY: 'CgkI2Ie8sp0YEAIQAQ',
+    // weekly 'Levels cleared' leaderboard (Play Games makes the weekly view automatically); empty = feature hidden
+    LB_WEEK: 'CgkI2Ie8sp0YEAIQAg'
   };
 
   var cap = window.Capacitor;
@@ -33,8 +35,24 @@
   // Meta standard events (usable as campaign optimization goals) + level milestones
   function toMeta(name, p) {
     p = p || {};
-    if (name === 'level_complete') { meta('fb_mobile_level_achieved', { fb_level: String(p.level) });
+    if (name === 'level_complete') { meta('fb_mobile_level_achieved', { fb_level: String(p.level) }); if (p.level <= 10) meta('lvl_win_' + p.level, {}); if (p.level <= 10 && p.secs > 90) meta('lvl_slow_' + p.level, {});
       if ([5, 10, 20, 30, 50].indexOf(p.level) >= 0) meta('reached_level_' + p.level, {}); }
+    else if ((name === 'level_start' || name === 'level_fail') && p.level <= 10) { meta((name === 'level_start' ? 'lvl_start_' : 'lvl_fail_') + p.level, {}); if (name === 'level_fail' && p.secs > 90) meta('lvl_slow_' + p.level, {}); }
+    else if (name === 'rw_tap') { meta('rw_tap', {}); meta(p.pre === 1 ? 'rw_tap_ready' : p.pre === 0 ? 'rw_tap_cold' : 'rw_tap_unk', {}); }
+    else if (name === 'rw_ok') meta('rw_ok_' + (p.src || 'x'), {});
+    else if (name === 'level_abandon' && p.level <= 10) meta('lvl_quit_' + p.level, {});
+    else if (name === 'iap_ready') meta('iap_ready', {});
+    else if (name === 'rw_none') { meta('rw_none', {}); meta('rw_none_' + String(p.r || 'x').slice(0, 12), {}); }
+    else if (name === 'inter_none') meta('inter_none', {});
+    else if (name === 'lives_out') meta('lives_out', {});
+    else if (name === 'ret') meta('ret_d' + p.d, {});
+    else if (name === 'play_min') meta('play_' + p.m + 'm', {});
+    else if (name === 'quit_after_ad') meta('quit_after_' + p.kind, {});
+    else if (name === 'bg_mid') meta('bg_mid_' + p.level, {});
+    else if (name === 'sess_end') meta('sess_lv_' + p.lv, {});
+    else if (name === 'iap_purchase') meta('fb_mobile_purchase', { fb_content_id: String(p.id), fb_currency: String(p.currency || 'USD') }, Number(p.price) || 0);
+    else if (['starter_seen', 'park_tip', 'park_ok', 'stack_tip', 'out_of_lives', 'level_skip', 'lucky_spin', 'notif_optin', 'outfit_buy', 'daily_start', 'daily_complete', 'quest_complete', 'world_ad', 'js_error', 'dress_tip_open', 'park_tip'].indexOf(name) >= 0) meta(name, {});
+    else if (name === 'booster_used') meta('boost_' + p.type, {});
     else if (name === 'tutorial_complete') meta('fb_mobile_tutorial_completion', { fb_success: 1 });
     else if (name === 'rewarded_ad_watched') meta('AdImpression', { fb_ad_type: 'rewarded_video' });
     else if (name === 'interstitial_shown') meta('AdImpression', { fb_ad_type: 'interstitial' });
@@ -42,7 +60,7 @@
   }
   N.testing = CFG.TESTING;
   N.debugLog = !!CFG.DEBUG_LOG;
-  N.track = function (name, params) { try { FA.logEvent({ name: name, params: params || {} }).catch(function () {}); } catch (e) {} toMeta(name, params); };
+  N.track = function (name, params) { try { var q = Object.assign({}, params || {}); ['level', 'attempt', 'world'].forEach(function (k) { if (q[k] != null) q[k] = String(q[k]); }); FA.logEvent({ name: name, params: q }).catch(function () {}); } catch (e) {} toMeta(name, params); };
   N.setProp = function (key, value) { try { FA.setUserProperty({ key: key, value: String(value) }).catch(function () {}); } catch (e) {} };
 
   // ---- Google Play Games: Daily Challenge leaderboard ----------------------
@@ -57,6 +75,12 @@
     submit: function (ms) { return pg('submit', { id: CFG.LB_DAILY, score: Math.round(ms) }); },
     show: function () { return pg('signIn').then(function (s) { return s.signedIn ? pg('show', { id: CFG.LB_DAILY }) : s; }); },
     rank: function () { return pg('rank', { id: CFG.LB_DAILY }); }
+  };
+  N.lbw = {
+    on: function () { return !!CFG.LB_WEEK; },
+    submit: function (n) { return CFG.LB_WEEK ? pg('submit', { id: CFG.LB_WEEK, score: Math.round(n) }) : Promise.resolve(pgOff); },
+    show: function () { return CFG.LB_WEEK ? pg('signIn').then(function (s) { return s.signedIn ? pg('show', { id: CFG.LB_WEEK, span: 'weekly' }) : s; }) : Promise.resolve(pgOff); },
+    rank: function () { return CFG.LB_WEEK ? pg('rank', { id: CFG.LB_WEEK, span: 'weekly' }) : Promise.resolve(pgOff); }
   };
 
   N.haptic = function (ms) { try { Haptics.vibrate({ duration: Math.max(10, Math.min(80, ms || 15)) }); } catch (e) {} };
@@ -73,7 +97,8 @@
   N.alog = alog;
   function brief(e) { try { if (e == null) return ''; if (typeof e === 'string') return e; var o = []; ['code', 'message', 'domain', 'cause'].forEach(function (k) { if (e[k] != null) o.push(k + '=' + e[k]); }); return o.join(' ') || JSON.stringify(e).slice(0, 160); } catch (x) { return '?'; } }
   function errText(e) { try { return (e && (e.message || e.code)) || (typeof e === 'string' ? e : JSON.stringify(e)); } catch (x) { return 'unknown'; } }
-  function noteErr(where, e) { N.lastAdError = where + ': ' + errText(e); alog('ERR ' + where + ': ' + brief(e)); N.track('ad_error', { where: where, msg: String(N.lastAdError).slice(0, 90) }); }
+  var errN = {};
+  function noteErr(where, e) { if (/^load /.test(where)) { errN[where] = (errN[where] || 0) + 1; if (errN[where] > 4) { alog('ERR ' + where + ' (quiet): ' + brief(e)); return; } } meta('ad_err', {}); meta('ad_err_' + String(where).replace(/[^a-z]+/gi, '_').slice(0, 24), {}); try { var cd = e && e.code; if (cd == null) { var mm = /code[=: ]+(-?\d+)/.exec(String(e && e.message || e)); cd = mm && mm[1]; } if (cd == null && /timeout/i.test(errText(e))) cd = 'timeout'; if (cd != null) meta('ad_code_' + String(cd).replace(/[^a-z0-9]+/gi, '_').slice(0, 16), {}); } catch (x) {} N.lastAdError = where + ': ' + errText(e); alog('ERR ' + where + ': ' + brief(e)); N.track('ad_error', { where: where, msg: String(N.lastAdError).slice(0, 90) }); }
   // gives up after ms, so the game never hangs waiting on the ad SDK
   function within(p, ms) { return Promise.race([p, new Promise(function (_, rej) { setTimeout(function () { rej(new Error('timeout ' + ms + 'ms')); }, ms); })]); }
   // One rewarded load at a time. A tap during a background load waits for that same load instead of
@@ -83,20 +108,21 @@
   function loadRewardP(ms) {
     if (rLoadP) return rLoadP;
     loadingR = true; alog('rewarded: loading');
-    rLoadP = within(AdMob.prepareRewardVideoAd({ adId: CFG.REWARDED_ID, isTesting: CFG.TESTING }), ms || 20000)
-      .then(function () { rewardLoaded = true; rLoadedAt = Date.now(); alog('rewarded: ready'); })
+    rLoadP = within(AdMob.prepareRewardVideoAd({ adId: CFG.REWARDED_ID, isTesting: CFG.TESTING }), ms || 40000)
+      .then(function () { rewardLoaded = true; rLoadedAt = Date.now(); alog('rewarded: ready'); meta('ad_loaded', {}); })
       .finally(function () { loadingR = false; rLoadP = null; });
     return rLoadP;
   }
+  var rFails = 0, iFails = 0; function backoff(n) { return Math.min(60000, 10000 * n); }
   function loadReward() {
     if (rLoadP || freshReward() || !N.ready) return; rewardLoaded = false;
-    loadRewardP().catch(function (e) { noteErr('load rewarded', e); setTimeout(loadReward, 15000); });
+    loadRewardP().then(function () { rFails = 0; }).catch(function (e) { noteErr('load rewarded', e); rFails++; setTimeout(loadReward, backoff(rFails)); });
   }
   function loadInter() {
     if (loadingI || interLoaded || !N.ready) return; loadingI = true; alog('interstitial: loading');
-    within(AdMob.prepareInterstitial({ adId: CFG.INTERSTITIAL_ID, isTesting: CFG.TESTING }), 20000)
-      .then(function () { interLoaded = true; alog('interstitial: ready'); })
-      .catch(function (e) { noteErr('load interstitial', e); setTimeout(loadInter, 20000); })
+    within(AdMob.prepareInterstitial({ adId: CFG.INTERSTITIAL_ID, isTesting: CFG.TESTING }), 40000)
+      .then(function () { interLoaded = true; iFails = 0; alog('interstitial: ready'); })
+      .catch(function (e) { noteErr('load interstitial', e); iFails++; setTimeout(loadInter, backoff(iFails)); })
       .then(function () { loadingI = false; });
   }
 
@@ -123,7 +149,7 @@
   function appOn(ev, fn) { try { var p = App.addListener(ev, fn); if (p && p.catch) p.catch(function () {}); } catch (e) {} }
   appOn('backButton', function () { if (window.onNativeBack) window.onNativeBack(); });
   appOn('pause', function () { if (window.onAppPause) window.onAppPause(); });
-  appOn('resume', function () { if (window.onAppResume) window.onAppResume(); });
+  appOn('resume', function () { if (window.onAppResume) window.onAppResume(); setTimeout(function () { try { if (!freshReward()) { rFails = 0; loadReward(); } if (!interLoaded) { iFails = 0; loadInter(); } } catch (e) {} }, 1200); });
   N.minimize = function () { try { App.minimizeApp().catch(function () {}); } catch (e) {} };
 
   // ---- In-app review (Google's own rating sheet) -------------------------------
@@ -192,31 +218,33 @@
   on('interstitialAdFailedToShow', function (e) { if (IN) { noteErr('show interstitial', e); IN.finish(false); } });
 
   // resolves 'earned' | 'skipped' | 'unavailable'; guaranteed to answer within ~20s
+  N.rewardReady = function () { return freshReward(); };
   N.showRewarded = function () {
     return new Promise(function (resolve) {
       var c = { earned: false, shown: false, done: false };
       c.finish = function (r) {
         if (c.done) return; c.done = true; if (RW === c) RW = null;
-        rewardLoaded = false; setTimeout(loadReward, 1500); resolve(r);
+        rewardLoaded = false; setTimeout(loadReward, 300); resolve(r);
       };
-      RW = c;
+      RW = c; rFails = 0;
       if (!N.ready) { N.lastAdError = N.lastAdError || 'ads still starting up'; return c.finish('unavailable'); }
       var step = 'load'; alog('tap: rewarded (' + (freshReward() ? 'preloaded' : 'not preloaded, loading now') + ')');
       // watchdog: whatever happens inside the ad SDK, hand the game back
-      setTimeout(function () { if (!c.done && !c.shown) { noteErr('rewarded stuck at ' + step, 'no response'); c.finish('unavailable'); } }, 25000);
+      setTimeout(function () { if (!c.done && !c.shown && step === 'load') { noteErr('rewarded stuck at ' + step, 'no response'); c.finish('unavailable'); } }, 33000);
       // one automatic retry with a fresh ad before telling the player nothing is available
       var attempt = function (tries) {
         if (c.done || c.shown) return;
         if (!freshReward()) rewardLoaded = false;
-        var ready = rewardLoaded ? Promise.resolve() : within(loadRewardP(9000), 9000);
+        var ready = rewardLoaded ? Promise.resolve() : within(loadRewardP(), 14000);
         ready.then(function () {
           if (c.done || c.shown) return;
           step = 'show'; alog('calling show');
           var opened = false;
           AdMob.showRewardVideoAd()
-            .then(function () { c.earned = true; })
+            .then(function () { c.earned = true; setTimeout(function () { if (!c.done && !N.adOpen) c.finish('earned'); }, 1500); })
             .catch(function (e) { if (c.shown || opened || c.done) return; opened = true; noteErr('show rewarded', e); rewardLoaded = false; if (tries > 0) attempt(tries - 1); else c.finish('unavailable'); });
-          setTimeout(function () { if (c.shown || c.done || opened) return; opened = true; noteErr('show rewarded', 'ad did not open'); rewardLoaded = false; if (tries > 0) setTimeout(function () { attempt(tries - 1); }, 1000); else c.finish('unavailable'); }, 8000);
+          setTimeout(function () { if (c.shown || c.done || opened || N.adOpen || document.hidden) return; opened = true; noteErr('show rewarded', 'ad did not open'); c.finish('unavailable'); }, 15000);
+          setTimeout(function () { if (!c.done) c.finish(c.earned ? 'earned' : 'unavailable'); }, 180000);
         }).catch(function (e) { noteErr('load rewarded', e); rewardLoaded = false; if (tries > 0 && !c.done) setTimeout(function () { attempt(tries - 1); }, 800); else c.finish('unavailable'); });
       };
       attempt(1);
