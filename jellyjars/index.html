@@ -49,6 +49,7 @@ button:focus-visible{outline:3px solid #fff;outline-offset:3px}
 #worldChip{margin-top:10px;border-radius:999px;padding:6px 14px;color:#fff;font-weight:900;font-size:13px;letter-spacing:.04em;text-shadow:0 1px 2px rgba(0,0,0,.3)}
 .homeTop{display:flex;flex-direction:column;align-items:center}
 .homeBtns{display:flex;flex-direction:column;gap:14px;width:min(320px,86vw);pointer-events:auto}
+#nextGoal{margin:-6px 0 0;text-align:center;color:#fff;font-weight:900;font-size:15px;text-shadow:0 1px 2px rgba(60,30,90,.55),0 0 8px rgba(60,30,90,.35)}#nextGoal:empty{display:none}
 .homeRow{display:flex;gap:10px}
 .dot{position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;background:linear-gradient(180deg,#ff8aa0,#ff3d64);border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.25)}
 #wheelWrap{position:relative;width:min(280px,72vw);aspect-ratio:1;margin:4px auto 0}
@@ -136,6 +137,8 @@ button:focus-visible{outline:3px solid #fff;outline-offset:3px}
 .tutBtns{display:flex;gap:10px}.tutBtns .btn{flex:1}
 /* world toast */
 #card .mx{position:sticky;top:-6px;align-self:flex-end;margin:-12px -8px -40px 0;width:38px;height:38px;flex:none;border:0;border-radius:50%;background:rgba(122,98,170,.14);color:var(--ink);font-size:24px;font-weight:900;line-height:38px;padding:0;z-index:2;cursor:pointer}
+#coach{position:absolute;left:50%;top:15%;transform:translateX(-50%);max-width:82%;background:#fff;color:#4a3b5c;font-weight:800;font-size:15px;line-height:1.3;text-align:center;padding:10px 16px;border-radius:16px;box-shadow:0 6px 20px rgba(60,30,90,.25);z-index:6;pointer-events:none;animation:coachIn .35s ease}
+@keyframes coachIn{from{opacity:0;transform:translate(-50%,-8px)}to{opacity:1;transform:translate(-50%,0)}}
 #toast{position:absolute;left:50%;top:22%;transform:translateX(-50%);text-align:center;color:#fff;pointer-events:none;z-index:5}
 #toast small{display:block;font-weight:900;letter-spacing:.14em;text-transform:uppercase;font-size:12px;opacity:.9;text-shadow:0 1px 3px rgba(0,0,0,.3)}
 #toast b{display:block;font-family:var(--display);font-weight:800;font-size:44px;line-height:1;text-shadow:0 3px 0 rgba(0,0,0,.15),0 8px 24px rgba(0,0,0,.3);white-space:nowrap}
@@ -225,6 +228,7 @@ button:focus-visible{outline:3px solid #fff;outline-offset:3px}
     </div>
     <div class="homeBtns">
       <button class="btn huge" id="playBtn">Level 1</button>
+      <p id="nextGoal" aria-live="polite"></p>
       <div class="homeRow">
         <button class="btn p" id="questBtn" style="flex:1;font-size:19px">Quests<i id="questDot" class="dot" hidden></i></button>
         <button class="btn o" id="bookBtn" style="flex:1;font-size:19px">Jellies<i id="bookDot" class="dot" hidden></i></button>
@@ -234,6 +238,7 @@ button:focus-visible{outline:3px solid #fff;outline-offset:3px}
         <button class="btn v" id="spinBtn" style="flex:1;font-size:17px;padding-left:6px;padding-right:6px">Lucky Spin<i id="spinDot" class="dot" hidden></i></button>
       </div>
       <div class="homeRow" style="justify-content:center">
+        <button class="round glass" id="rankBtn" aria-label="Weekly ranking" hidden><svg viewBox="0 0 24 24"><path d="M7 4h10v3a5 5 0 0 1-10 0z" fill="#fff"/><path d="M7 5H4v1.5A3.5 3.5 0 0 0 7.5 10M17 5h3v1.5A3.5 3.5 0 0 1 16.5 10" stroke="#fff" stroke-width="1.8" fill="none"/><path d="M10.5 12h3v4h-3z" fill="#fff"/><rect x="8" y="16.5" width="8" height="3" rx="1" fill="#fff"/></svg></button>
         <button class="round glass" id="howBtn" aria-label="How to play"><svg viewBox="0 0 24 24"><path d="M9 9.2a3 3 0 1 1 4.6 2.5c-1 .6-1.6 1.3-1.6 2.6" stroke="#fff" stroke-width="2.6" fill="none" stroke-linecap="round"/><circle cx="12" cy="18.6" r="1.7" fill="#fff"/></svg></button>
         <button class="round glass" id="musBtn" aria-label="Music"></button>
         <button class="round glass" id="sndBtn" aria-label="Sound effects"></button>
@@ -250,7 +255,7 @@ button:focus-visible{outline:3px solid #fff;outline-offset:3px}
   </div></div>
 
   <div id="fx"><div id="hand" hidden><svg viewBox="0 0 24 24" width="56" height="56"><path d="M9.5 1.5a2 2 0 0 1 2 2V10h.6V8.6a1.9 1.9 0 0 1 3.8 0V10h.5a1.9 1.9 0 0 1 3.8.4v4.1c0 4.6-3.2 8-7.5 8h-.9c-2.9 0-4.6-1.4-5.8-3.5L2.8 14a1.8 1.8 0 0 1 2.9-2.1l1.8 2V3.5a2 2 0 0 1 2-2z" fill="#fff" stroke="#1e1236" stroke-width="1.3" stroke-linejoin="round"/></svg></div></div>
-  <div id="toast"><small id="toastSmall"></small><b id="toastBig"></b></div>
+  <div id="coach" hidden></div><div id="toast"><small id="toastSmall"></small><b id="toastBig"></b></div>
   <div id="tut" hidden><div class="card"><p class="step" id="tutStep"></p><h2 id="tutTitle"></h2><p id="tutText"></p><div class="dots" id="tutDots"></div><div class="tutBtns"><button class="btn ghost" id="tutBack" style="flex:.6">Back</button><button class="btn p" id="tutNext">Next</button></div></div></div>
   <div id="dev" hidden>
     <h3>Engine view</h3>
@@ -301,7 +306,7 @@ const JELLIES=[
  {name:'Kiki',flavor:'Kiwi Splash',bio:'Tiny seeds, huge energy. First to bounce, last to sleep.'}
 ];
 /* order in which flavors join the game: [flavor, first level]. All 16 are in play by level 44 (world 9) */
-const INTRO=[[0,1],[4,1],[7,2],[2,4],[3,5],[5,7],[6,9],[1,11],[8,14],[9,17],[13,21],[12,26],[11,29],[14,33],[10,38],[15,44]];
+const INTRO=[[0,1],[4,1],[7,2],[2,4],[3,7],[5,8],[6,10],[1,12],[8,15],[9,17],[13,21],[12,26],[11,29],[14,33],[10,38],[15,44]];
 /* colour families: a level never uses two jellies from the same family, so every board stays easy to read.
    red, orange, yellow, green, blue, purple, pink, brown, white, black */
 const FAMILY=[0,1,2,3,4,5,6,7,8,9,3,0,4,1,5,3];
@@ -317,10 +322,11 @@ function mulberry(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1
 function shuffle(arr,r){for(let i=arr.length-1;i>0;i--){const j=r()*(i+1)|0;[arr[i],arr[j]]=[arr[j],arr[i]]}return arr}
 const tierOf=n=>(n>=10&&n%10===0)?'super':(n>=5&&n%5===0)?'hard':'normal';
 function shapeFor(n){
-  const cols=n<=1?4:n<=4?5:6;
-  const rows=Math.min(7,(n<=1?3:4)+Math.floor(n/4));
-  const nColors=n<=1?2:n<=3?3:n<=6?4:n<=12?5:n<=24?6:7;
-  const stackP=n<4?0:Math.min(0.55,0.15+(n-4)*0.025);
+  /* first 10 levels add one new thing at a time (one popup per level, 18 Nov): L2 new jelly, L4 new colour, L5 Grab, L6 stacked jellies, L7 new jelly + bigger board, L8 fifth colour, L9 Magnet, L10 new jelly */
+  const cols=n<=1?4:n<=6?5:6;
+  const rows=Math.min(7,(n<=1?3:4)+Math.floor(Math.max(0,n-2)/5));
+  const nColors=n<=1?2:n<=3?3:n<=7?4:n<=14?5:n<=26?6:7;
+  const stackP=n<6?0:Math.min(0.55,0.1+(n-6)*0.025);
   const tallP=n<10?0:Math.min(0.45,0.12+(n-10)*0.02);
   return {cols,rows,nColors,stackP,tallP};
 }
@@ -336,7 +342,7 @@ function buildGrid(n,a,sh){
   const r=mulberry(n*100003+a*7919+11+SALT);const {cols,rows}=sh;const N=cols*rows;
   for(let t=0;t<20;t++){
     const grid=new Array(N).fill(EMPTY);
-    const nW=n>=4?Math.floor(N*0.07):0;
+    const nW=n>=9?Math.floor(N*0.07):0;
     shuffle([...Array(N).keys()].filter(k=>k>=cols*2),r).slice(0,nW).forEach(k=>grid[k]=WALL);
     if(!connected(grid,cols))continue;
     const open=[...Array(N).keys()].filter(k=>grid[k]!==WALL);
@@ -351,15 +357,20 @@ function buildGrid(n,a,sh){
     const st=new Array(N).fill(null).map(()=>[]);let bi=0;
     open.forEach(k=>{if(!h[k])return;for(let i=0;i<h[k]-1;i++)st[k].push(bag[bi++]);grid[k]=bag[bi++]});
     const hidden=new Array(N).fill(0);
-    if(n>=6){const pct=Math.min(0.3,0.12+n*0.004);open.forEach(k=>{if(grid[k]>=0&&k>=cols&&r()<pct)hidden[k]=1})}
+    if(n>=11){const pct=Math.min(0.3,0.12+n*0.004);open.forEach(k=>{if(grid[k]>=0&&k>=cols&&r()<pct)hidden[k]=1})}
     return {cols,rows,grid,st,hidden,triples};
   }
   return null;
 }
 let JID=0,IID=0,SALT=0;
+/* level features (18 Nov): gum = one shelf spot stuck under a gummy until a jar of gum.color is completed;
+   seals = {jarOrdinal: n} a jar that arrives sealed and opens after n other jars are completed */
+function mkJar(S,c,slot){const ord=S.jarN++;return{color:c,fill:0,vis:0,id:++JID,slot,seal:(S.seals&&S.seals[ord])||0}}
+const capOf=S=>S.cap-(S.gum?1:0);
 function newState(L,cap=5){
-  const S={cols:L.cols,rows:L.rows,grid:L.grid.slice(),st:L.st.map(a=>a.slice()),hidden:L.hidden.slice(),queue:L.jars.slice(),active:[null,null],shelf:[],cap,won:false,lost:false,total:L.jars.length,doneJars:0};
-  for(let i=0;i<2;i++){const c=S.queue.shift();if(c!=null)S.active[i]={color:c,fill:0,vis:0,id:++JID,slot:i}}
+  const S={cols:L.cols,rows:L.rows,grid:L.grid.slice(),st:L.st.map(a=>a.slice()),hidden:L.hidden.slice(),queue:L.jars.slice(),active:[null,null],shelf:[],cap,won:false,lost:false,total:L.jars.length,doneJars:0,jarN:0,
+    gum:L.gum!=null?{color:L.gum}:null,seals:L.seals||null};
+  for(let i=0;i<2;i++){const c=S.queue.shift();if(c!=null)S.active[i]=mkJar(S,c,i)}
   return S;
 }
 function tappable(S){
@@ -369,15 +380,20 @@ function tappable(S){
     for(const nk of [r>0?k-cols:-1,k+cols<N?k+cols:-1,c>0?k-1:-1,c<cols-1?k+1:-1]){if(nk<0||reach[nk])continue;if(grid[nk]===EMPTY){reach[nk]=1;q.push(nk)}else if(grid[nk]>=0)tap[nk]=1}}
   return tap;
 }
-function pickJar(S,color){let b=null;for(const j of S.active)if(j&&j.color===color&&j.fill<3&&(!b||j.fill>b.fill))b=j;return b}
+function pickJar(S,color){let b=null;for(const j of S.active)if(j&&!j.seal&&j.color===color&&j.fill<3&&(!b||j.fill>b.fill))b=j;return b}
 function resolve(S,ev){
   let ch=true;
   while(ch){ch=false;
-    for(let i=0;i<2;i++){const j=S.active[i];if(j&&j.fill>=3){j.done=true;S.doneJars++;ev.push({type:'jarDone',jar:j,slot:i});const nc=S.queue.shift();S.active[i]=nc==null?null:{color:nc,fill:0,vis:0,id:++JID,slot:i};if(S.active[i])ev.push({type:'jarNew',jar:S.active[i],slot:i});ch=true}}
+    for(let i=0;i<2;i++){const j=S.active[i];if(j&&j.fill>=3){j.done=true;S.doneJars++;ev.push({type:'jarDone',jar:j,slot:i});
+      if(S.gum&&S.gum.color===j.color){S.gum=null;ev.push({type:'gumFree'})}
+      const o=S.active[1-i];if(o&&o.seal>0){o.seal--;ev.push({type:o.seal?'sealTick':'unseal',jar:o})}
+      const nc=S.queue.shift();S.active[i]=nc==null?null:mkJar(S,nc,i);if(S.active[i])ev.push({type:'jarNew',jar:S.active[i],slot:i});ch=true}}
+    /* never deadlock: a sealed jar with no open jar beside it opens at once */
+    for(let i=0;i<2;i++){const j=S.active[i],o=S.active[1-i];if(j&&j.seal>0&&(!o||o.seal>0)){j.seal=0;ev.push({type:'unseal',jar:j});ch=true}}
     for(let i=0;i<S.shelf.length;i++){const it=S.shelf[i];const j=pickJar(S,it.color);if(j){j.fill++;S.shelf.splice(i,1);i--;ev.push({type:'shelfToJar',item:it,jar:j,idx:j.fill-1});ch=true}}
   }
 }
-function checkEnd(S){if(!S.active[0]&&!S.active[1]&&!S.queue.length)S.won=true;else if(S.shelf.length>=S.cap)S.lost=true}
+function checkEnd(S){if(!S.active[0]&&!S.active[1]&&!S.queue.length)S.won=true;else if(S.shelf.length>=capOf(S))S.lost=true}
 function takeTop(S,k){const color=S.grid[k];let refill=null;if(S.st[k].length){refill=S.st[k].pop();S.grid[k]=refill}else S.grid[k]=EMPTY;S.hidden[k]=0;return{color,refill}}
 function applyTap(S,k){
   const {color,refill}=takeTop(S,k);const ev=[];
@@ -387,7 +403,7 @@ function applyTap(S,k){
   resolve(S,ev);checkEnd(S);return ev;
 }
 function applyMagnet(S){
-  const cands=S.active.filter(Boolean);if(!cands.length)return null;
+  const cands=S.active.filter(j=>j&&!j.seal);if(!cands.length)return null;
   const avail=c=>S.shelf.filter(i=>i.color===c).length+S.grid.filter(v=>v===c).length+S.st.reduce((a,s)=>a+s.filter(v=>v===c).length,0);
   /* fill the jar Magnet can complete the most of (ties go to the fuller jar) */
   const j=cands.slice().sort((a,b)=>(Math.min(3-b.fill,avail(b.color))-Math.min(3-a.fill,avail(a.color)))||(b.fill-a.fill))[0];
@@ -405,21 +421,21 @@ function playout(L,r){
   const S=newState(L);let g=0,tSum=0,tN=0;
   while(!S.won&&!S.lost&&g++<800){
     const t=tappable(S);const cand=[];for(let k=0;k<t.length;k++)if(t[k])cand.push(k);if(!cand.length)break;
-    const act=S.active.filter(Boolean).map(j=>j.color);const m=cand.filter(k=>act.includes(S.grid[k]));let k;
+    const act=S.active.filter(j=>j&&!j.seal).map(j=>j.color);const m=cand.filter(k=>act.includes(S.grid[k]));let k;const gc=S.gum?S.gum.color:-9;
     /* plays like a person: only knows the 2 jars shown under NEXT, and now and then taps carelessly */
     const nx=S.queue.slice(0,2);
     if(r()<0.04)k=cand[r()*cand.length|0];
     else if(m.length)k=m[r()*m.length|0];
     else{let bs=-1e9;
       for(const c of cand){const col=S.grid[c];let s=r()*0.8;
-        const qi=nx.indexOf(col);if(qi>=0)s+=4/(1+qi);
+        const qi=nx.indexOf(col);if(qi>=0)s+=4/(1+qi);if(col===gc)s+=0.6;
         for(const it of S.shelf)if(it.color===col)s+=1.2;
         const nxt=S.st[c].length?S.st[c][S.st[c].length-1]:null;
         if(nxt!=null&&act.includes(nxt))s+=2.2;
         if(nxt==null){S.grid[c]=EMPTY;const t2=tappable(S);S.grid[c]=col;for(let i=0;i<t2.length;i++)if(t2[i]&&!t[i])s+=act.includes(S.grid[i])?2.5:0.3}
         if(s>bs){bs=s;k=c}}}
     applyTap(S,k);
-    if(S.doneJars>=S.total*0.6){tSum+=S.shelf.length/S.cap;tN++}
+    if(S.doneJars>=S.total*0.6){tSum+=S.shelf.length/capOf(S);tN++}
   }
   return {won:S.won,ten:tN?tSum/tN:0};
 }
@@ -430,20 +446,43 @@ function bandFor(n,adj=0){
   /* targets are first-try win rates for a typical player (no boosters, no revives) */
   const tier=tierOf(n);const old=Math.max(0.4,0.58-Math.max(0,n-10)*0.004);
   /* normal levels: ~70% first-try wins for 11-30 (where retention is won), easing down to the old curve by level 50 */
-  const base=n<=30?0.70:n<=50?0.70-(n-30)*(0.70-old)/20:old;
-  let b=n<=3?[0.85,1]:n<=10&&tier==='normal'?[0.7,0.9]:n===5?[0.6,0.75]:n===10?[0.42,0.58]:tier==='super'?(n<=30?[0.25,0.38]:[0.15,0.27]):tier==='hard'?(n<=20?[0.35,0.5]:[0.25,0.37]):(n%5===1&&n>10)?[base+0.06,Math.min(0.92,base+0.16)]:[base-0.06,base+0.06];
+  const base=n<=20?0.76:n<=30?0.70:n<=50?0.70-(n-30)*(0.70-old)/20:old;
+  let b=n<=3?[0.85,1]:n<=10&&tier==='normal'?[0.88,1]:n===5?[0.8,0.95]:n===10?[0.72,0.86]:/* boss levels ramp in gently: the first ones (15, 20) are a step up, not a wall */
+    tier==='super'?(n<=20?[0.45,0.6]:n<=30?[0.38,0.52]:n<=50?[0.28,0.42]:[0.15,0.27]):tier==='hard'?(n<=15?[0.55,0.7]:n<=25?[0.45,0.6]:n<=45?[0.35,0.5]:[0.25,0.37]):(n%5===1&&n>10)?[base+0.06,Math.min(0.92,base+0.16)]:[base-0.06,base+0.06];
+  /* every level a notch easier than 1.0.87 (owner, 11 Nov): +5 points first-try win rate */
+  b=[Math.min(0.95,b[0]+0.05),Math.min(1,b[1]+0.05)];
+  /* levels that introduce a new twist (6 stacks, 16 gummy, 26 seals) are easier so players learn it without failing (23 Nov: half of new players failed level 6 once) */
+  if(n===6||n===16||n===26)b=[Math.min(0.97,b[0]+0.06),1];
+  adj=(adj||0)+(n>3?RC.diff_adj:0);
   if(n>3&&adj)b=[Math.min(0.9,Math.max(0.03,b[0]+adj)),Math.min(0.97,Math.max(0.1,b[1]+adj))];
   return b;
 }
+/* gummy shelf spot from level 16, sealed jars from level 26; each first appears alone on its intro level */
+const GUM_AT=16,SEAL_AT=26;
+const hasGum=n=>n===GUM_AT||(n>GUM_AT&&n!==SEAL_AT&&n%5!==0&&(n%3===1));
+const hasSeal=n=>n===SEAL_AT||(n>SEAL_AT&&n%5!==0&&(n%4===2));
+function addFeatures(n,L,r){
+  delete L.gum;delete L.seals;const J=L.jars.length;
+  if(hasGum(n)&&J>=5)L.gum=L.jars[2+Math.floor(r()*Math.min(3,J-3))];
+  if(hasSeal(n)&&J>=6){const seals={};const cnt=n>=45&&J>=10?2:1;let at=2+Math.floor(r()*2);
+    for(let i=0;i<cnt&&at<=J-3;i++){seals[at]=n>=40&&r()<0.5?2:1;at+=3+Math.floor(r()*3)}
+    if(Object.keys(seals).length)L.seals=seals}
+}
 function genLevel(n,fails,adj){
+  if(typeof window!=='undefined')window.__gen=(window.__gen||0)+1;/* counts builds on the game's own thread (should stay 0 in normal play) */
   const tier=tierOf(n);let sh=shapeFor(n);const band=bandFor(n,adj);let best=null,inBand=[];
-  if(tier==='hard')sh={...sh,nColors:Math.min(7,sh.nColors+1),stackP:Math.min(0.7,sh.stackP+0.15)};
-  if(tier==='super')sh={...sh,nColors:Math.min(7,sh.nColors+1),stackP:Math.min(0.75,sh.stackP+0.25),tallP:Math.min(0.6,sh.tallP+0.2)};
+  if(tier==='hard'&&n>10)sh={...sh,nColors:Math.min(7,sh.nColors+1),stackP:Math.min(0.7,sh.stackP+0.15)};
+  if(tier==='super'&&n>10)sh={...sh,nColors:Math.min(7,sh.nColors+1),stackP:Math.min(0.75,sh.stackP+0.25),tallP:Math.min(0.6,sh.tallP+0.2)};
   for(let pass=0;pass<5&&inBand.length<2;pass++){
     let passBest=null;
     for(let a=0;a<20;a++){
       const g=buildGrid(n,a+pass*100,sh);if(!g)continue;
       const L={...g,jars:shuffle(g.triples.slice(),mulberry(n*17+a+pass+SALT))};
+      if(n<=10){const dep={},cnt={};g.grid.forEach((c,k)=>{if(c<0)return;const row=Math.floor(k/g.cols);dep[c]=(dep[c]||0)+row;cnt[c]=(cnt[c]||0)+1;
+          g.st[k].forEach(c2=>{dep[c2]=(dep[c2]||0)+row+1.5;cnt[c2]=(cnt[c2]||0)+1})});
+        const rr=mulberry(n*29+a+pass);const used={};
+        L.jars=g.triples.map(c=>{used[c]=(used[c]||0)+1;return{c,k:dep[c]/cnt[c]+used[c]*1.2+rr()*0.6}}).sort((x,y)=>x.k-y.k).map(x=>x.c)}
+      addFeatures(n,L,mulberry(n*31+a*7+pass+SALT));
       const {wr,ten}=evaluate(L,28,n*13+a+SALT);if(wr===0)continue;
       const d=wr<band[0]?band[0]-wr:wr>band[1]?wr-band[1]:0;
       if(d===0)inBand.push({L,wr,ten});
@@ -455,7 +494,7 @@ function genLevel(n,fails,adj){
     // steer the generator: too easy -> more flavors and taller stacks; too hard -> fewer flavors
     /* easier, but never so few flavors that a level feels empty */
     if(!passBest||passBest.wr<band[0])sh={...sh,nColors:Math.max(n>8?Math.max(4,shapeFor(n).nColors-1):2,sh.nColors-1),stackP:Math.max(0,sh.stackP-0.1)};
-    else if(n>3)sh={...sh,nColors:Math.min(7,sh.nColors+(sh.nColors<7?1:0)),stackP:Math.min(0.8,sh.stackP+0.15),tallP:Math.min(0.6,sh.tallP+0.12)};
+    else if(n>10)sh={...sh,nColors:Math.min(7,sh.nColors+(sh.nColors<7?1:0)),stackP:Math.min(0.8,sh.stackP+0.15),tallP:Math.min(0.6,sh.tallP+0.12)};
   }
   const pick=inBand.length?inBand.sort((a,b)=>b.ten-a.ten)[0]:best;
   const L=pick.L;Object.assign(L,{n,tier,band,wr:pick.wr,ten:pick.ten,mercy:0});
@@ -477,13 +516,21 @@ let G;try{G=Object.assign(JSON.parse(JSON.stringify(DEF)),JSON.parse(localStorag
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(G))}catch(e){}};
 if(G.ov!==2){let rf=0;Object.keys(G.outfits||{}).forEach(ci=>(G.outfits[ci]||[]).forEach(oi=>rf+=[300,800,1500][oi]||0));G.coins+=rf;G.outfits={};G.wear={};G.ov=2;if(rf)G.refund=rf;save()}
 if(G.cur>0){G.sessions.push(G.cur);G.sessions=G.sessions.slice(-6)}G.cur=0;save();
+if(!G.mystSeen&&G.level>12){G.mystSeen=1;save()}if(!G.gumSeen&&G.level>GUM_AT+1){G.gumSeen=1;save()}if(!G.sealSeen&&G.level>SEAL_AT+1){G.sealSeen=1;save()}
 let sessLevels=0;
 const avgSess=()=>G.sessions.length?Math.max(3,Math.round(G.sessions.reduce((a,b)=>a+b,0)/G.sessions.length)):6;
-function sessionPhase(){if(sessLevels===0&&G.level>4)return'warm';const a=avgSess();if(sessLevels>=3&&sessLevels===a-1)return'spike';return'normal'}
+/* no hard 'spike' level before level 21 or before 3 real sessions: with no history avgSess() is 6, so every new player got a harder level 6 (18 Nov data: level 6 failed 24 times vs 5 or fewer on every other early level) */
+function sessionPhase(){if(sessLevels===0&&G.level>4)return'warm';const a=avgSess();if(G.level>20&&G.sessions.length>=3&&sessLevels>=3&&sessLevels===a-1)return'spike';return'normal'}
 const sessAdj=p=>p==='warm'?0.12:p==='spike'?-0.12:0;
 const adProfile=()=>G.stats.rew>=3?'watcher':'casual';
-const interEvery=()=>adProfile()==='watcher'?3:2;
-const AD_GAP=60e3,adGapOk=()=>Date.now()-(G.lastAdAt||0)>AD_GAP;
+/* 18 Nov: first interstitial after level 11 (was 6) and notification ask after level 3 (was 10, only ~2 opt-ins) */
+const RC_DEF={inter_start:11,inter_every:3,ad_gap:90,world_ad:0,diff_adj:0,notif_level:3,v:0};
+const RC=(()=>{let c={};try{c=JSON.parse(localStorage.getItem('jj_rc')||'{}')}catch(e){}return Object.assign({},RC_DEF,c)})();
+(function(){try{const ctl=new AbortController();setTimeout(()=>ctl.abort(),5000);
+fetch('https://meacrob.github.io/jellyjars/config.json?t='+Math.floor(Date.now()/36e5),{signal:ctl.signal}).then(r=>r.ok?r.json():null).then(j=>{if(!j||typeof j!=='object')return;
+const c={};for(const k in RC_DEF)if(typeof j[k]==='number')c[k]=j[k];try{localStorage.setItem('jj_rc',JSON.stringify(c))}catch(e){}Object.assign(RC,c)}).catch(()=>{})}catch(e){}})();
+const interEvery=()=>Math.max(1,RC.inter_every);
+const adGapOk=()=>Date.now()-(G.lastAdAt||0)>RC.ad_gap*1e3;
 function tickHearts(){if(G.hearts<MAXH&&G.heartTs){const n=Math.floor((Date.now()-G.heartTs)/REGEN);if(n>0){G.hearts=Math.min(MAXH,G.hearts+n);G.heartTs=G.hearts<MAXH?G.heartTs+n*REGEN:0;save()}}}
 function loseHeart(){if(G.hearts>=MAXH)G.heartTs=Date.now();G.hearts=Math.max(0,G.hearts-1);save()}
 const fmt=ms=>{const s=Math.max(0,Math.ceil(ms/1000));return`${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`};
@@ -524,18 +571,19 @@ function audioInit(){
   if(A.ctx){if(A.ctx.state==='suspended')A.ctx.resume();return}
   try{const AC_=window.AudioContext||window.webkitAudioContext;let C;try{C=new AC_({latencyHint:'playback'})}catch(e){C=new AC_()}A.ctx=C;
     A.comp=C.createDynamicsCompressor();A.comp.threshold.value=-10;A.comp.ratio.value=3;A.comp.attack.value=0.01;A.comp.release.value=0.2;A.comp.connect(C.destination);
-    A.master=C.createGain();A.master.gain.value=0.9;A.master.connect(A.comp);
-    const len=Math.floor(C.sampleRate*1.3),ir=C.createBuffer(2,len,C.sampleRate);for(let ch=0;ch<2;ch++){const d=ir.getChannelData(ch);for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,3)*0.8}
+    A.master=C.createGain();A.master.gain.value=0.5;A.master.connect(A.comp);
+    const len=Math.floor(C.sampleRate*0.8),ir=C.createBuffer(2,len,C.sampleRate);for(let ch=0;ch<2;ch++){const d=ir.getChannelData(ch);for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,3)*0.8}
     A.rev=C.createConvolver();A.rev.buffer=ir;const rg=C.createGain();rg.gain.value=0.5;A.rev.connect(rg).connect(A.master);
-    A.sfx=C.createGain();A.sfx.gain.value=G.sfx?1:0;A.sfx.connect(A.master);const sr=C.createGain();sr.gain.value=0.45;A.sfx.connect(sr).connect(A.rev);
+    A.sfx=C.createGain();A.sfx.gain.value=G.sfx?0.85:0;A.sfx.connect(A.master);const sr=C.createGain();sr.gain.value=0.45;A.sfx.connect(sr).connect(A.rev);
     A.mus=C.createGain();A.mus.gain.value=G.music?MUSV:0;const lp=C.createBiquadFilter();lp.type='lowpass';lp.frequency.value=6500;lp.Q.value=0.3;A.mus.connect(lp).connect(A.master);const mr=C.createGain();mr.gain.value=0.38;lp.connect(mr).connect(A.rev);
     const nl=C.sampleRate;A.noise=C.createBuffer(1,nl,C.sampleRate);const nd=A.noise.getChannelData(0);for(let i=0;i<nl;i++)nd[i]=Math.random()*2-1;
     if(mode==='home'||mode==='tut')homeMusicStart();else if(curWorld!=null)musicStart(curWorld,G.level);
+    setTimeout(bakeAll,300);
   }catch(e){}
 }
 function env(g,t,a,d,v){g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(v,t+a);g.gain.exponentialRampToValueAtTime(0.0001,t+a+d)}
-function bell(f,t,d=1,v=0.15,dest){const C=A.ctx;if(!C)return;const c=C.createOscillator(),m=C.createOscillator(),mg=C.createGain(),g=C.createGain();
-  c.frequency.value=f;m.frequency.value=f*3.51;mg.gain.setValueAtTime(f*2,t);mg.gain.exponentialRampToValueAtTime(1,t+d*0.8);
+function bell(f,t,d=1,v=0.15,dest){const C=A.ctx;if(!C)return;if(!bell.lim(t))return;const c=C.createOscillator(),m=C.createOscillator(),mg=C.createGain(),g=C.createGain();
+  const hi=f>1200;c.frequency.value=f;m.frequency.value=f*(hi?2:3.51);mg.gain.setValueAtTime(f*(hi?0.5:2),t);mg.gain.exponentialRampToValueAtTime(1,t+d*0.8);
   m.connect(mg).connect(c.frequency);env(g,t,0.004,d,v);c.connect(g).connect(dest||A.sfx);c.start(t);m.start(t);c.stop(t+d+0.05);m.stop(t+d+0.05)}
 function tone(f,t,d,v,type='sine',f2,dest){const C=A.ctx;if(!C)return;const o=C.createOscillator(),g=C.createGain();o.type=type;o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(f2,t+d);env(g,t,0.006,d,v);o.connect(g).connect(dest||A.sfx);o.start(t);o.stop(t+d+0.05)}
 function marimba(f,t,v=0.12,dest){tone(f,t,0.35,v,'sine',null,dest);tone(f*4,t,0.06,v*0.4,'sine',null,dest)}
@@ -543,25 +591,48 @@ function musicBox(f,t,v=0.1,dest){tone(f,t,1.2,v,'sine',null,dest);tone(f*2,t,0.
 function pluckSyn(f,t,v=0.08,dest){const C=A.ctx;const o=C.createOscillator(),fl=C.createBiquadFilter(),g=C.createGain();o.type='sawtooth';o.frequency.value=f;fl.type='lowpass';fl.frequency.setValueAtTime(f*6,t);fl.frequency.exponentialRampToValueAtTime(f*1.2,t+0.25);env(g,t,0.005,0.3,v);o.connect(fl).connect(g).connect(dest||A.sfx);o.start(t);o.stop(t+0.4)}
 function noise(t,d,v,f0,f1,type='bandpass',dest,q=1.2){const C=A.ctx;if(!C)return;const s=C.createBufferSource();s.buffer=A.noise;const fl=C.createBiquadFilter();fl.type=type;fl.Q.value=q;fl.frequency.setValueAtTime(f0,t);if(f1)fl.frequency.exponentialRampToValueAtTime(f1,t+d);const g=C.createGain();env(g,t,0.01,d,v);s.connect(fl).connect(g).connect(dest||A.sfx);s.start(t);s.stop(t+d+0.05)}
 const PENTA=[0,2,4,7,9,12,14,16,19,21,24];
-const now=()=>A.ctx?A.ctx.currentTime:0;
-function sparkle(t,n=4,v=0.035){for(let i=0;i<n;i++)bell(2000+Math.random()*2600,t+i*0.035+Math.random()*0.02,0.35,v)}
+/* never more than ~14 bells starting within 60ms: fast tapping can't pile up voices */
+bell.q=[];bell.lim=t=>{const q=bell.q;while(q.length&&q[0]<t-0.06)q.shift();if(q.length>=14)return false;q.push(t);return true};
+/* schedule effects a hair ahead: on phones the audio engine works in chunks, and a sound timed for 'now' arrives
+   after now has passed, which skips its fade-in and clicks. 50ms is not noticeable but always lands in the future. */
+const now=()=>A.ctx?A.ctx.currentTime+(A.lead!=null?A.lead:0.05):0;
+function sparkle(t,n=4,v=0.035){if(t-(sparkle.last||0)<0.15)n=Math.min(n,1);sparkle.last=t;for(let i=0;i<n;i++)bell(1600+Math.random()*1200,t+i*0.035+Math.random()*0.02,0.35,v)}
+/* The big jingles (level complete, jar filled, pops) used to be built live from up to 80 oscillators at the busiest
+   moment of the game, which made weaker phones crackle. They are now rendered once in the background and replayed
+   as a single recording, which costs almost nothing. Until the recordings are ready the live version plays. */
+const BAKED={};let bakeQ=null,BAKING=false;
+function bake(name,dur,fn){const sr=A.ctx.sampleRate,oc=new OfflineAudioContext(1,Math.ceil(sr*dur),sr);
+  const k={ctx:A.ctx,sfx:A.sfx,lead:A.lead,sl:sparkle.last,bq:bell.q};
+  A.ctx=oc;A.sfx=oc.destination;A.lead=0.01;sparkle.last=-1;bell.q=[];BAKING=true;
+  try{fn()}finally{A.ctx=k.ctx;A.sfx=k.sfx;A.lead=k.lead;sparkle.last=k.sl;bell.q=k.bq;BAKING=false}
+  return oc.startRendering().then(b=>{BAKED[name]=b})}
+function bakeAll(){if(bakeQ||!A.ctx||!window.OfflineAudioContext)return;
+  const jobs=[['win',3,()=>sfx.win()],['lose',2,()=>sfx.lose()],['coin',0.6,()=>sfx.coin()]];
+  for(let c=0;c<4;c++)jobs.push(['jar'+c,1.6,()=>sfx.jar(c)]);
+  for(let x=0;x<7;x++)jobs.push(['pop'+x,1.2,()=>sfx.pop(x>>1,x&1)]);
+  bakeQ=jobs.reduce((p,[n,d,f])=>p.then(()=>bake(n,d,f)).catch(()=>{}),Promise.resolve())}
+function playBaked(name){const b=BAKED[name];if(!b||BAKING)return false;const s=A.ctx.createBufferSource();s.buffer=b;s.connect(A.sfx);s.start(now());return true}
 const sfx={
   tap(){if(!A.ctx)return;const t=now();tone(500,t,0.09,0.12,'sine',1100)},
-  pop(i,combo=0){if(!A.ctx)return;const t=now();const m=76+PENTA[Math.min(10,i*2+combo)];bell(mtof(m),t,0.9,0.14);bell(mtof(m+12),t+0.02,0.5,0.05);sparkle(t+0.03,3)},
+  pop(i,combo=0){if(!A.ctx)return;if(playBaked('pop'+Math.min(6,i*2+Math.min(combo,2))))return;const t=now();const m=76+PENTA[Math.min(6,i*2+Math.min(combo,2))];bell(mtof(m),t,0.9,0.13);if(m<86)bell(mtof(m+12),t+0.02,0.5,0.04);sparkle(t+0.03,3)},
   shelf(){if(!A.ctx)return;const t=now();tone(260,t,0.12,0.16,'triangle',200);noise(t,0.05,0.08,1800,null,'bandpass')},
   danger(){if(!A.ctx)return;const t=now();tone(880,t,0.12,0.06,'square');tone(740,t+0.14,0.14,0.06,'square')},
-  jar(combo=0){if(!A.ctx)return;const t=now();const b=72+combo*2;[0,4,7,12,16,19,24].forEach((s,i)=>bell(mtof(b+s),t+i*0.045,0.8,0.11));noise(t,0.5,0.07,400,6000,'bandpass');sparkle(t+0.3,6,0.04)},
+  jar(combo=0){if(!A.ctx)return;if(playBaked('jar'+Math.min(combo,3)))return;const t=now();const b=72+Math.min(combo,3)*2;[0,4,7,12,16,19,24].forEach((s,i)=>bell(mtof(b+s),t+i*0.045,0.8,0.11));noise(t,0.5,0.07,400,6000,'bandpass');sparkle(t+0.3,6,0.04)},
   bad(){if(!A.ctx)return;const t=now();tone(150,t,0.16,0.18,'sine',70)},
   wake(){if(!A.ctx)return;const t=now();bell(mtof(96),t,0.4,0.035)},
   whoosh(){if(!A.ctx)return;noise(now(),0.35,0.05,300,2500,'bandpass')},
-  win(){if(!A.ctx)return;const t=now();for(let i=0;i<14;i++)bell(mtof(72+PENTA[i%11]+(i>10?12:0)),t+i*0.05,0.9,0.1);[72,76,79,84].forEach(m=>bell(mtof(m),t+0.75,1.6,0.08));for(let i=0;i<22;i++)bell(2600+Math.random()*2000,t+0.8+i*0.05+Math.random()*0.04,0.25,0.05);noise(t+0.7,0.9,0.05,800,8000,'highpass')},
-  coin(){if(!A.ctx)return;const t=now();marimba(1047,t,0.09);marimba(1568,t+0.07,0.08)},
-  lose(){if(!A.ctx)return;const t=now();[79,76,72,67].forEach((m,i)=>bell(mtof(m),t+i*0.16,1,0.09));tone(220,t+0.5,0.6,0.06,'sine',110)},
+  win(){if(!A.ctx)return;if(playBaked('win'))return;const t=now();for(let i=0;i<14;i++)bell(mtof(72+PENTA[i%11]+(i>10?12:0)),t+i*0.05,0.9,0.1);[72,76,79,84].forEach(m=>bell(mtof(m),t+0.75,1.6,0.08));for(let i=0;i<22;i++)bell(2600+Math.random()*2000,t+0.8+i*0.05+Math.random()*0.04,0.25,0.05);noise(t+0.7,0.9,0.05,800,8000,'highpass')},
+  coin(){if(!A.ctx)return;if(playBaked('coin'))return;const t=now();marimba(1047,t,0.09);marimba(1568,t+0.07,0.08)},
+  lose(){if(!A.ctx)return;if(playBaked('lose'))return;const t=now();[79,76,72,67].forEach((m,i)=>bell(mtof(m),t+i*0.16,1,0.09));tone(220,t+0.5,0.6,0.06,'sine',110)},
   click(){if(!A.ctx)return;tone(700,now(),0.06,0.08,'sine',1200)}
 };
 const QUAL={M:[0,4,7],m:[0,3,7],M7:[0,4,7,11],m7:[0,3,7,10],sus:[0,5,7,10],add9:[0,4,7,14],M6:[0,4,7,9],d9:[0,4,10,14],d7:[0,4,7,10],m9:[0,3,10,14]};
-const M={timer:null};const MUSV=0.22;
-function musicStop(){if(M.timer)clearInterval(M.timer);M.timer=null}
+const M={timer:null};const MUSV=0.065;
+const LOOK=0.8;/* how far ahead music is queued */
+function musicStop(){if(M.timer)clearInterval(M.timer);M.timer=null;
+  /* notes already queued keep playing, so fade the music bus out fast and hold the next song until they're gone */
+  if(A.ctx&&A.mus){const t=A.ctx.currentTime;A.mus.gain.cancelScheduledValues(t);A.mus.gain.setTargetAtTime(0,t,0.03);M.resumeAt=t+LOOK+0.1}}
+function musicIn(){const C=A.ctx,t0=Math.max(C.currentTime+0.15,M.resumeAt||0);if(A.mus&&G.music){A.mus.gain.cancelScheduledValues(C.currentTime);A.mus.gain.setValueAtTime(0.0001,Math.max(C.currentTime,t0-0.06));A.mus.gain.setTargetAtTime(musVol(),t0-0.05,0.08)}return t0}
 /* =====================================================================
    MUSIC: 20 hand-written songs, one per world.
    Each world has its own style, key, tempo, instruments and a written hook (A) and answer (B).
@@ -632,7 +703,49 @@ const SONGS=[
   pb:[[6,'m'],[4,'M'],[1,'M'],[5,'M']],b:'3\' 2\' 1\' 7 6 . 3 . | 1\' 7 6 5 4 . 1 . | 5 6 5 3 1 . 5 . | 7 - 2\' - 5\' - . .'},
  {n:'Royal Jelly Palace',vol:1.7,style:'fanfare',key:67,mode:'maj',bpm:112,lead:'brassFan',dbl:'glock',harm:'',bass:'tubaB',
   pa:[[1,'M'],[5,'M'],[1,'M'],[5,'M']],a:'1 . 3 . 5 . 1\' . | 7 . 5 . 2 . 5 . | 3 4 5 6 5 3 1 . | 2 - 7, - 5, - . .',
-  pb:[[4,'M'],[1,'M'],[5,'M'],[1,'M']],b:'6 5 4 6 1\' . 6 . | 5 4 3 5 1\' . 5 . | 2\' 1\' 7 6 5 . 2 . | 1\' - 5 - 3 - 1 -'}
+  pb:[[4,'M'],[1,'M'],[5,'M'],[1,'M']],b:'6 5 4 6 1\' . 6 . | 5 4 3 5 1\' . 5 . | 2\' 1\' 7 6 5 . 2 . | 1\' - 5 - 3 - 1 -'},
+ {n:'Mango Mochi',vol:0.6,style:'reggae',key:62,mode:'maj',bpm:112,lead:'kalimba',dbl:'piano',harm:'organ',bass:'roundB',
+  pa:[[1,'M'],[4,'M'],[6,'m'],[5,'M']],a:'5 . 3 5 6 . 5 . | 4 . 6 4 1\' . 6 . | 3 . 1 3 6 . 5 3 | 2 . 5 2 7, - . .',
+  pb:[[4,'M'],[5,'M'],[3,'m'],[6,'m']],b:'6 . 1\' 6 4 . 6 . | 7 . 2\' 7 5 . 7 . | 5 . 3 5 7 . 5 . | 6 - 3 - 1 - . .'},
+ {n:'Teh Tarik Tune',style:'swing',key:65,mode:'maj',bpm:116,sw:1.25,lead:'piano',dbl:'vibes',harm:'pianoComp',bass:'walkB',
+  pa:[[1,'M7'],[6,'m7'],[2,'m7'],[5,'d7']],a:'1 . 3 5 6 . 5 3 | 6 . 1\' 6 5 . 3 1 | 2 . 4 6 1\' . 6 4 | 5 - 4 - 2 - . .',
+  pb:[[4,'M7'],[3,'m7'],[2,'m7'],[5,'d9']],b:'4 . 6 1\' 3\' . 1\' 6 | 3 . 5 7 2\' . 7 5 | 2 . 4 6 1\' . 6 4 | 5 . 7, 2 5 - . .'},
+ {n:'Coconut Cove',style:'jungle',key:64,mode:'maj',bpm:108,lead:'marimba',dbl:'kalimba',harm:'marimbaOff',bass:'logB',
+  pa:[[1,'M'],[5,'M'],[6,'m'],[4,'M']],a:'1 . 3 5 3 . 1 . | 7, . 2 5 2 . 7, . | 6, . 1 3 1 . 6, . | 4 . 6 1\' 6 - . .',
+  pb:[[4,'M'],[1,'M'],[2,'m'],[5,'M']],b:'6 . 4 6 1\' . 6 . | 5 . 3 5 1\' . 5 . | 4 . 2 4 6 . 4 . | 5 - 7 - 2\' - . .'},
+ {n:'Honeydew Hush',style:'dream',key:65,mode:'lyd',bpm:100,lead:'harp',dbl:'celesta',harm:'arp16',bass:'subB',
+  pa:[[1,'M'],[2,'M'],[6,'m'],[5,'M']],a:'3 . 5 . 7 . 5 3 | 2 . 4 . 6 . 4 2 | 1 . 3 . 6 . 5 3 | 2 - 5 - 7 - . .',
+  pb:[[4,'M'],[5,'M'],[3,'m'],[1,'M']],b:'1\' . 6 . 4 . 6 1\' | 2\' . 7 . 5 . 7 2\' | 7 . 5 . 3 . 5 7 | 1\' - 5 - 3 - . .'},
+ {n:'Sago Shuffle',style:'swing',key:58,mode:'maj',bpm:126,sw:1.3,lead:'vibes',dbl:'pluck',harm:'pianoComp',bass:'walkB',
+  pa:[[1,'M6'],[4,'M7'],[2,'m7'],[5,'d7']],a:'5 . 6 5 3 . 1 . | 6 . 1\' 6 4 . 3 . | 2 . 4 6 5 . 4 . | 2 - 7, - 1 - . .',
+  pb:[[3,'m7'],[6,'m7'],[2,'m7'],[5,'d9']],b:'3 . 5 7 5 . 3 . | 6 . 1\' 3\' 1\' . 6 . | 4 . 6 1\' 6 . 4 . | 5 - 2 - 5 - . .'},
+ {n:'Lychee Lullaby',style:'waltz',meter:3,key:62,mode:'maj',bpm:150,lead:'musicbox',dbl:'harp',harm:'harp',bass:'roundB',
+  pa:[[1,'M'],[6,'m'],[4,'M'],[5,'M']],a:'5 - 3 - 1 - | 6 - 1\' - 6 - | 4 - 6 - 1\' - | 7 - 5 - 2 -',
+  pb:[[4,'M'],[1,'M'],[2,'m'],[5,'M']],b:'6 - 4 - 1\' - | 5 - 3 - 1\' - | 4 - 6 - 2\' - | 5 - - 7 2\' -'},
+ {n:'Pineapple Parade',style:'parade',key:65,mode:'maj',bpm:120,lead:'pizz',dbl:'glock',harm:'pizzChord',bass:'pizzB',
+  pa:[[1,'M'],[5,'M'],[1,'M'],[4,'M']],a:'1 1 3 5 1\' - 5 . | 7, 7, 2 5 7 - 5 . | 1 1 3 5 1\' . 3\' . | 6 - 4 - 1 - . .',
+  pb:[[4,'M'],[1,'M'],[5,'M'],[1,'M']],b:'4 . 6 . 1\' . 6 . | 3 . 5 . 1\' . 5 . | 2 . 4 . 7 . 5 . | 1\' - 5 - 1 - . .'},
+ {n:'Guava Grove',style:'reggae',key:55,mode:'mix',bpm:104,lead:'steel',dbl:'marimba',harm:'organ',bass:'roundB',
+  pa:[[1,'M'],[7,'M'],[4,'M'],[1,'M']],a:'3 . 5 . 1\' . 7 5 | 2 . 4 . 7 . 6 4 | 1 . 4 . 6 . 4 1 | 3 - 5 - 1 - . .',
+  pb:[[4,'M'],[5,'m'],[7,'M'],[1,'M']],b:'6 . 4 6 1\' . 6 . | 5 . 2 5 7 . 5 . | 7 . 4 7 2\' . 7 . | 1\' - 5 - 3 - . .'},
+ {n:'Kiwi Kampung',style:'folk',key:67,mode:'maj',bpm:116,lead:'uke',dbl:'kalimba',harm:'marimbaArp',bass:'roundB',
+  pa:[[1,'M'],[4,'M'],[5,'M'],[1,'M']],a:'1 3 5 3 4 6 5 . | 6 4 1\' 6 5 3 1 . | 2 4 5 7 5 4 2 . | 3 - 1 - 1 - . .',
+  pb:[[6,'m'],[4,'M'],[2,'m'],[5,'M']],b:'6 1\' 3\' 1\' 6 . 3 . | 4 6 1\' 6 4 . 1 . | 2 4 6 4 2 . 6, . | 5 - 7 - 2\' - . .'},
+ {n:'Plum Petals',vol:0.6,style:'waltz',meter:3,key:57,mode:'min',bpm:144,lead:'piano',dbl:'celesta',harm:'harp',bass:'roundB',
+  pa:[[1,'m'],[4,'m'],[7,'M'],[3,'M']],a:'1 - 3 - 5 - | 4 - 6 - 1\' - | 7 - 5 - 2 - | 3 - - 5 3 -',
+  pb:[[6,'M'],[4,'m'],[5,'M'],[1,'m']],b:'6 - 1\' - 3\' - | 4 - 6 - 1\' - | 5 - 7 - 2\' - | 1\' - - 5 3 -'},
+ {n:'Papaya Pier',style:'steelband',key:60,mode:'maj',bpm:108,lead:'steelRoll',dbl:'glock',harm:'',bass:'roundB',
+  pa:[[1,'M'],[4,'M'],[5,'M'],[1,'M']],a:'5 . 5 6 5 . 3 . | 4 . 4 6 1\' . 6 . | 5 . 7 2\' 7 . 5 . | 3 - 1 - 1 - . .',
+  pb:[[6,'m'],[2,'m'],[5,'M'],[1,'M']],b:'3 . 6 1\' 3\' . 1\' . | 2 . 4 6 2\' . 6 . | 7 . 5 7 2\' . 7 . | 1\' - 5 - 1\' - . .'},
+ {n:'Starlight Soda',style:'dream',key:62,mode:'maj',bpm:118,lead:'bell',dbl:'musicbox',harm:'arp16',bass:'subB',
+  pa:[[1,'M'],[5,'M'],[6,'m'],[4,'M']],a:'1\' . 7 5 3 . 5 . | 2\' . 7 5 2 . 5 . | 1\' . 6 3 1 . 3 . | 4 - 6 - 1\' - . .',
+  pb:[[4,'M'],[5,'M'],[3,'m'],[6,'m']],b:'6 4 6 1\' . 6 4 . | 7 5 7 2\' . 7 5 . | 5 3 5 7 . 5 3 . | 6 - 3 - 1 - . .'},
+ {n:'Banana Breeze',style:'jungle',key:60,mode:'mix',bpm:114,lead:'kalimba',dbl:'harpsi',harm:'marimbaOff',bass:'logB',
+  pa:[[1,'M'],[7,'M'],[4,'M'],[5,'m']],a:'5 . 3 1 3 . 5 . | 4 . 2 7, 2 . 4 . | 6 . 4 1 4 . 6 . | 5 - 2 - 5 - . .',
+  pb:[[4,'M'],[1,'M'],[7,'M'],[1,'M']],b:'1\' . 6 4 6 . 1\' . | 5 . 3 1 3 . 5 . | 7 . 4 2 4 . 7 . | 1\' - 5 - 3 - . .'},
+ {n:'Rambutan Rag',style:'swing',key:67,mode:'maj',bpm:132,sw:1.35,lead:'banjo',dbl:'piano',harm:'pianoComp',bass:'walkB',
+  pa:[[1,'M'],[6,'d7'],[2,'m7'],[5,'d7']],a:'3 . 5 1\' 5 . 3 . | 6 . 1\' 3\' 1\' . 6 . | 2 . 4 6 4 . 2 . | 5 - 7, - 1 - . .',
+  pb:[[4,'M6'],[4,'m'],[1,'M'],[5,'d9']],b:'1\' . 6 4 6 . 1\' . | 6b . 4 2 4 . 6b . | 5 . 3 1 3 . 5 . | 2 - 5 - 7 - . .'}
 ];
 function parseMel(str,key,mode){const sc=SCALES[mode];return str.split('|').map(b=>b.trim().split(/\s+/).map(tok=>{
   if(tok==='-')return 'h';if(tok==='.')return null;const mm=tok.match(/^(\d)([#b]?)([',]*)$/);if(!mm)return null;
@@ -641,13 +754,13 @@ function chordNotes(ch,key,mode){const sc=SCALES[mode];const root=key+sc[ch[0]-1
 
 /* ----- tiny sample bank, rendered on first use ----- */
 const SMP={};
-function smpRender(name){const C=A.ctx,sr=C.sampleRate,refs=[130.81,261.63,523.25,1046.5];const out=[];
+function smpRender(name){const C=A.ctx,sr=C.sampleRate,refs=[130.81,261.63,523.25,1046.5,2093];const out=[];
   const spec=VOICES[name];refs.forEach(rf=>{const len=Math.floor(sr*spec.dur),buf=C.createBuffer(1,len,sr),d=buf.getChannelData(0);spec.fill(d,sr,rf);let pk=0;for(let i=0;i<len;i++)pk=Math.max(pk,Math.abs(d[i]));if(pk>0)for(let i=0;i<len;i++)d[i]/=pk;
     /* plucked strings: the true pitch is set by the whole-sample loop length plus the half-sample filter delay */
     const rr=spec.ks&&rf>600?523.25:rf,real=spec.ks?sr/(Math.max(2,Math.round(sr/rr))+0.5):rf;out.push({rf:real,buf})});SMP[name]=out}
 function ksFill(bright,decay,body){return(d,sr,rf)=>{if(rf>600)rf=523.25;const N=Math.max(2,Math.round(sr/rf));const line=new Float32Array(N);let lp=0;for(let i=0;i<N;i++){const w=Math.random()*2-1;lp=lp+(w-lp)*bright;line[i]=lp}
   let idx=0,prev=0;for(let i=0;i<d.length;i++){const cur=line[idx];const nx=(cur+prev)*0.5*decay;prev=cur;line[idx]=nx;idx=(idx+1)%N;d[i]=cur*(body?1-body+body*Math.sin(i/sr*rf*6.283):1)}}}
-function addFill(parts,att){return(d,sr,rf)=>{for(let i=0;i<d.length;i++){const t=i/sr;let v=0;for(const [r,a,dc] of parts)v+=a*Math.sin(6.2832*rf*r*t)*Math.exp(-t/dc);d[i]=v*Math.min(1,t/att)}}}
+function addFill(parts,att){return(d,sr,rf)=>{parts=parts.filter(p=>rf*p[0]<sr*0.45);for(let i=0;i<d.length;i++){const t=i/sr;let v=0;for(const [r,a,dc] of parts)v+=a*Math.sin(6.2832*rf*r*t)*Math.exp(-t/dc);d[i]=v*Math.min(1,t/att)}}}
 const VOICES={
   /* soft keys and mallets only: no plucked-string models, they sounded harsh and samey */
   pluck:{dur:0.8,fill:addFill([[1,1,0.32],[2,0.12,0.12]],0.004)},
@@ -669,7 +782,8 @@ const VOICES={
   piano:{dur:1.8,fill:addFill([[1,1,0.9],[2,0.5,0.6],[3,0.25,0.35],[4,0.12,0.25],[5,0.06,0.15]],0.003)},
   bell:{dur:1.8,fill:addFill([[1,1,1.1],[2.4,0.4,0.5],[3.2,0.2,0.3],[5.1,0.1,0.15]],0.002)}
 };
-function smpPlay(name,m,t,v,pan,cut){if(!SMP[name])smpRender(name);const f=mtof(m);const bank=SMP[name];let s=bank[0];for(const b of bank)if(Math.abs(Math.log(b.rf/f))<Math.abs(Math.log(s.rf/f)))s=b;
+function smpPlay(name,m,t,v,pan,cut){if(!SMP[name])smpRender(name);const f=mtof(m);const bank=SMP[name];/* pick the sample that needs the least speeding up: slowing down is clean, speeding up adds grit */
+  const cost=b=>{const r=Math.log(f/b.rf);return r>0?r*3:-r};let s=bank[0];for(const b of bank)if(cost(b)<cost(s))s=b;
   const C=A.ctx,src=C.createBufferSource(),g=C.createGain();src.buffer=s.buf;src.playbackRate.value=f/s.rf;g.gain.value=v;
   let out=g;if(pan&&C.createStereoPanner){const p=C.createStereoPanner();p.pan.value=pan;g.connect(p);out=p}
   src.connect(g);out.connect(A.mus);if(cut){g.gain.setValueAtTime(v,t+cut);g.gain.linearRampToValueAtTime(0,t+cut+0.06)}src.start(t);src.stop(t+(cut?cut+0.08:s.buf.duration/src.playbackRate.value))}
@@ -818,8 +932,8 @@ const HQUAL={M:[0,4,7],m:[0,3,7],M7:[0,4,7,11],m7:[0,3,7,10],sus:[0,5,7,10],add9
 function homeMusicStart(){
   if(!A.ctx)return;if(M.timer&&M.home)return;musicStop();M.home=true;M.song=null;const w=WORLDS[0].mus;const r=mulberry(3);
   const mel=[];for(let b=0;b<4;b++){const bar={};const ch=w.prog[b];const tones=HQUAL[ch[1]].map(x=>w.root+ch[0]+x+12);[0,3,6,8,10,12,14].forEach(p=>{if(r()<(p%4===0?0.75:0.4))bar[p]=tones[r()*tones.length|0]+(r()<0.3?12:0)});mel.push(bar)}
-  M.hw=w;M.hmel=mel;M.step=0;M.next=A.ctx.currentTime+0.12;if(A.mus&&G.music)A.mus.gain.setTargetAtTime(musVol(),A.ctx.currentTime,0.3);
-  M.timer=setInterval(()=>{const C=A.ctx;if(!C||C.state!=='running')return;const spb=60/w.bpm/4;while(M.next<C.currentTime+0.35){homeStep(M.step,M.next);M.next+=spb;M.step++}},30);
+  M.hw=w;M.hmel=mel;M.step=0;M.next=musicIn();
+  M.timer=setInterval(()=>{const C=A.ctx;if(!C||C.state!=='running')return;const spb=60/w.bpm/4;if(M.next<C.currentTime)M.next=C.currentTime+0.05;while(M.next<C.currentTime+LOOK){homeStep(M.step,M.next);M.next+=spb;M.step++}},30);
 }
 function homeStep(s,t){
   const w=M.hw,D=A.mus,bar=Math.floor(s/16)%4,pos=s%16,ch=w.prog[bar],root=w.root+ch[0],tones=HQUAL[ch[1]].map(x=>root+x);
@@ -832,12 +946,12 @@ function homeStep(s,t){
   if(pos===4||pos===12)tone(1800,t,0.04,0.018,'sine',1200,D);
 }
 /* in a level: that world's song (keeps playing across levels of the same world, with fresh variations) */
-function levelMusic(wi,n){if(!A.ctx)return;if(M.timer&&!M.home&&M.wi===wi){musicNewLevel(n);return}musicStart(wi,n)}
+function levelMusic(wi,n){if(!A.ctx)return;if(M.timer&&!M.home&&M.si===songFor(n)){musicNewLevel(n);return}musicStart(wi,n)}
 /* ---- extra voices for the newer songs: all bright and crisp, nothing muffled ---- */
 function echoBus(){const C=A.ctx;if(!A.echo||A.echoCtx!==C){const d=C.createDelay(1.5),fb=C.createGain(),wet=C.createGain();d.delayTime.value=Math.min(1.4,60/(M.bpm||120)*0.75);fb.gain.value=0.33;wet.gain.value=0.32;d.connect(fb).connect(d);d.connect(wet).connect(A.mus);A.echo=d;A.echoCtx=C}A.echo.delayTime.value=Math.min(1.4,60/(M.bpm||120)*0.75);return A.echo}
 function synthV(m,t,d,v,o){o=o||{};const C=A.ctx,f=mtof(m),g=C.createGain(),fl=C.createBiquadFilter();fl.type=o.hp?'highpass':'lowpass';fl.Q.value=o.q||0.8;
   const f0=o.f0||3000,f1=o.f1||f0;fl.frequency.setValueAtTime(f0,t);if(f1!==f0)fl.frequency.exponentialRampToValueAtTime(f1,t+(o.fd||0.15));
-  const oscs=[];(o.det||[0]).forEach(dt=>{const x=C.createOscillator();x.type=o.wave||'sawtooth';x.frequency.setValueAtTime(f*(o.slide?0.94:1)*Math.pow(2,dt/1200),t);if(o.slide)x.frequency.exponentialRampToValueAtTime(f*Math.pow(2,dt/1200),t+0.06);x.connect(fl);oscs.push(x)});
+  const oscs=[];[(o.det&&o.det.length?o.det[0]*0.4:0)].forEach(dt=>{const x=C.createOscillator();x.type=o.wave||'sawtooth';x.frequency.setValueAtTime(f*(o.slide?0.94:1)*Math.pow(2,dt/1200),t);if(o.slide)x.frequency.exponentialRampToValueAtTime(f*Math.pow(2,dt/1200),t+0.06);x.connect(fl);oscs.push(x)});
   if(o.vib){const l=C.createOscillator(),lg=C.createGain();l.frequency.value=o.vib;lg.gain.value=f*0.012;l.connect(lg);oscs.forEach(x=>lg.connect(x.frequency));l.start(t+0.12);l.stop(t+d+0.2)}
   const a=o.a||0.005,vv=v/Math.sqrt(oscs.length);g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(vv,t+a);
   if(o.stac)g.gain.exponentialRampToValueAtTime(0.0001,t+Math.max(a+0.02,o.stac));else{g.gain.setValueAtTime(vv*(o.sus||0.8),t+Math.max(a,d-0.05));g.gain.exponentialRampToValueAtTime(0.0001,t+d+(o.rel||0.08))}
@@ -864,7 +978,16 @@ function boing(t,v){tone(300,t,0.18,v,'sine',900,A.mus)}
 /* round, soft bass: triangle plus sine, filtered */
 function roundBass(m,t,d,v){const C=A.ctx,f=mtof(m),o=C.createOscillator(),o2=C.createOscillator(),fl=C.createBiquadFilter(),g=C.createGain();o.type='triangle';o.frequency.value=f;o2.type='sine';o2.frequency.value=f/2;fl.type='lowpass';fl.frequency.value=650;
   g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(v,t+0.012);g.gain.exponentialRampToValueAtTime(v*0.5,t+d*0.5);g.gain.exponentialRampToValueAtTime(0.0001,t+d);o.connect(fl);o2.connect(fl);fl.connect(g).connect(A.mus);o.start(t);o2.start(t);o.stop(t+d+0.05);o2.stop(t+d+0.05)}
-function musCompose(seed){const S=SONGS[M.wi%SONGS.length];SONGS_CUR=S;
+/* worlds 1-2 keep their own song; from level 11 every level gets a different song (never the old World 3 waltz),
+   and back-to-back levels never share a groove style or a lead instrument */
+/* 2 = old World 3 waltz (removed); 8 circus and 9 disco are the heaviest to synthesize live, kept off phones */
+const SONG_SKIP=[2,8,9],SONG_MEMO={},WORLD_SONG=[4,1];
+function songFor(n){const wi=worldOf(n);if(wi<2)return WORLD_SONG[wi];if(SONG_MEMO[n]!=null)return SONG_MEMO[n];
+  const prev=n>11?SONGS[songFor(n-1)]:SONGS[WORLD_SONG[1]],prev2=n>12?SONGS[songFor(n-2)]:SONGS[WORLD_SONG[0]];const pool=[];for(let i=0;i<SONGS.length;i++)if(!SONG_SKIP.includes(i))pool.push(i);
+  const r=mulberry(n*7919+31);for(let i=pool.length-1;i>0;i--){const j=r()*(i+1)|0;[pool[i],pool[j]]=[pool[j],pool[i]]}
+  const ins=x=>[x.lead,x.dbl];const ok=i=>{const S=SONGS[i];const recent=[];for(let q=n-1;q>=Math.max(11,n-4);q--)recent.push(SONGS[songFor(q)]);return !recent.includes(S)&&S!==prev&&S!==prev2&&S.style!==prev.style&&S.style!==prev2.style&&!ins(S).some(v=>ins(prev).includes(v))};
+  const pick=pool.find(ok);return SONG_MEMO[n]=pick!=null?pick:pool.find(i=>SONGS[i]!==prev)}
+function musCompose(seed){const S=SONGS[M.si!=null?M.si:M.wi%SONGS.length];SONGS_CUR=S;
   M.song=S;M.meter=S.meter||4;M.steps=M.meter===3?12:16;M.bpm=S.bpm;M.sw=S.sw||1;
   M.melA=parseMel(S.a,S.key,S.mode);M.melB=parseMel(S.b,S.key,S.mode);M.pa=S.pa;M.pb=S.pb;M.seed=seed;M.r=mulberry(seed*131+M.wi*17+7);
   // render the instruments this song needs before it starts, so the first notes are never late
@@ -875,8 +998,8 @@ const FORMX=[{p:'in',b:0},{p:'in',b:1}];
 [['A',1],['A',2],['B',1],['B',2],['A',3]].forEach(([p,ps])=>{for(let b=0;b<4;b++)FORMX.push({p,b,ps,cad:p==='A'&&ps>=2&&b===3})});
 FORMX.push({p:'br',b:0},{p:'br',b:3});
 function musicStart(wi,seed){
-  if(!A.ctx)return;musicStop();M.home=false;M.wi=wi;musCompose(seed!=null?seed:1);if(A.mus&&G.music)A.mus.gain.setTargetAtTime(musVol(),A.ctx.currentTime,0.3);M.step=0;M.bar=0;M.loop=0;M.next=A.ctx.currentTime+0.15;
-  M.timer=setInterval(()=>{const C=A.ctx;if(!C||C.state!=='running')return;const spb=60/M.bpm/4;while(M.next<C.currentTime+0.35){playStep(M.step,M.next);const sw=M.step%2===0?M.sw:2-M.sw;M.next+=spb*sw;M.step++}},30);
+  if(!A.ctx)return;musicStop();M.home=false;M.wi=wi;M.si=songFor(seed!=null?seed:Math.max(1,wi*PER_WORLD+1));musCompose(seed!=null?seed:1);M.step=0;M.bar=0;M.loop=0;M.next=musicIn();
+  M.timer=setInterval(()=>{const C=A.ctx;if(!C||C.state!=='running')return;const spb=60/M.bpm/4;if(M.next<C.currentTime)M.next=C.currentTime+0.05;while(M.next<C.currentTime+LOOK){playStep(M.step,M.next);const sw=M.step%2===0?M.sw:2-M.sw;M.next+=spb*sw;M.step++}},30);
 }
 /* a new level brings fresh little variations from the next loop on */
 function musicNewLevel(n){if(!M.timer)return;M.pending=n}
@@ -904,16 +1027,18 @@ function playStep(s,t){
 }
 function musNote(m,t,v){playLead(M.song?M.song.lead:'glock',m,t,0.3,v,0)}
 
-const musVol=()=>MUSV*(M.home?1.6:((M.song&&M.song.vol)||1));
+const musVol=()=>MUSV*(M.home?1.5:Math.min(1.5,(M.song&&M.song.vol)||1));
 function setMusic(on){G.music=on;save();if(A.mus)A.mus.gain.setTargetAtTime(on?musVol():0,A.ctx.currentTime,0.1)}
-function setSfx(on){G.sfx=on;save();if(A.sfx)A.sfx.gain.setTargetAtTime(on?1:0,A.ctx.currentTime,0.05)}
+function setSfx(on){G.sfx=on;save();if(A.sfx)A.sfx.gain.setTargetAtTime(on?0.85:0,A.ctx.currentTime,0.05)}
 function duck(on){if(A.mus&&G.music)A.mus.gain.setTargetAtTime(on?0.04:musVol(),A.ctx.currentTime,0.2)}
 document.addEventListener('visibilitychange',()=>{if(!A.ctx)return;if(document.hidden)A.ctx.suspend();else A.ctx.resume()});
 let jsErrs=0;
 function logErr(msg,src,line){if(jsErrs>=3)return;jsErrs++;try{track('js_error',{msg:String(msg||'unknown').slice(0,100),src:String(src||'').split('/').pop().slice(0,40),line:+line||0,mode:typeof mode==='string'?mode:''})}catch(e){}}
 window.addEventListener('error',e=>logErr(e.message,e.filename,e.lineno));
 window.addEventListener('unhandledrejection',e=>{const r=e.reason;logErr('promise: '+(r&&r.message||r),'',0)});
-const track=(n,p)=>{try{const NB=window.NativeBridge;if(NB&&NB.track)NB.track(n,Object.assign({level:G.level},p||{}))}catch(e){}};
+/* an attempt that ended without a win or a fail: quit to home, restarted, or the app was closed */
+function lvAbandon(where){const o=G.lvOpen;if(!o)return;G.lvOpen=null;save();track('level_abandon',{level:o.n,attempt:o.a,secs:Math.round(((Date.now()-o.t)||0)/1e3),where})}
+const track=(n,p)=>{if((n==='level_fail'||n==='level_complete')&&G.lvOpen){G.lvOpen=null;save()}try{const NB=window.NativeBridge;if(NB&&NB.track)NB.track(n,Object.assign({level:G.level},p||{}))}catch(e){}};
 const buzz=p=>{try{const NB=window.NativeBridge;if(NB&&NB.native&&NB.haptic){NB.haptic(Array.isArray(p)?p[0]:p)}else if(navigator.vibrate)navigator.vibrate(p)}catch(e){}};
 
 /* ===================================================================
@@ -1223,7 +1348,7 @@ const lerp=(a,b,t)=>a+(b-a)*t;
 const gameG=new T.Group();scene.add(gameG);const homeG=new T.Group();scene.add(homeG);
 let S=null,L=null,cellG={},boardMeshes=[],dispQ=[[],[]],flights=[],nextLids=[],shelfSlots=[],shelfPanel=null,lay={},view={w:10,top:8};
 let mode='home';
-function clearGame(){while(gameG.children.length)gameG.remove(gameG.children[0]);cellG={};boardMeshes=[];dispQ=[[],[]];flights=[];nextLids=[];shelfSlots=[];TW=[];PS.length=0}
+function clearGame(){while(gameG.children.length)gameG.remove(gameG.children[0]);gumMesh=null;cellG={};boardMeshes=[];dispQ=[[],[]];flights=[];nextLids=[];shelfSlots=[];TW=[];PS.length=0}
 function cellPos(k){return new T.Vector3((k%S.cols)-(S.cols-1)/2,lay.by+((S.rows-1)/2-Math.floor(k/S.cols)),0)}
 const UNDER=[[0,0.17,-0.26,0.9],[0,0.32,-0.5,0.8]];
 function buildCell(k,anim,vOverride){
@@ -1269,8 +1394,25 @@ function buildShelf(){
   const sl=new T.Sprite(new T.SpriteMaterial({map:SHELF_TEX||(SHELF_TEX=textTex('SHELF')),transparent:true,depthWrite:false}));sl.scale.set(1.3,0.42,1);sl.position.set(0,-0.98,0.3);shelfPanel.add(sl);
   shelfPanel.position.set(0,lay.shelfY,0);gameG.add(shelfPanel);shelfPanel.userData.panel=panel;
   for(let i=0;i<cap;i++){const s=new T.Mesh(GEO.socket,i>=5?MAT.goldSlot:MAT.socket);s.position.set(shelfX(i),lay.shelfY,-0.36);gameG.add(s);shelfSlots.push(s)}
+  buildGum();
 }
-let SHELF_TEX=null;
+let SHELF_TEX=null,gumMesh=null;const GUMMAT={};
+/* gummy blocking the last shelf spot, with a sleepy jelly of the flavour that frees it */
+function buildGum(){if(gumMesh){gameG.remove(gumMesh);gumMesh=null}if(!S||!S.gum)return;const c=S.gum.color;
+  const m=GUMMAT.g||(GUMMAT.g=physical(new T.Color('#ff4f9a'),{roughness:0.18,transparent:true,opacity:0.5,depthWrite:false,emissive:'#ff4f9a',emissiveIntensity:0.15}));
+  const g=new T.Group();const box=new T.Mesh(roundedBox(0.9,0.9,0.62,0.26,4),m);box.renderOrder=3;g.add(box);
+  const j=makeJelly(c,'sleep');j.scale.setScalar(0.56);j.position.set(0,-0.04,0.4);g.add(j);
+  g.position.set(shelfX(S.cap-1),lay.shelfY,0.05);g.userData.c=c;gameG.add(g);gumMesh=g}
+function sealTex(n){const c=document.createElement('canvas');c.width=256;c.height=256;const x=c.getContext('2d');x.textAlign='center';x.textBaseline='middle';x.lineJoin='round';x.fillStyle='#fff';x.strokeStyle='rgba(40,16,70,.55)';
+  x.font='800 42px "Baloo 2", Arial Rounded MT Bold, sans-serif';x.lineWidth=10;x.strokeText('OPENS IN',128,46);x.fillText('OPENS IN',128,46);
+  x.font='800 120px "Baloo 2", Arial Rounded MT Bold, sans-serif';x.lineWidth=16;x.strokeText(String(n),128,136);x.fillText(String(n),128,136);
+  x.font='800 42px "Baloo 2", Arial Rounded MT Bold, sans-serif';x.lineWidth=10;const w=n===1?'JAR':'JARS';x.strokeText(w,128,222);x.fillText(w,128,222);
+  const tx=new T.CanvasTexture(c);tx.encoding=T.sRGBEncoding;return tx}
+const SEALMAT=physical(new T.Color('#c9b6f2'),{roughness:0.3,transparent:true,opacity:0.82,depthWrite:false});
+function addSeal(jar){const vo=jar.vo;if(!vo||vo.seal)return;const g=new T.Group();const cov=new T.Mesh(new T.CylinderGeometry(0.63,0.63,2.34,32),SEALMAT);cov.renderOrder=3;g.add(cov);
+  const sp=new T.Sprite(new T.SpriteMaterial({map:sealTex(jar.seal),transparent:true,depthWrite:false,depthTest:false}));sp.scale.set(1.15,1.15,1);sp.position.set(0,0,0.7);sp.renderOrder=4;g.add(sp);
+  vo.g.add(g);vo.seal=g;vo.sealSp=sp}
+function dropSeal(jar){const vo=jar.vo;if(!vo||!vo.seal)return;const p=new T.Vector3();vo.g.getWorldPosition(p);vo.g.remove(vo.seal);vo.seal=null;burst(p,'#c9b6f2',18,2.4,0.3,0.7,0);sfx.wake()}
 const shelfX=i=>(i-(S.cap-1)/2)*1.0;
 function textTex(t){const c=document.createElement('canvas');c.width=256;c.height=80;const x=c.getContext('2d');x.font='800 56px "Baloo 2", Arial Rounded MT Bold, sans-serif';x.textAlign='center';x.textBaseline='middle';x.lineJoin='round';x.lineWidth=12;x.strokeStyle='rgba(40,16,70,.45)';x.strokeText(t,128,44);x.fillStyle='#fff';x.fillText(t,128,44);const tx=new T.CanvasTexture(c);tx.encoding=T.sRGBEncoding;return tx}
 /* jars */
@@ -1291,6 +1433,7 @@ function makeJarVis(jar){
   g.position.set(30,lay.jarY,0);g.visible=false;gameG.add(g);
   jar.vo={g,lid,ghosts,items:[],enterT:null,leaveT:null,bump:0};
   for(let i=0;i<jar.vis;i++)addToJar(jar,makeJelly(jar.color,'happy'),i);
+  if(jar.seal)addSeal(jar);
 }
 const slotY=i=>-0.78+i*0.66;
 function addToJar(jar,m,i){const u=m.userData;if(u.outfit)u.outfit.visible=false;if(u.acc)u.acc.visible=true;m.position.set(0,slotY(i),0);m.rotation.set(0,0,0);m.scale.setScalar(0.66);setMode(m,'happy');jar.vo.g.add(m);jar.vo.items.push(m)}
@@ -1319,14 +1462,17 @@ function startFlight(m,toFn,dur,onLand,delay=0,s1=1){
 function handleEvents(ev){
   let delay=0;const t0=performance.now();
   for(const e of ev){
-    if(e.type==='jarNew'){makeJarVis(e.jar);dispQ[e.slot].push(e.jar)}
+    if(e.type==='jarNew'){makeJarVis(e.jar);dispQ[e.slot].push(e.jar);if(e.jar.seal&&!G.sealSeen){const lv=G.level;setTimeout(()=>featIntro('seal',0,lv),300)}}
+    else if(e.type==='gumFree'){if(gumMesh){const g=gumMesh;gumMesh=null;burst(g.position,PAL[g.userData.c],22,2.6,0.32,0.8,0);gameG.remove(g);sfx.wake();showToast('Gummy melted','+1 shelf spot',true)}}
+    else if(e.type==='sealTick'){const vo=e.jar.vo;if(vo&&vo.sealSp){vo.sealSp.material.map=sealTex(e.jar.seal);vo.sealSp.material.needsUpdate=true}}
+    else if(e.type==='unseal'){dropSeal(e.jar)}
     else if(e.type==='toJar'||e.type==='toShelf'){
       const g=cellG[e.k];delete cellG[e.k];if(!g)continue;
       (g.userData.under||[]).forEach(u=>g.remove(u));
       if(e.refill!=null)buildCell(e.k,true,e.refill);
       setMode(g,'whee');g.userData.body.userData.k=undefined;
       if(e.type==='toJar'){const jar=e.jar,idx=e.idx;startFlight(g,()=>jarWorld(jar,idx),0.42,()=>{gameG.remove(g);addToJar(jar,g,idx);jar.vis++;jar.vo.bump=performance.now();sfx.pop(idx,comboN);buzz(10);burst(jarWorld(jar,idx),PAL[jar.color],10,2.2,0.28,0.5,0)},delay,0.66);delay+=0.04}
-      else{const it=e.item;it.mesh=g;startFlight(g,()=>new T.Vector3(shelfX(Math.max(0,S.shelf.indexOf(it))),lay.shelfY,0),0.38,()=>{it.vis=true;setMode(g,S.shelf.length>=S.cap-1?'worried':'awake');sfx.shelf();g.userData.landT=performance.now();if(S.shelf.length>=S.cap-1&&!S.won)sfx.danger()},0,0.92)}
+      else{const it=e.item;it.mesh=g;startFlight(g,()=>new T.Vector3(shelfX(Math.max(0,S.shelf.indexOf(it))),lay.shelfY,0),0.38,()=>{it.vis=true;setMode(g,S.shelf.length>=capOf(S)-1?'worried':'awake');sfx.shelf();g.userData.landT=performance.now();if(S.shelf.length>=capOf(S)-1&&!S.won)sfx.danger()},0,0.92)}
     }
     else if(e.type==='fromStack'){const jar=e.jar,idx=e.idx;const g=makeJelly(e.color,'whee');const p0=cellPos(e.k);g.position.set(p0.x,p0.y,-0.3);gameG.add(g);
       if(cellG[e.k]){gameG.remove(cellG[e.k]);delete cellG[e.k]}if(S.grid[e.k]>=0)buildCell(e.k,false);
@@ -1442,7 +1588,7 @@ function frame(){
     }
     nextLids.forEach((m,i)=>{const c=S.queue[i];m.visible=c!=null;if(c!=null)m.material=MAT['lid'+c];m.rotation.y=ts*0.8+i});
     // shelf items glide to their slot
-    const danger=S.shelf.length>=S.cap-1;
+    const danger=S.shelf.length>=capOf(S)-1;
     S.shelf.forEach((it,i)=>{const m=it.mesh;if(!m||!it.vis||it.moving)return;m.position.x+= (shelfX(i)-m.position.x)*Math.min(1,dt*12);m.position.y=lay.shelfY;const l=m.userData.landT?t-m.userData.landT:1e9;const sq=l<300?1-0.16*Math.sin(l/300*Math.PI):1;m.scale.set(0.92/Math.sqrt(sq),0.92*sq,0.92);
       const want=danger?'worried':'awake',cur=m.userData.mode;if(cur!==want&&!(want==='awake'&&cur==='blink'))setMode(m,want)});
     blinkAll(S.shelf.filter(it=>it.mesh&&it.vis).map(it=>it.mesh),t);
@@ -1504,7 +1650,7 @@ function showDaily(){
   const give=x=>{if(G.daily.last===dayKey(new Date())){closeModal();return}/* never pay twice in one day */track('daily_claim',{day,doubled:x>1?1:0});G.coins+=(r.c||0)*x;G.grab+=(r.g||0)*x;G.magnet+=(r.m||0)*x;G.daily={last:dayKey(new Date()),day};save();hud();sfx.win();closeModal()};
   const cells=DAILY.map((d,i)=>`<div style="flex:1;min-width:0;border-radius:12px;padding:6px 2px;font-size:11px;font-weight:900;${i+1===day?'background:linear-gradient(180deg,#fff1a8,#ffc83d);color:#4a2a00;box-shadow:0 3px 0 #c27a00':i+1<day?'background:#e6dcff;color:#7b6aa8':'background:#f3eefc;color:#9a8cc0'}">D${i+1}<br>${d.c?d.c:d.g&&d.m?'+3':d.g?'Grab':'Mag'}</div>`).join('');
   modal(`<p class="step">Daily reward</p><h2>Day ${day}</h2><div style="display:flex;gap:4px">${cells}</div><p><b>${rewardLabel(r)}</b></p><p style="font-size:13px">Come back every day. Day 7 is the big one.</p>`,[
-    {t:`Claim x2 ${tvTag()}`,cls:'v',fn:()=>showAd('rew',()=>give(2))},{t:'Claim',cls:'ghost',back:true,fn:()=>give(1)}]);
+    {t:`Claim x2 ${tvOffer('daily2x')}`,cls:'v',fn:()=>showAd('rew','daily2x',()=>give(2))},{t:'Claim',cls:'ghost',back:true,fn:()=>give(1)}]);
 }
 /* ---------- Lucky Spin: 1 free spin a day, up to 3 more via rewarded ads ---------- */
 const SPIN=[{c:25,w:24,col:'#ffd23b',lab:'25'},{g:1,w:12,col:'#8fd6ff',lab:'Grab'},{c:50,w:20,col:'#ff9cc8',lab:'50'},{life:1,w:6,col:'#ff6b8a',lab:'Lives'},
@@ -1518,7 +1664,7 @@ function wheelSvg(){const n=SPIN.length,R0=140,c=150;let p='';
   return `<svg id="wheel" viewBox="0 0 300 300" style="transform:rotate(${wheelRot}deg)"><circle cx="150" cy="150" r="146" fill="#7b4dff"/>${p}<circle cx="150" cy="150" r="30" fill="#fff"/><circle cx="150" cy="150" r="22" fill="url(#cg)"/>${Array.from({length:16},(_,i)=>{const a=i/16*2*Math.PI;return `<circle cx="${(150+143*Math.cos(a)).toFixed(1)}" cy="${(150+143*Math.sin(a)).toFixed(1)}" r="4" fill="#fff6c0"/>`}).join('')}</svg>`}
 function showSpin(){
   const was=showSpin.was!=null?showSpin.was:busy;showSpin.was=was;busy=true;const st=spinState();
-  const btn=st.free?{t:'Spin!',fn:()=>doSpin(false)}:st.ads<SPIN_ADS?{t:`Spin again ${tvTag()}`,cls:'v',fn:()=>showAd('rew',()=>{showSpin();setTimeout(()=>doSpin(true),350)})}:{t:'Come back tomorrow',dis:true,fn:()=>{}};
+  const btn=st.free?{t:'Spin!',fn:()=>doSpin(false)}:st.ads<SPIN_ADS?{t:`Spin again ${tvOffer('spin')}`,cls:'v',fn:()=>showAd('rew','spin',()=>{showSpin();setTimeout(()=>doSpin(true),350)})}:{t:'Come back tomorrow',dis:true,fn:()=>{}};
   modal(`<p class="step">Lucky Spin</p><div id="wheelWrap">${wheelSvg()}<svg id="wheelPtr" viewBox="0 0 34 40"><path d="M17 40L2 8a15 15 0 0 1 30 0z" fill="#ff3d64" stroke="#fff" stroke-width="3"/></svg></div><div id="spinResult">${st.free?'1 free spin today':st.ads<SPIN_ADS?`${SPIN_ADS-st.ads} bonus spin${SPIN_ADS-st.ads>1?'s':''} left today`:'No spins left today'}</div>`,
     [btn,{t:'Close',cls:'ghost',back:true,fn:()=>{if(spinning)return;closeModal();busy=showSpin.was;showSpin.was=null;$('spinDot').hidden=!spinState().free;hud()}}]);
 }
@@ -1532,8 +1678,9 @@ function doSpin(viaAd){
   const w=$('wheel');void w.getBoundingClientRect();w.style.transform=`rotate(${wheelRot}deg)`;
   let last=-1;const t0=performance.now();
   const tick=()=>{if(!spinning)return;const m=getComputedStyle(w).transform;if(m&&m!=='none'){const v=m.split('(')[1].split(',');const ang=(Math.atan2(+v[1],+v[0])*180/Math.PI+360)%360;const sgi=Math.floor(ang/seg);if(sgi!==last){last=sgi;if(A.ctx)tone(1700,now(),0.03,0.05,'square')}}if(performance.now()-t0<4300)requestAnimationFrame(tick)};requestAnimationFrame(tick);
-  setTimeout(()=>{spinning=false;const p=SPIN[idx];
-    if(p.c)G.coins+=p.c;if(p.g)G.grab+=p.g;if(p.m)G.magnet+=p.m;if(p.life){G.hearts=MAXH;G.heartTs=0}save();hud();
+  /* the prize is banked the moment the wheel starts, so closing the app mid-spin can't lose it */
+  {const p=SPIN[idx];if(p.c)G.coins+=p.c;if(p.g)G.grab+=p.g;if(p.m)G.magnet+=p.m;if(p.life){G.hearts=MAXH;G.heartTs=0}save()}
+  setTimeout(()=>{spinning=false;const p=SPIN[idx];hud();
     track('lucky_spin',{prize:p.lab,via_ad:viaAd?1:0});qProg('spin');
     if(p.c===300){sfx.win();confetti();buzz([40,60,40])}else{sfx.jar(1);buzz(30)}
     const txt=p.c?`+${p.c} coins!`:p.g?'+1 Grab!':p.m?'+1 Magnet!':'Lives refilled!';
@@ -1543,18 +1690,41 @@ $('spinBtn').onclick=()=>{audioInit();sfx.click();showSpin.was=null;showSpin()};
 $('dcBtn').onclick=()=>{audioInit();sfx.click();showChallenge()};
 
 function setQuality(home){R.setPixelRatio(home?Math.min(DPR,2):DPR)}
-function showHome(){ch=null;mode='home';homeMusicStart();setQuality(true);busy=true;closeModal();$('home').hidden=false;$('bar').hidden=true;$('prog').hidden=true;$('dev').hidden=true;$('tut').hidden=true;hideHand();
-  setWorld(worldOf(G.level),curWorld==null);$('playBtn').innerHTML='Level '+G.level+(streakTier(G.streak)>=1?`<span class="streakTag">${flameSvg()}${G.streak}</span>`:'');$('worldChip').textContent=`World ${worldOf(G.level)+1} · ${WORLDS[worldOf(G.level)].name}  ›`;questDot();bookDot();if(G.refund){const rf=G.refund;delete G.refund;save();setTimeout(()=>{if($('modal').hidden&&mode==='home'){busy=true;modal(`<h2>New Wardrobe!</h2><p>Outfits got a big upgrade: bigger hats, new eye styles and 8 new jellies to dress. We refunded <b>${rf.toLocaleString()} coins</b> for what you bought before.</p>`,[{t:'Nice!',fn:()=>{closeModal();busy=false;bookDot()}}])}},400)}const pos=(G.level-1)%PER_WORLD;$('worldDots').innerHTML=Array.from({length:PER_WORLD},(_,i)=>`<i class="${i<pos?'on':i===pos?'cur':''}"></i>`).join('');fitCamera();hud();$('spinDot').hidden=!spinState().free;dcDot();if(dailyDue())setTimeout(()=>{if(mode==='home'&&$('modal').hidden)showDaily()},700);else setTimeout(()=>{if(mode==='home'&&$('modal').hidden&&!starterOffer())dressTip()},1200)}
-function pregen(){const n=G.level,f=G.fails[n]||0,ph=sessionPhase();setTimeout(()=>{pre={n,f,ph,L:genLevel(n,f,sessAdj(ph))}},60)}
-function startLevel(){
+/* home-screen goal (18 Nov): always show the nearest thing the player is working toward */
+function nextGoalText(){const L=G.level,nj=INTRO.find(x=>x[1]>=L&&!G.seen.includes(x[0]));const wEnd=Math.ceil(L/PER_WORLD)*PER_WORLD;const got=G.seen.length,tot=PAL.length;
+  if(nj&&nj[1]<=wEnd)return `New jelly at level ${nj[1]} · ${got}/${tot} collected`;
+  return `World chest after level ${wEnd}`+(got<tot?` · ${got}/${tot} jellies`:'')}
+function showHome(){if(mode==='game')lvAbandon('home');ch=null;mode='home';homeMusicStart();setQuality(true);busy=true;closeModal();$('home').hidden=false;$('bar').hidden=true;$('prog').hidden=true;$('dev').hidden=true;$('tut').hidden=true;hideHand();
+  setWorld(worldOf(G.level),curWorld==null);$('playBtn').innerHTML='Level '+G.level+(streakTier(G.streak)>=1?`<span class="streakTag">${flameSvg()}${G.streak}</span>`:'');$('worldChip').textContent=`World ${worldOf(G.level)+1} · ${WORLDS[worldOf(G.level)].name}  ›`;$('nextGoal').textContent=G.seenTut?nextGoalText():'';$('rankBtn').hidden=!(lbwOn()&&G.level>10);questDot();bookDot();if(G.refund){const rf=G.refund;delete G.refund;save();setTimeout(()=>{if($('modal').hidden&&mode==='home'){busy=true;modal(`<h2>New Wardrobe!</h2><p>Outfits got a big upgrade: bigger hats, new eye styles and 8 new jellies to dress. We refunded <b>${rf.toLocaleString()} coins</b> for what you bought before.</p>`,[{t:'Nice!',fn:()=>{closeModal();busy=false;bookDot()}}])}},400)}const pos=(G.level-1)%PER_WORLD;$('worldDots').innerHTML=Array.from({length:PER_WORLD},(_,i)=>`<i class="${i<pos?'on':i===pos?'cur':''}"></i>`).join('');fitCamera();hud();$('spinDot').hidden=!spinState().free;dcDot();if(dailyDue())setTimeout(()=>{if(mode==='home'&&$('modal').hidden)showDaily()},700);else setTimeout(()=>{if(mode==='home'&&$('modal').hidden&&!starterOffer())dressTip()},1200)}
+/* Building a level means test-playing hundreds of layouts. Doing that on the game's own thread froze the screen
+   (and starved the music) for seconds right after every win on slower phones. It now runs in a background worker. */
+let genW=null,genSeq=0,preJob=null;const genCb={};
+try{const src=document.currentScript.textContent,a=src.indexOf('const INTRO='),b0=src.indexOf('function genLevel('),b=src.indexOf('\n}\n',b0)+3,pal=src.match(/const PAL=[^\n]*\n/);
+  if(a>0&&b0>a&&window.Worker&&window.Blob){const code=(pal?pal[0]:'')+'const RC={diff_adj:0};'+src.slice(a,b)+';onmessage=e=>{const d=e.data;RC.diff_adj=d.da;let L=null;try{L=genLevel(d.n,d.f,d.adj)}catch(x){}postMessage({id:d.id,L})};';
+    genW=new Worker(URL.createObjectURL(new Blob([code],{type:'text/javascript'})));
+    genW.onmessage=e=>{const c=genCb[e.data.id];delete genCb[e.data.id];if(c)c(e.data.L)};
+    genW.onerror=()=>{genW=null;Object.keys(genCb).forEach(k=>{const c=genCb[k];delete genCb[k];c(null)})}}}catch(e){genW=null}
+function genAsync(n,f,adj){return new Promise(res=>{if(!genW)return res(null);const id=++genSeq;genCb[id]=res;try{genW.postMessage({id,n,f,adj,da:RC.diff_adj})}catch(e){delete genCb[id];res(null)}})}
+const preKey=(n,f,ph)=>n+'|'+f+'|'+ph;
+function pregen(){const n=G.level,f=G.fails[n]||0,ph=sessionPhase(),key=preKey(n,f,ph);if((pre&&pre.key===key)||(preJob&&preJob.key===key))return;
+  if(!genW){setTimeout(()=>{pre={n,f,ph,key,L:genLevel(n,f,sessAdj(ph))}},60);return}
+  const job={key};preJob=job;job.p=genAsync(n,f,sessAdj(ph)).then(L=>{if(L&&L.grid)pre={n,f,ph,key,L};if(preJob===job)preJob=null})}
+let lvT=0,adEnd=0,adKind='';
+let lvTok=0;
+function startLevel(){lvT=Date.now();adEnd=0;lvTok++;hideHand();
   closeModal();tickHearts();
   if(G.hearts<=0){showNoLives();return}
   if(!G.seenTut){return runTutorial(()=>{G.seenTut=true;save();track('tutorial_complete');startLevel()})}
-  if(G.level>=4&&!G.unl.grab){G.unl.grab=true;G.grab+=2;save();hud();return runTutorial(startLevel,[TUT_GRAB],'Got it · 2 free')}
-  if(G.level>=8&&!G.unl.magnet){G.unl.magnet=true;G.magnet+=2;save();hud();return runTutorial(startLevel,[TUT_MAG],'Got it · 2 free')}
+  if(G.level>=5&&!G.unl.grab){G.unl.grab=true;G.grab+=2;save();hud();return runTutorial(startLevel,[TUT_GRAB],'Got it · 2 free')}
+  if(G.level>=9&&!G.unl.magnet){G.unl.magnet=true;G.magnet+=2;save();hud();return runTutorial(startLevel,[TUT_MAG],'Got it · 2 free')}
   ch=null;boostUsed=false;$('bGrab').hidden=$('bMagnet').hidden=false;
   const n=G.level,fails=G.fails[n]||0;phase=sessionPhase();
-  L=(pre&&pre.n===n&&pre.f===fails&&pre.ph===phase)?pre.L:genLevel(n,fails,sessAdj(phase));pre=null;
+  const key=preKey(n,fails,phase);
+  if(!(pre&&pre.key===key)&&genW){pregen();if(preJob&&preJob.key===key){
+    /* the level is still being built in the background: wait for it (a few moments at most) instead of freezing */
+    const tok=lvTok,job=preJob;busy=true;let fired=false;const go=()=>{if(fired||tok!==lvTok)return;fired=true;if(!(pre&&pre.key===key))pre={n,f:fails,ph:phase,key,L:genLevel(n,fails,sessAdj(phase))};startLevel()};
+    job.p.then(go);setTimeout(go,9000);setTimeout(()=>{if(!fired&&tok===lvTok)showToast('Level '+n,'Getting ready…',true)},600);return}}
+  L=(pre&&pre.key===key)?pre.L:genLevel(n,fails,sessAdj(phase));pre=null;
   mode='game';setQuality(false);$('home').hidden=true;$('bar').hidden=false;$('prog').hidden=false;$('tut').hidden=true;
   const wi=worldOf(n);const newWorld=curWorld!==wi;setWorld(wi);
   if(newWorld&&n>1&&!travelled)showToast(`World ${wi+1}`,WORLDS[wi].name);travelled=false;levelMusic(wi,n);
@@ -1562,22 +1732,71 @@ function startLevel(){
   MAT.frame.emissive=MAT.frame.emissive||new T.Color();MAT.frame.emissive.copy(lin(L.tier==='normal'?'#000000':L.tier==='hard'?'#ff4a1f':'#a020ff'));MAT.frame.emissiveIntensity=L.tier==='normal'?0:0.35;
   const stier=streakTier(G.streak);freeGrab=stier>=1&&G.unl.grab?1:0;freeMag=stier>=2&&G.unl.magnet?1:0;const xSpot=stier>=3?1:0;
   loadState(newState(L,5+xSpot));
+  lvAbandon('restart');G.lvOpen={n,a:fails+1,t:Date.now()};save();
   track('level_start',{level:n,attempt:fails+1,world:wi+1,tier:L.tier,phase,mercy:L.mercy?1:0});
   const fresh=[...new Set(L.triples)].filter(c=>!G.seen.includes(c));
-  hud();
+  hud();if(!G.stackSeen&&S.st.some(a=>a.length)){const lv=G.level;setTimeout(()=>stackIntro(0,lv),1200)}if(!G.mystSeen&&S.hidden.some(Boolean)){const lv=G.level;setTimeout(()=>mystIntro(0,lv),1400)}if(!G.gumSeen&&S.gum){const lv=G.level;setTimeout(()=>featIntro('gum',0,lv),1400)}if(!G.sealSeen&&S.active.some(j=>j&&j.seal)){const lv=G.level;setTimeout(()=>featIntro('seal',0,lv),1400)}
   const perks=[freeGrab?'Grab':'',freeMag?'Magnet':'',xSpot?'Extra spot':''].filter(Boolean);
   const toasts=[];
   if(L.tier!=='normal')toasts.push(()=>showToast(L.tier==='super'?'Tough level':'Tricky level',(L.tier==='super'?'3x':'2x')+' coins',true));
   if(perks.length)toasts.push(()=>showToast(`Hot Streak · ${G.streak} wins`,'Free '+perks.join(' + '),true));
   const playToasts=d=>toasts.forEach((f,i)=>setTimeout(()=>{if(mode==='game'&&G.level===n)f()},d+i*2700));
-  busy=false;hintK=null;
+  busy=false;hintK=null;setTimeout(parkTip,1500);
   if(fresh.length&&!ch){busy=true;meetJellies(fresh,()=>{busy=false;playToasts(300);if(n===1)setTimeout(()=>{hintK=firstHint()},300)})}
   else{playToasts(newWorld&&n>1?2700:350);if(n===1)setTimeout(()=>{hintK=firstHint();},500)}
 
 }
 function firstHint(){const act=S.active.filter(Boolean).map(j=>j.color);for(let k=0;k<tapMask.length;k++)if(tapMask[k]&&act.includes(S.grid[k]))return k;return null}
 function placeHand(k){const g=cellG[k];if(!g){hideHand();return}const p=g.position.clone();p.y-=0.05;p.z+=0.4;const s=toScreen(p);const h=$('hand');h.hidden=false;h.style.left=s.x+'px';h.style.top=s.y+'px';if(!h.dataset.anim){h.dataset.anim=1;const loop=()=>{if(h.hidden){h.dataset.anim='';return}h.classList.add('press');setTimeout(()=>h.classList.remove('press'),300);setTimeout(loop,1200)};setTimeout(loop,400)}}
-function hideHand(){$('hand').hidden=true;hintK=null}
+function hideHand(){$('hand').hidden=true;hintK=null;const c=$('coach');if(c)c.hidden=true}
+/* first time no awake jelly matches a jar: explain parking on the shelf, then point at a smart pick.
+   after that, until level 8, just point if the player hesitates */
+function parkPick(){if(!S||S.won||S.lost||mode!=='game'||ch)return null;
+  const act=S.active.filter(Boolean).map(j=>j.color);if(!act.length)return null;
+  const tm=tappable(S);const ks=[];for(let k=0;k<tm.length;k++)if(tm[k])ks.push(k);
+  if(!ks.length||ks.some(k=>act.includes(S.grid[k]))||S.shelf.length>=capOf(S)-1)return null;
+  const nx=S.queue.slice(0,2);let best=null,bs=-1e9;
+  for(const k of ks){const col=S.grid[k];
+    /* try it: what opens up if this one moves to the shelf? */
+    const T2={cols:S.cols,grid:S.grid.slice(),st:S.st.map(a=>a.slice()),hidden:S.hidden.slice()};
+    const {refill}=takeTop(T2,k);const t2=tappable(T2);let sc=0;
+    if(refill!=null&&act.includes(refill))sc+=3;
+    for(let i=0;i<t2.length;i++)if(t2[i]&&!tm[i]&&act.includes(T2.grid[i]))sc+=3;
+    const qi=nx.indexOf(col);if(qi>=0)sc+=1.2/(1+qi);
+    sc+=S.shelf.filter(it=>it.color===col).length*0.8;
+    if(qi<0&&!S.shelf.some(it=>it.color===col))sc-=0.5;
+    if(sc>bs){bs=sc;best=k}}
+  parkScore=bs;return best}
+/* mystery jellies (level 11+) used to appear with no explanation */
+function featIntro(k,tries,lv){const key=k+'Seen';if(G[key]||mode!=='game'||!S||S.won||S.lost||G.level!==lv)return;if(busy||!$('modal').hidden||!$('tut').hidden){if(tries<40)setTimeout(()=>featIntro(k,tries+1,lv),700);return}
+  let h;if(k==='gum'){if(!S.gum)return;const c=S.gum.color;h=`<h2>New: gummy shelf spot</h2><div style="display:flex;justify-content:center;margin:2px 0 8px">${thumbImg(c,84)}</div><p>A gummy is stuck on one shelf spot. Fill a <b>${JELLIES[c].name}</b> jar and it melts, giving you the spot back.</p>`}
+  else{if(!S.active.some(j=>j&&j.seal))return;h=`<h2>New: sealed jars</h2><div style="width:70px;height:92px;margin:4px auto 10px;border-radius:22px;background:#c9b6f2;color:#fff;font-family:var(--display);font-weight:800;font-size:44px;line-height:92px;text-align:center;box-shadow:inset 0 -6px 0 rgba(0,0,0,.12)">1</div><p>A sealed jar opens once the jar next to it is filled. Its jellies have nowhere to go until then, so don't wake them too early.</p>`}
+  G[key]=1;save();track('feat_tip',{type:k,level:lv});busy=true;modal(h,[{t:'Got it',fn:()=>{closeModal();busy=false}}])}
+function mystIntro(tries,lv){if(G.mystSeen||mode!=='game'||!S||S.won||S.lost||G.level!==lv)return;if(busy||!$('modal').hidden||!$('tut').hidden){if(tries<40)setTimeout(()=>mystIntro(tries+1,lv),700);return}
+  G.mystSeen=1;save();track('myst_tip',{level:lv});busy=true;modal(`<h2>New: mystery jellies</h2><div style="width:84px;height:84px;margin:4px auto 8px;border-radius:26px;background:#b9b0cc;color:#fff;font-family:var(--display);font-weight:800;font-size:56px;line-height:84px;text-align:center;box-shadow:inset 0 -6px 0 rgba(0,0,0,.12)">?</div><p>Jellies marked <b>?</b> keep their flavor secret until they wake up. Plan a spot on the shelf in case you need it.</p>`,[{t:'Got it',fn:()=>{closeModal();busy=false}}])}
+function stackIntro(tries,lv){lv=lv||G.level;if(G.stackSeen||(stackIntro.open&&!$("modal").hidden)||mode!=='game'||!S||S.won||S.lost||G.level!==lv)return;if(busy||!$('modal').hidden||!$('tut').hidden){if(tries<60)setTimeout(()=>stackIntro(tries+1,lv),700);return}
+  let k=-1;for(let i=0;i<S.st.length;i++)if(S.st[i].length&&tapMask[i]){k=i;break}if(k<0)for(let i=0;i<S.st.length;i++)if(S.st[i].length){k=i;break}if(k<0)return;
+  stackIntro.open=1;track('stack_tip',{level:G.level});busy=true;const top=S.grid[k],under=S.st[k][S.st[k].length-1];
+  modal(`<h2>New: stacked jellies</h2>
+    <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin:6px 0 10px"><div style="position:relative">${thumbImg(top,58)}<span style="position:absolute;right:-6px;top:-6px;width:22px;height:22px;border-radius:50%;border:3px solid #fff;background:#${new T.Color(PAL[under]).getHexString()}"></span></div><span style="font-size:26px;font-weight:900;color:#9a86b8">&rarr;</span>${thumbImg(under,58)}</div>
+    <p>A jelly with a <b>small coloured dot</b> has another jelly hiding underneath.</p>
+    <p>The dot shows its colour. Take the top jelly and the hidden one <b>pops up</b> in the same spot.</p>`,
+    [{t:'Got it',fn:()=>{stackIntro.open=0;G.stackSeen=1;save();closeModal();busy=false;if(tapMask[k]){hintK=k;coach('This one has a jelly underneath')}}}])}
+function coach(t){const c=$('coach');if(!t){c.hidden=true;return}c.textContent=t;c.hidden=false}
+let parkLevel=0,parkScore=0;
+function parkTip(){if(busy)return;const k=parkPick();if(k==null)return;const tok=lvTok;
+  const learned=(G.parkDone||0)>=2;
+  /* show the explainer the first two times it's needed (never twice in one level) until the player has parked twice */
+  if(!learned&&(G.parkTipN||0)<1&&parkLevel!==G.level){parkLevel=G.level;G.parkTipN=(G.parkTipN||0)+1;save();track('park_tip',{level:G.level,n:G.parkTipN});busy=true;
+    modal(`<h2>No matching jelly?</h2>
+      <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin:6px 0 10px">${thumbImg(S.grid[k],58)}<span style="font-size:26px;font-weight:900;color:#9a86b8">&rarr;</span><span style="padding:8px 12px;border-radius:12px;background:#efe7fb;font-weight:900;color:#6b5a86;letter-spacing:.08em">SHELF</span></div>
+      <p>You can only tap jellies with <b>open eyes</b>.</p>
+      <p>If none of them match a jar, move one to the <b>Shelf</b>. The jelly behind it will wake up, so you can keep sorting.</p>
+      <p style="font-size:13px">Tip: choose one that uncovers a colour the jars need. The hand will show you a good one.</p>`,
+      [{t:'Show me',fn:()=>{closeModal();busy=false;setTimeout(()=>{if(tok===lvTok&&parkPick()===k){hintK=k;coach('Move this jelly to the Shelf')}},250)}}]);return}
+  /* until it's learned, point quickly; after that, only nudge early levels if the player hesitates */
+  const wait=learned?6000:2500;
+  if(!learned||G.level<=8){const m=moves;setTimeout(()=>{if(tok===lvTok&&moves===m&&!busy&&parkPick()===k&&parkScore>=2){hintK=k;if(!learned)coach('Move a jelly to the Shelf to wake the one behind it')}},wait)}}
 function onPointer(e){
   audioInit();
   if(mode!=='game'||busy||!S||S.won||S.lost)return;
@@ -1590,12 +1809,12 @@ function onTap(k){
   if(ch&&ch.t0==null)ch.t0=performance.now();
   if(grabMode&&!tapMask[k]){grabMode=false;boostUsed=true;if(freeGrab>0)freeGrab--;else G.grab--;save();track('booster_used',{type:'grab'});qProg('boost')}
   else if(grabMode)grabMode=false;
-  moves++;sfx.tap();hideHand();
-  const ev=applyTap(S,k);handleEvents(ev);afterMove();
+  moves++;sfx.tap();hideHand();coach(null);const parking=!grabMode&&parkPick()!=null;
+  const ev=applyTap(S,k);if(parking&&ev.some(e=>e.type==='toShelf')){G.parkDone=(G.parkDone||0)+1;save();if(G.parkDone<=2)track('park_ok',{level:G.level,n:G.parkDone})}handleEvents(ev);afterMove();
   if(G.level===1&&moves<2)setTimeout(()=>{if(mode==='game'&&moves<2)hintK=firstHint()},700);
 }
 function afterMove(){
-  tapMask=tappable(S);refreshAwake(false);
+  tapMask=tappable(S);refreshAwake(false);{const tok=lvTok;setTimeout(()=>{if(tok===lvTok)parkTip()},700)}if(!G.stackSeen&&S.st.some(a=>a.length)){const lv=G.level;setTimeout(()=>stackIntro(0,lv),900)}
   if(S.won&&ch&&ch.t1==null)ch.t1=performance.now();hud();
   if(S.won){busy=true;setTimeout(onWin,1300)}
   else if(S.lost){busy=true;setTimeout(onLose,900)}
@@ -1645,7 +1864,7 @@ function showQuests(was){if(was==null)was=busy;busy=true;const Q=ensureQuests();
   $('card').querySelectorAll('[data-q]').forEach(b=>b.onclick=()=>{const q=Q.list[+b.dataset.q];if(q.cl||q.p<q.n)return;q.cl=true;G.coins+=q.c;save();hud();sfx.coin();buzz(20);track('quest_claim',{quest:q.k});showQuests(was)});
   const bb=$('card').querySelector('[data-bonus]');if(bb)bb.onclick=()=>{if(Q.bonus||nCl<3)return;
     const give=x=>{Q.bonus=true;G.coins+=B.c*x;G.grab+=B.g*x;G.magnet+=B.m*x;save();hud();sfx.win();confetti();buzz([30,40,30]);track('quest_bonus',{doubled:x>1?1:0});showQuests(was)};
-    modal(`<p class="step">All quests done</p><h2>Bonus chest!</h2><div class="icon">${chestSvg()}</div><p><b>${rewardLabel(B)}</b></p>`,[{t:`Open x2 ${tvTag()}`,cls:'v',fn:()=>showAd('rew',()=>give(2))},{t:'Open',cls:'o',back:true,fn:()=>give(1)}])}}
+    modal(`<p class="step">All quests done</p><h2>Bonus chest!</h2><div class="icon">${chestSvg()}</div><p><b>${rewardLabel(B)}</b></p>`,[{t:`Open x2 ${tvOffer('chest2x')}`,cls:'v',fn:()=>showAd('rew','chest2x',()=>give(2))},{t:'Open',cls:'o',back:true,fn:()=>give(1)}])}}
 
 /* ---------- Jelly Wardrobe ---------- */
 const ownsOutfit=(ci,oi)=>(G.outfits[ci]||[]).includes(oi);
@@ -1670,7 +1889,15 @@ function wardrobe(ci,was){busy=true;const w=wornOf(ci);
     [{t:'Back',cls:'ghost',back:true,fn:()=>jellyBook(was)}]);
   const c=$('card');const put=()=>{G.wear[ci]=w;save();redressAll()};
   c.querySelector('.mx').onclick=()=>{sfx.click();closeModal();busy=was;bookDot()};
-  c.querySelectorAll('[data-buy]').forEach(b=>b.onclick=()=>{const oi=+b.dataset.buy,o=OUTFITS[ci][oi];if(G.coins<o.p)return;G.coins-=o.p;(G.outfits[ci]=G.outfits[ci]||[]).push(oi);w[o.slot]=oi;put();hud();sfx.win();confetti();buzz([30,40,30]);track('outfit_buy',{jelly:JELLIES[ci].name,outfit:o.n,price:o.p});wardrobe(ci,was)});
+  /* buying an outfit asks first: coins only move on Confirm, exactly once */
+  c.querySelectorAll('[data-buy]').forEach(b=>b.onclick=()=>{const oi=+b.dataset.buy,o=OUTFITS[ci][oi];sfx.click();if(ownsOutfit(ci,oi))return wardrobe(ci,was);
+    const prev=`<div class="wprev">${thumbImg(ci,136,false,{[o.slot]:oi})}</div><h2 style="color:${nameCol(ci)}">${o.n}</h2>`;
+    if(G.coins<o.p)return modal(`<p class="step">Not enough coins</p>${prev}<p>This outfit costs ${coinSvg(16)} <b>${o.p.toLocaleString()}</b>. You have ${coinSvg(16)} <b>${G.coins.toLocaleString()}</b>.<br>You need <b>${(o.p-G.coins).toLocaleString()}</b> more.</p>`,[{t:'OK',back:true,fn:()=>wardrobe(ci,was)}]);
+    track('outfit_view',{jelly:JELLIES[ci].name,outfit:o.n,price:o.p});
+    modal(`<p class="step">Buy outfit?</p>${prev}<p style="line-height:1.7">Cost: ${coinSvg(16)} <b>${o.p.toLocaleString()}</b><br>Your coins: ${coinSvg(16)} <b>${G.coins.toLocaleString()}</b><br>After buying: ${coinSvg(16)} <b>${(G.coins-o.p).toLocaleString()}</b></p>`,[
+      {t:`Confirm Purchase`,cls:'o',fn:()=>{if(ownsOutfit(ci,oi)||G.coins<o.p)return wardrobe(ci,was);
+        G.coins-=o.p;(G.outfits[ci]=G.outfits[ci]||[]).push(oi);w[o.slot]=oi;put();hud();sfx.win();confetti();buzz([30,40,30]);track('outfit_buy',{jelly:JELLIES[ci].name,outfit:o.n,price:o.p});wardrobe(ci,was)}},
+      {t:'Cancel',cls:'ghost',back:true,fn:()=>wardrobe(ci,was)}])});
   c.querySelectorAll('[data-wear]').forEach(b=>b.onclick=()=>{const oi=+b.dataset.wear;w[OUTFITS[ci][oi].slot]=oi;put();sfx.jar(1);wardrobe(ci,was)});
   c.querySelectorAll('[data-off]').forEach(b=>b.onclick=()=>{const oi=+b.dataset.off;delete w[OUTFITS[ci][oi].slot];put();sfx.click();wardrobe(ci,was)})}
 
@@ -1694,11 +1921,17 @@ function starRow(st){const tot=totalStars(),toNext=(G.starChests+1)*STAR_CHEST-t
 const starChestDue=()=>totalStars()>=(G.starChests+1)*STAR_CHEST;
 function starChest(done){const r={c:200,g:G.unl.grab?1:0,m:G.unl.magnet?1:0};
   const give=x=>{G.starChests++;G.coins+=r.c*x;G.grab+=r.g*x;G.magnet+=r.m*x;save();hud();sfx.win();confetti();track('star_chest',{n:G.starChests,doubled:x>1?1:0});closeModal();done()};
-  modal(`<p class="step">${starSvg(true,16)} ${G.starChests*STAR_CHEST+STAR_CHEST} stars collected</p><h2>Star Chest!</h2><div class="icon">${chestSvg()}</div><p><b>${rewardLabel(r)}</b></p>`,[{t:`Open x2 ${tvTag()}`,cls:'v',fn:()=>showAd('rew',()=>{usedRewarded=true;give(2)})},{t:'Open',cls:'o',back:true,fn:()=>give(1)}])}
+  modal(`<p class="step">${starSvg(true,16)} ${G.starChests*STAR_CHEST+STAR_CHEST} stars collected</p><h2>Star Chest!</h2><div class="icon">${chestSvg()}</div><p><b>${rewardLabel(r)}</b></p>`,[{t:`Open x2 ${tvOffer('chest2x')}`,cls:'v',fn:()=>showAd('rew','chest2x',()=>{usedRewarded=true;give(2)})},{t:'Open',cls:'o',back:true,fn:()=>give(1)}])}
 
 /* ---------- Daily Challenge: one board a day, the same for every player. No boosters, no revives, fastest clear wins.
    The day follows Google Play's leaderboard day (midnight Pacific) so the board and the leaderboard reset together. ---------- */
 const DC_UNLOCK=6,DC_ADS=3;
+/* weekly 'Levels cleared' ranking (Play Games weekly leaderboard, week starts Sunday Pacific like its daily board) */
+function weekKey(){const d=chDay().split('-').map(Number);const t=Date.UTC(d[0],d[1]-1,d[2]);const w=new Date(t).getUTCDay();return new Date(t-w*864e5).toISOString().slice(0,10)}
+const lbwOn=()=>{const NB=window.NativeBridge;return !!(NB&&NB.lbw&&NB.lbw.on())};
+function weekWin(){const k=weekKey();if(!G.wk||G.wk.k!==k)G.wk={k,n:0};G.wk.n++;save();if(lbwOn())window.NativeBridge.lbw.submit(G.wk.n);return G.wk.n}
+function wkLine(n,c){if(!lbwOn()||n<11)return '';setTimeout(()=>{window.NativeBridge.lbw.rank().then(r=>{const el=$('wkRank');if(el&&r&&r.rank>0)el.textContent=` · #${r.rank} this week`})},300);
+  return `<p style="margin:2px 0 0;font-size:13px;font-weight:900;color:var(--ink2)">${c} level${c===1?'':'s'} cleared this week<span id="wkRank"></span></p>`}
 function chDay(){try{return new Intl.DateTimeFormat('en-CA',{timeZone:'America/Los_Angeles',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date())}catch(e){return new Date(Date.now()-8*3600e3).toISOString().slice(0,10)}}
 function chLeft(){let h=0,m=0;try{const p=new Intl.DateTimeFormat('en-US',{timeZone:'America/Los_Angeles',hour:'numeric',minute:'numeric',hourCycle:'h23'}).formatToParts(new Date());h=+p.find(x=>x.type==='hour').value;m=+p.find(x=>x.type==='minute').value}catch(e){const d=new Date(Date.now()-8*3600e3);h=d.getUTCHours();m=d.getUTCMinutes()}
   const left=(24*60-(h*60+m));return `${Math.floor(left/60)}h ${left%60}m`}
@@ -1715,7 +1948,7 @@ function lbAvail(){const NB=window.NativeBridge;return !!(NB&&NB.native&&NB.lb&&
 function showChallenge(was){if(was==null)was=busy;busy=true;const st=dcState();
   if(G.level<DC_UNLOCK){modal(`<p class="step">Daily Challenge</p><h2>Almost there!</h2><div class="icon">${stopSvg()}</div><p>Reach <b>Level ${DC_UNLOCK}</b> to race other players on a new board every day.</p>`,[{t:'OK',back:true,fn:()=>{closeModal();busy=was}}]);return}
   const free=st.tries===0,canAd=!free&&st.ads<DC_ADS&&st.tries>=1+st.ads;
-  const play=free?{t:'Play',fn:()=>{closeModal();startChallenge()}}:canAd?{t:`Try again ${tvTag()}`,cls:'v',fn:()=>showAd('rew',()=>{G.dc.ads++;save();startChallenge()})}:{t:'No tries left today',dis:true,fn:()=>{}};
+  const play=free?{t:'Play',fn:()=>{closeModal();startChallenge()}}:canAd?{t:`Try again ${tvOffer('dchall')}`,cls:'v',fn:()=>showAd('rew','dchall',()=>{G.dc.ads++;save();startChallenge()})}:{t:'No tries left today',dis:true,fn:()=>{}};
   modal(`<p class="step">New board in ${chLeft()}</p><h2>Daily Challenge</h2><div class="icon">${stopSvg()}</div>
     <div class="help"><span class="hi">1</span><span>The <b>same board</b> for every player today</span></div>
     <div class="help"><span class="hi">2</span><span><b>No boosters, no revives.</b> Pure skill</span></div>
@@ -1746,11 +1979,11 @@ function chWin(){const ms=ch.t1-ch.t0,st=dcState();const first=!st.best;const pb
   modal(`<p class="step">Daily Challenge</p><h2>${pb&&!first?'New best!':'Cleared!'}</h2><div class="big">${stopSvg(44)}<span>${fmtMs(ms)}</span></div>
     <p>${pb?'':`Best today: <b>${fmtMs(st.best)}</b><br>`}<span id="dcRank">${lbAvail()?'Checking your rank…':''}</span></p>
     ${first?`<p><b>${coinSvg(20)} +${bonus}</b> · ${flameSvg()} ${st.streak}-day challenge streak${st.streak%7===0?' bonus!':''}</p>`:''}`,
-    [...(canAd?[{t:`Beat your time ${tvTag()}`,cls:'v',fn:()=>showAd('rew',()=>{G.dc.ads++;save();startChallenge()})}]:[]),...(lbAvail()?[{t:'Leaderboard',cls:'o',fn:()=>{window.NativeBridge.lb.show()}}]:[]),{t:'Home',cls:'ghost',back:true,fn:()=>{ch=null;showHome()}}]);
+    [...(canAd?[{t:`Beat your time ${tvOffer('dchall')}`,cls:'v',fn:()=>showAd('rew','dchall',()=>{G.dc.ads++;save();startChallenge()})}]:[]),...(lbAvail()?[{t:'Leaderboard',cls:'o',fn:()=>{window.NativeBridge.lb.show()}}]:[]),{t:'Home',cls:'ghost',back:true,fn:()=>{ch=null;showHome()}}]);
   if(lbAvail())setTimeout(()=>window.NativeBridge.lb.rank().then(r=>{const el=$('dcRank');if(el)el.innerHTML=r&&r.rank>0?rankLine(r):''}),1200)}
 function chLose(){const st=dcState();sfx.lose();buzz(60);track('daily_fail',{pct:Math.round(S.doneJars/S.total*100),try:st.tries});const canAd=st.ads<DC_ADS;
   modal(`<p class="step">Daily Challenge</p><h2>Shelf full!</h2><div class="big" style="font-size:40px">${Math.round(S.doneJars/S.total*100)}%</div><p>No time this run. Plan a little more, the clock only matters once you clear it.</p>${st.best?`<p>Your best today: <b>${fmtMs(st.best)}</b></p>`:''}`,
-    [...(canAd?[{t:`Try again ${tvTag()}`,cls:'v',fn:()=>showAd('rew',()=>{G.dc.ads++;save();startChallenge()})}]:[]),{t:'Home',cls:'ghost',back:true,fn:()=>{ch=null;showHome()}}])}
+    [...(canAd?[{t:`Try again ${tvOffer('dchall')}`,cls:'v',fn:()=>showAd('rew','dchall',()=>{G.dc.ads++;save();startChallenge()})}]:[]),{t:'Home',cls:'ghost',back:true,fn:()=>{ch=null;showHome()}}])}
 const stopSvg=(s=84)=>`<svg viewBox="0 0 48 48" width="${s}" height="${s}"><defs><linearGradient id="swG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8fd6ff"/><stop offset="1" stop-color="#1f8fff"/></linearGradient></defs><rect x="20" y="3" width="8" height="6" rx="2" fill="#ff8a1f"/><circle cx="24" cy="27" r="17" fill="url(#swG)" stroke="#0b5fae" stroke-width="2.4"/><circle cx="24" cy="27" r="12.5" fill="#fff"/><path d="M24 27V18.5" stroke="#1e1236" stroke-width="3" stroke-linecap="round"/><path d="M24 27l5 3" stroke="#ff3d64" stroke-width="3" stroke-linecap="round"/><circle cx="24" cy="27" r="2" fill="#1e1236"/><path d="M38 12l3-3" stroke="#0b5fae" stroke-width="3" stroke-linecap="round"/></svg>`;
 
 /* ---------- World travel: the jelly hops along a winding path from the old world up to the new one ---------- */
@@ -1811,10 +2044,10 @@ function worldTravel(fromWi,toWi,doneLevels,cb){
     island(pathX(0),pathY(0)+wd*0.05,wd,F,0);
     const ar=arrived?Math.min(1,(el-3.5)/0.5):0;island(pathX(1),pathY(1)+wd*0.05,wd*(1+0.06*Math.sin(Math.min(1,ar)*Math.PI)),Tw,ar);
     // stepping stones with level numbers for the new world
-    for(let i=1;i<=PER_WORLD;i++){const u=i/(PER_WORLD+1),px=pathX(u),py=pathY(u);const lit=e>=u;
+    for(let i=1;i<=PER_WORLD;i++){const u=i/(PER_WORLD+1),px=pathX(u),py=pathY(u);const lit=e>=u,Fw=F;
       x.fillStyle='rgba(0,0,0,.18)';x.beginPath();x.ellipse(px,py+15,17,6,0,0,7);x.fill();
-      x.fillStyle=lit?Tw.frame:'rgba(255,255,255,.9)';x.beginPath();x.arc(px,py,16,0,7);x.fill();x.strokeStyle='#fff';x.lineWidth=3;x.stroke();
-      x.fillStyle=lit?'#fff':Tw.frame;x.font='800 14px "Baloo 2", Nunito, sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText(doneLevels+i,px,py+1)}
+      x.fillStyle=lit?Fw.frame:'rgba(255,255,255,.9)';x.beginPath();x.arc(px,py,16,0,7);x.fill();x.strokeStyle='#fff';x.lineWidth=3;x.stroke();
+      x.fillStyle=lit?'#fff':Fw.frame;x.font='800 14px "Baloo 2", Nunito, sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText(doneLevels-PER_WORLD+i,px,py+1)}
     // the jelly hops from stone to stone
     const hop=Math.abs(Math.sin(e*Math.PI*(PER_WORLD+1)));const jx=pathX(e),jy=pathY(e)-34-hop*26*(T<1?1:0);
     x.fillStyle='rgba(0,0,0,.2)';x.beginPath();x.ellipse(jx,pathY(e)-6,18-hop*6,5,0,0,7);x.fill();
@@ -1831,7 +2064,7 @@ function chestReward(wi,done){
   G.chests++;save();const r={c:150+wi*25,g:1,m:wi>=1?1:0};
   const give=x=>{track('world_chest',{world:wi+1,doubled:x>1?1:0});G.coins+=r.c*x;G.grab+=r.g*x;G.magnet+=r.m*x;save();hud();sfx.win();confetti();closeModal();done()};
   modal(`<p class="step">World ${wi+1} complete</p><h2>${WORLDS[wi].name}</h2><div class="icon">${chestSvg()}</div><p><b>${coinSvg(20)} ${r.c} + ${r.g} Grab${r.m?` + ${r.m} Magnet`:''}</b></p><p style="font-size:13px">Next stop: <b>${WORLDS[(wi+1)%WORLDS.length].name}</b></p>`,[
-    {t:`Open x2 ${tvTag()}`,cls:'v',fn:()=>showAd('rew',()=>{usedRewarded=true;give(2)})},{t:'Open',cls:'o',back:true,fn:()=>give(1)}]);
+    {t:`Open x2 ${tvOffer('chest2x')}`,cls:'v',fn:()=>showAd('rew','chest2x',()=>{usedRewarded=true;give(2)})},{t:'Open',cls:'o',back:true,fn:()=>give(1)}]);
 }
 const chestSvg=()=>`<svg viewBox="0 0 64 64" width="96" height="96"><defs><linearGradient id="ch1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffb36b"/><stop offset="1" stop-color="#c46a1f"/></linearGradient><linearGradient id="ch2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe98a"/><stop offset="1" stop-color="#ffaa10"/></linearGradient></defs><rect x="8" y="28" width="48" height="28" rx="6" fill="url(#ch1)"/><path d="M8 30a24 16 0 0 1 48 0z" fill="url(#ch1)"/><rect x="8" y="27" width="48" height="6" fill="url(#ch2)"/><rect x="28" y="24" width="8" height="14" rx="2" fill="url(#ch2)"/><circle cx="32" cy="32" r="2" fill="#8a4a00"/><rect x="14" y="36" width="5" height="18" fill="url(#ch2)"/><rect x="45" y="36" width="5" height="18" fill="url(#ch2)"/><path d="M20 14l2 5M32 8v6M44 14l-2 5" stroke="#ffd21a" stroke-width="3" stroke-linecap="round"/></svg>`;
 function reward(){const base=20+Math.min(30,Math.floor(L.n/4)*2);return(L.tier==='super'?3:L.tier==='hard'?2:1)*base}
@@ -1839,14 +2072,17 @@ function onWin(){
   if(ch)return chWin();
   sfx.win();buzz([30,40,30]);confetti();
   const n=G.level,r=reward();
-  track('level_complete',{level:n,attempt:(G.fails[n]||0)+1,revives:reviveCount,moves,streak:G.streak+1});
-  delete G.fails[n];const tierBefore=streakTier(G.streak);G.level++;G.streak++;sessLevels++;G.cur=sessLevels;save();hud();pregen();
-  qJustDone=[];qProg('win');if(reviveCount===0)qProg('clean');qProg('streak',G.streak);
+  G.lvOpen=null;
+  track('level_complete',{secs:Math.round((Date.now()-lvT)/1e3),level:n,attempt:(G.fails[n]||0)+1,revives:reviveCount,moves,streak:G.streak+1});
+  delete G.fails[n];const tierBefore=streakTier(G.streak);G.level++;G.streak++;sessLevels++;G.cur=sessLevels;G.coins+=r;save();hud();pregen();
+  qJustDone=[];qProg('win');if(reviveCount===0)qProg('clean');qProg('streak',G.streak);const wkN=weekWin();
   const tierUp=streakTier(G.streak)>tierBefore;const qd=qJustDone.map(t=>`<p class="qdone" style="margin:0">✓ Quest done: ${t}</p>`).join('');qJustDone=[];
   const st=reviveCount===0&&!boostUsed?3:reviveCount===0||!boostUsed?2:1;G.stars[n]=Math.max(G.stars[n]||0,st);save();
-  modal(`<p class="step">Level ${n}</p><h2>Complete!</h2>${starRow(st)}<div class="big">${coinSvg(48)}<span id="cnt">0</span></div>${tierUp?'<p style="font-family:var(--display);font-size:20px;color:#ff8a1f">Streak bonus unlocked!</p>':''}${streakBox()}${qd}`,[
-    ...(n<=3?[]:[{t:`Claim ${r*3} ${tvTag()}`,cls:'v',fn:()=>showAd('rew',()=>{G.coins+=r*3;usedRewarded=true;save();sfx.coin();next()})}]),
-    {t:`Claim ${r}`,cls:n<=3?'p':'ghost',back:true,fn:()=>{G.coins+=r;save();sfx.coin();next()}}]);
+  /* one-time 'great start' bonus after level 3 (biggest early drop is between levels 2 and 3), enough toward a first outfit */
+  const fb=(n===3&&!G.fb3)?100:0;if(fb){G.fb3=1;G.coins+=fb;save();track('start_bonus',{coins:fb})}
+  modal(`<p class="step">Level ${n}</p><h2>Complete!</h2>${starRow(st)}<div class="big">${coinSvg(48)}<span id="cnt">0</span></div>${fb?`<p style="font-family:var(--display);font-size:20px;color:#ff8a1f;margin:2px 0">Great start! +${fb} bonus coins</p>`:''}${tierUp?'<p style="font-family:var(--display);font-size:20px;color:#ff8a1f">Streak bonus unlocked!</p>':''}${streakBox()}${qd}${wkLine(n,wkN)}`,[
+    ...(n<=3?[]:[{t:`Claim ${r*3} ${tvOffer('win_coins')}`,cls:'v',fn:()=>showAd('rew','win_coins',()=>{G.coins+=r*2;usedRewarded=true;save();sfx.coin();next()})}]),
+    {t:`Claim ${r}`,cls:n<=3?'p':'ghost',back:true,fn:()=>{sfx.coin();next()}}]);
   let c=0;const iv=setInterval(()=>{c=Math.min(r,c+Math.ceil(r/12));const el=$('cnt');if(el)el.textContent=c;if(c%3===0)sfx.coin();if(c>=r)clearInterval(iv)},55);
   [0,1,2].forEach(i=>{if(i<st)setTimeout(()=>{if(A.ctx)bell(mtof(79+i*4),now(),0.8,0.12);buzz(15)},260+i*230)});
 }
@@ -1854,13 +2090,12 @@ function next(){
   if(starChestDue()&&!next.star){next.star=true;return starChest(()=>next())}next.star=false;
   const done=G.level-1;if(done%PER_WORLD===0&&!next.opened){next.opened=true;return chestReward(worldOf(done),()=>next())}
   if(done%PER_WORLD===0&&!next.went){next.went=true;travelled=true;return worldTravel(worldOf(done),worldOf(done+1),done,()=>next())}
-  next.opened=false;next.went=false;
-  const NBx=window.NativeBridge;
-  if(done>=3&&!G.notifAsked&&NBx&&NBx.askNotifications){G.notifAsked=true;save();return modal(`<div class="icon">${bellSvg()}</div><h2>Want a heads-up?</h2><p>We'll tell you when your lives are full and your daily reward is ready. No spam.</p>`,[{t:'Yes, notify me',fn:()=>{NBx.askNotifications().then(ok=>{track('notif_optin',{granted:ok?1:0});closeModal();next()})}},{t:'Not now',cls:'ghost',back:true,fn:()=>{closeModal();next()}}])}
-  if([12,30,60].includes(done)&&!G.reviewAsked.includes(done)&&NBx&&NBx.requestReview){G.reviewAsked.push(done);save();setTimeout(()=>NBx.requestReview(),1800)}
-  if(!G.noAds&&done>=10&&done%PER_WORLD===0&&adGapOk()){G.sinceAd=0;save();track('world_ad',{world:worldOf(done+1)+1});return showAd('inter',startLevel)}
-  if(!G.noAds&&G.level-1>=6&&!usedRewarded){G.sinceAd++;if(G.sinceAd>=interEvery()&&adGapOk()){G.sinceAd=0;save();return showAd('inter',startLevel)}}
-  save();startLevel();
+  const NBx=window.NativeBridge;const go=()=>{next.opened=false;next.went=false};
+  if(((done>=RC.notif_level&&!G.notifAsked)||(G.notifRetry&&done>=G.notifRetry))&&NBx&&NBx.askNotifications){const again=!!G.notifAsked;G.notifAsked=true;G.notifRetry=0;save();track('notif_ask',{again:again?1:0});return modal(`<div class="icon">${bellSvg()}</div><h2>Want a heads-up?</h2><p>We'll tell you when your lives are full and your daily reward is ready. No spam.</p>`,[{t:'Yes, notify me',fn:()=>{NBx.askNotifications().then(ok=>{track('notif_optin',{granted:ok?1:0});closeModal();next()})}},{t:'Not now',cls:'ghost',back:true,fn:()=>{if(!again){G.notifRetry=done+7;save()}closeModal();next()}}])}
+  if([11,26,56].includes(done)&&!G.reviewAsked.includes(done)&&NBx&&NBx.requestReview){G.reviewAsked.push(done);save();setTimeout(()=>NBx.requestReview(),1800)}
+  if(RC.world_ad&&!G.noAds&&done>=10&&done%PER_WORLD===0&&!usedRewarded&&adGapOk()){go();G.sinceAd=0;save();track('world_ad',{world:worldOf(done+1)+1});return showAd('inter',startLevel)}
+  if(!G.noAds&&done>=RC.inter_start&&(done-RC.inter_start)%interEvery()===0&&!usedRewarded&&adGapOk()){go();G.sinceAd=0;save();return showAd('inter',startLevel)}
+  go();save();startLevel();
 }
 const LOSE_COPY=[
   ['Tough one!','Rough start. Extra room on the shelf lets you plan.'],
@@ -1884,11 +2119,11 @@ function onLose(){
   if(reviveCount<MAX_REVIVES){
     const cost=REVIVE_COST[reviveCount];
     const sp=pct<40&&reviveCount===0?2:1;
-    if(reviveCount<2)btns.push({t:`+${sp} Shelf Spot${sp>1?'s':''} ${tvTag()}`,cls:'v',fn:()=>showAd('rew',()=>{track('revive',{method:'ad',n:reviveCount+1,spots:sp,progress_pct:pct});revive(sp)})});
+    if(reviveCount<2)btns.push({t:`+${sp} Shelf Spot${sp>1?'s':''} ${tvOffer('revive')}`,cls:'v',fn:()=>showAd('rew','revive',()=>{track('revive',{method:'ad',n:reviveCount+1,spots:sp,progress_pct:pct});revive(sp)})});
     if(G.coins>=cost)btns.push({t:`+1 Shelf Spot · ${coinSvg(22)} ${cost}`,cls:'o',fn:()=>{G.coins-=cost;save();sfx.coin();track('revive',{method:'coins',n:reviveCount+1,cost});revive()}});
     else{const need=cost-G.coins;btns.push({t:`+1 Shelf Spot · ${coinSvg(22)} ${cost}`,cls:'o',dis:true,fn:()=>{}});
       /* only one video option per screen: the coins video appears once the free shelf-spot videos are used up */
-      if(reviveCount>=2)btns.push({t:`Get ${need} coins ${tvTag()}`,cls:'p',fn:()=>showAd('rew',()=>{G.coins+=need;save();hud();sfx.coin();onLose()})})}
+      if(reviveCount>=2)btns.push({t:`Get ${need} coins ${tvOffer('lose_coins')}`,cls:'p',fn:()=>showAd('rew','lose_coins',()=>{G.coins+=need;save();hud();sfx.coin();onLose()})})}
   }
   btns.push({t:'Give up',cls:'ghost',fn:giveUpConfirm});
   const last=reviveCount>=MAX_REVIVES?'<p style="font-size:13px">No more extra spots for this attempt.</p>':reviveCount===MAX_REVIVES-1?'<p style="font-size:13px">Last extra spot available this attempt.</p>':'';
@@ -1900,27 +2135,28 @@ function giveUpConfirm(){
   modal(`<h2>Give up?</h2><p>You'll lose a life${S&&S.doneJars?` and your <b>${Math.round(S.doneJars/S.total*100)}% progress</b>`:''}${G.streak>=2?`, plus your <b>${G.streak}-level streak</b>`:''}.</p>`,[{t:'Keep playing',back:true,fn:onLose},{t:'Give up',cls:'ghost',fn:giveUp}]);
 }
 function giveUp(){
-  track('level_fail',{level:G.level,attempt:(G.fails[G.level]||0)+1,progress_pct:S?Math.round(S.doneJars/S.total*100):0,revives:reviveCount});
+  G.lvOpen=null;
+  track('level_fail',{secs:Math.round((Date.now()-lvT)/1e3),level:G.level,attempt:(G.fails[G.level]||0)+1,progress_pct:S?Math.round(S.doneJars/S.total*100):0,revives:reviveCount});
   loseHeart();G.streak=0;G.fails[G.level]=(G.fails[G.level]||0)+1;sessLevels++;G.cur=sessLevels;save();hud();pregen();
   const stuck=(G.fails[G.level]||0)>=3;
-  modal(`<div class="icon">${heartSvg()}</div><h2>${G.hearts} ${G.hearts===1?'life':'lives'} left</h2>${stuck?'<p style="font-size:13px">Stuck? Watch a video to skip this level.</p>':''}`,[...(stuck?[{t:`Skip level ${tvTag()}`,cls:'v',fn:()=>showAd('rew',skipLevel)}]:[]),{t:'Try again',fn:()=>{if(!G.noAds&&G.level>=8){G.sinceAd++;if(G.sinceAd>=interEvery()&&adGapOk()){G.sinceAd=0;save();return showAd('inter',startLevel)}}startLevel()}},{t:'Home',cls:'ghost',back:true,fn:showHome}]);
+  modal(`<div class="icon">${heartSvg()}</div><h2>${G.hearts} ${G.hearts===1?'life':'lives'} left</h2>${stuck?'<p style="font-size:13px">Stuck? Watch a video to skip this level.</p>':''}`,[...(stuck?[{t:`Skip level ${tvOffer('skip')}`,cls:'v',fn:()=>showAd('rew','skip',skipLevel)}]:[]),{t:'Try again',fn:()=>{if(!G.noAds&&G.level>=8){G.sinceAd++;if(G.sinceAd>=interEvery()&&adGapOk()){G.sinceAd=0;save();return showAd('inter',startLevel)}}startLevel()}},{t:'Home',cls:'ghost',back:true,fn:showHome}]);
 }
 function skipLevel(){const n=G.level;track('level_skip',{level:n,fails:G.fails[n]||0});delete G.fails[n];G.level++;sessLevels++;G.cur=sessLevels;usedRewarded=true;save();hud();pregen();closeModal();next()}
 function revive(k=1){if(!S||!S.lost)return;reviveCount++;S.cap+=k;S.lost=false;
   /* revive buff (from the video): jars for the jellies stuck on the shelf jump to the front of the queue, so paying feels worth it */
   {const sc={};S.shelf.forEach(i=>sc[i.color]=(sc[i.color]||0)+1);S.queue.sort((x,y)=>(sc[y]||0)-(sc[x]||0))}
   buildShelf();lay.compW=Math.max(lay.compW,S.cap+0.9);fitCamera();busy=false;closeModal();hud();sfx.jar(0);burst(new T.Vector3(shelfX(S.cap-1),lay.shelfY,0.4),'#ffd54d',30,3,0.4,0.9,0)}
-function showNoLives(){busy=true;tickHearts();if(G.hearts>0){startLevel();return}
+function showNoLives(){busy=true;tickHearts();if(G.hearts>0){startLevel();return}track('lives_out');
   track('out_of_lives');
   modal(`<div class="icon">${heartSvg()}</div><h2>Out of lives</h2><p>Next life in <b id="nlT">${fmt(REGEN-(Date.now()-G.heartTs))}</b></p>`,[
-    {t:`+1 Life ${tvTag()}`,cls:'v',fn:()=>showAd('rew',()=>{G.hearts++;save();startLevel()})},
+    {t:`+1 Life ${tvOffer('life')}`,cls:'v',fn:()=>showAd('rew','life',()=>{G.hearts++;save();startLevel()})},
     {t:`Refill · ${coinSvg(22)} 120`,cls:'o',dis:G.coins<120,fn:()=>{G.coins-=120;G.hearts=MAXH;G.heartTs=0;save();startLevel()}},
     {t:'Home',cls:'ghost',back:true,fn:showHome}])}
 function buyBooster(kind){
   const price=kind==='grab'?120:150,name=kind==='grab'?'Grab':'Magnet';const was=busy;busy=true;const back=()=>{closeModal();busy=was;hud()};
   modal(`<div class="icon">${kind==='grab'?grabSvg():magSvg()}</div><h2>${name}</h2><p>${kind==='grab'?'Pull out any jelly, even a sleeping one.':'Fill a jar instantly.'}</p>`,[
     {t:`3 for ${coinSvg(22)} ${price}`,cls:'o',dis:G.coins<price,fn:()=>{G.coins-=price;G[kind]+=3;save();sfx.coin();back()}},
-    {t:`Get 1 ${tvTag()}`,cls:'v',fn:()=>showAd('rew',()=>{G[kind]+=1;save();back()})},
+    {t:`Get 1 ${tvOffer('booster')}`,cls:'v',fn:()=>showAd('rew','booster',()=>{G[kind]+=1;save();back()})},
     {t:'Not now',cls:'ghost',back:true,fn:back}])}
 /* ---------- Shop: real Google Play purchases. Prices come from Google Play in the player's own currency. ---------- */
 const SHOP=[
@@ -1934,7 +2170,8 @@ const SHOP=[
   {id:'jj_coins_20000',name:'Vault of Coins',desc:'20,000 coins',tag:'BEST VALUE',cons:true,give:()=>{G.coins+=20000}}];
 const IAP_IDS=SHOP.map(i=>i.id);
 let iapLoading=null;
-function iapLoad(){const NB=window.NativeBridge;if(!(NB&&NB.native&&NB.iapLoad))return Promise.resolve(false);if(NB.iap.ready)return Promise.resolve(true);if(!iapLoading)iapLoading=NB.iapLoad(IAP_IDS).then(ok=>{iapLoading=null;return ok});return iapLoading}
+function iapLoad(){const NB=window.NativeBridge;if(!(NB&&NB.native&&NB.iapLoad))return Promise.resolve(false);if(NB.iap.ready)return Promise.resolve(true);if(!iapLoading)iapLoading=NB.iapLoad(IAP_IDS).then(ok=>{iapLoading=null;if(ok)track('iap_ready',{n:iapFails});else if(++iapFails<=3)setTimeout(()=>iapLoad().then(o=>{if(o&&mode==='home'&&$('modal').hidden&&!dailyDue())starterOffer()}),[20e3,60e3,180e3][iapFails-1]);return ok});return iapLoading}
+let iapFails=0;
 /* grant once per purchase token; No Ads also comes back on a new phone */
 function iapGrant(t,fresh){const it=SHOP.find(x=>x.id===t.productIdentifier);if(!it)return false;G.iapDone=G.iapDone||[];const tok=t.purchaseToken||t.transactionId||t.orderId;
   if(tok&&G.iapDone.includes(tok)){if(!it.cons)it.give(false);return false}
@@ -1961,17 +2198,17 @@ function shop(back){
   modal(`<h2>Shop</h2><div class="shoplist">${items.map(i=>`<div class="shopitem"><div><b>${i.name}${i.tag?`<span class="ribbon">${i.tag}</span>`:''}</b><span>${i.desc}</span></div>${priceBtn(i)}</div>`).join('')}
     <div class="shopitem"><div><b>Free coins</b><span>Watch a video for 25 coins</span></div><button data-free="1" style="background:linear-gradient(180deg,var(--v1),var(--v2));box-shadow:inset 0 2px 0 rgba(255,255,255,.5),0 3px 0 var(--v3)">Watch</button></div></div>`,[{t:'Close',cls:'ghost',back:true,fn:ret}]);
   $('card').querySelectorAll('[data-buy]').forEach(b=>b.onclick=()=>{const it=SHOP.find(x=>x.id===b.dataset.buy);sfx.click();iapBuy(it,()=>shop(back))});
-  $('card').querySelector('[data-free]').onclick=()=>showAd('rew',()=>{G.coins+=25;save();hud();sfx.coin();shop(back)});
+  track('rw_offer',{src:'shop_free'});$('card').querySelector('[data-free]').onclick=()=>showAd('rew','shop_free',()=>{G.coins+=25;save();hud();sfx.coin();shop(back)});
   if(native&&!NB.iap.ready)iapLoad().then(ok=>{if(ok&&$('card').querySelector('.shoplist'))shop(back)});
 }
 /* one-time Starter Pack offer: from level 8, at most every 2 days, only while it's unbought */
 function starterOffer(){const NB=window.NativeBridge;if(G.starter||G.level<8||!(NB&&NB.native&&NB.iap.ready))return false;const p=NB.iap.products.jj_starter;if(!p)return false;
-  if(Date.now()-(G.starterShown||0)<2*864e5)return false;G.starterShown=Date.now();save();
+  if(Date.now()-(G.starterShown||0)<2*864e5)return false;G.starterShown=Date.now();save();track('starter_seen');/* counted only when actually shown */
   modal(`<p class="step">Special offer</p><h2>Starter Pack</h2><div class="icon">${chestSvg()}</div><p><b>${coinSvg(20)} 1,000 + 3 Grab + 3 Magnet</b></p><p style="font-size:13px">One time only. About 4x the value of normal coin packs.</p>`,
     [{t:`Get it · ${p.priceString}`,cls:'o',fn:()=>iapBuy(SHOP[0],()=>closeModal())},{t:'Not now',cls:'ghost',back:true,fn:()=>{closeModal()}}]);return true}
 let MLAST=null;
-function showAd(kind,done){
-  if(showAd.on)return;G.lastAdAt=Date.now();showAd.on=true;const done0=done;done=(...a)=>{showAd.on=false;done0(...a)};setTimeout(()=>{showAd.on=false},30000);
+function showAd(kind,done,src){if(typeof done==='string'){const t=done;done=src;src=t}
+  if(showAd.on)return;G.lastAdAt=Date.now();showAd.on=true;const adId=showAd.id=(showAd.id||0)+1;const done0=done;done=(...a)=>{showAd.on=false;G.lastAdAt=Date.now();done0(...a)};setTimeout(()=>{if(showAd.id===adId)showAd.on=false},30000);
   const NB=window.NativeBridge;
   if(NB&&NB.native){
     const back=MLAST;const resumeAudio=()=>{try{A.ctx&&A.ctx.resume()}catch(e){}};
@@ -1979,14 +2216,15 @@ function showAd(kind,done){
     if(kind!=='inter')setTimeout(showLoading,900);
     if(NB.debugLog&&NB.alog)NB.alog('--- screen open');
     try{A.ctx&&A.ctx.suspend()}catch(e){}
-    if(kind==='inter'){NB.showInterstitial().then(shown=>{resumeAudio();if(shown){G.stats.inter++;save();track('interstitial_shown',{total:G.stats.inter})}done()});return}
+    if(kind==='inter'){NB.showInterstitial().then(shown=>{resumeAudio();if(shown){G.stats.inter++;save();track('interstitial_shown',{total:G.stats.inter});adEnd=Date.now();adKind='inter'}else track('inter_none');done()});return}
     let settled=false;
     // last-resort safety net in the game itself: never leave the player on the loading screen
-    const guard=setTimeout(()=>{if(!settled){settled=true;showAd.on=false;resumeAudio();if(back)modal('<p style="color:#e8264f;font-size:13px">No video available right now. Try again in a moment.'+(NB.debugLog?'<br><span style="color:#999;font-size:11px">timed out</span>':'')+'</p>'+back[0],back[1]);else closeModal()}},30000);
+    const guard=setTimeout(function g(){if(!settled&&(NB.adOpen||document.hidden)){setTimeout(g,5000);return}if(!settled){settled=true;track('rw_none',{src,r:'timeout'});showAd.on=false;resumeAudio();if(back)modal('<p style="color:#e8264f;font-size:13px">No video available right now. Try again in a moment.'+(NB.debugLog?'<br><span style="color:#999;font-size:11px">timed out</span>':'')+'</p>'+back[0],back[1]);else closeModal()}},36000);
     // after a few seconds let the player back out themselves
-    setTimeout(()=>{if(settled)return;const c=$('card');if(!c||!c.querySelector('.adscreen'))return;const b=document.createElement('button');b.className='btn ghost';b.textContent='Cancel';b.onclick=()=>{if(settled)return;settled=true;showAd.on=false;clearTimeout(guard);resumeAudio();if(back)modal(back[0],back[1]);else closeModal()};c.appendChild(b)},5000);
-    NB.showRewarded().then(r=>{if(settled)return;settled=true;showAd.on=false;clearTimeout(guard);resumeAudio();
-      if(r==='earned'){G.stats.rew++;save();track('rewarded_ad_watched',{total:G.stats.rew});qProg('video');if(NB.setProp)NB.setProp('ad_profile',adProfile());closeModal();done()}
+    setTimeout(()=>{if(settled)return;const c=$('card');if(!c||!c.querySelector('.adscreen'))return;const b=document.createElement('button');b.className='btn ghost';b.textContent='Cancel';b.onclick=()=>{if(settled)return;settled=true;track('rw_none',{src,r:'cancel'});showAd.on=false;clearTimeout(guard);resumeAudio();if(back)modal(back[0],back[1]);else closeModal()};c.appendChild(b)},7000);
+    track('rw_tap',{src,pre:NB.rewardReady?(NB.rewardReady()?1:0):-1});
+    NB.showRewarded().then(r=>{if(settled)return;if(r==='earned'){track('rw_ok',{src});adEnd=Date.now();adKind='rew'}else track('rw_none',{src,r});settled=true;showAd.on=false;clearTimeout(guard);resumeAudio();
+      if(r==='earned'){usedRewarded=true;G.stats.rew++;save();track('rewarded_ad_watched',{total:G.stats.rew});qProg('video');if(NB.setProp)NB.setProp('ad_profile',adProfile());closeModal();done()}
       else if(back){modal((r==='unavailable'?'<p style="color:#e8264f;font-size:13px">No video available right now. Try again in a moment.'+(NB.debugLog&&NB.lastAdError?'<br><span style="color:#999;font-size:11px">'+String(NB.lastAdError).replace(/</g,'')+'</span>':'')+'</p>':'')+back[0],back[1])}
       else closeModal()});
     return;
@@ -2000,6 +2238,8 @@ function modal(html,btns){if(!html.includes('adscreen'))MLAST=[html.replace(/^<p
 function closeModal(){$('modal').hidden=true}
 function showToast(a,b,sm){const t=$('toast');t.classList.toggle('sm',!!sm);$('toastSmall').textContent=a;$('toastBig').textContent=b;t.classList.remove('show');void t.offsetWidth;t.classList.add('show')}
 const coinSvg=(s=40)=>`<svg viewBox="0 0 32 32" width="${s}" height="${s}" style="vertical-align:middle"><circle cx="16" cy="16" r="13" fill="url(#cg)"/><circle cx="16" cy="16" r="9" fill="none" stroke="#e08d00" stroke-width="2" opacity=".6"/><path d="M16 10v12" stroke="#c97a00" stroke-width="3" stroke-linecap="round"/></svg>`;
+/* a rewarded offer the player can see (counted once per placement per screen) */
+const tvSeen={};const tvOffer=src=>{const t=Date.now();if(!(tvSeen[src]>t-3000)){track('rw_offer',{src});}tvSeen[src]=t;return tvTag()};
 const tvTag=()=>`<span class="tv"><svg viewBox="0 0 12 12"><path d="M3 2l7 4-7 4z" fill="#fff"/></svg>AD</span>`;
 const bellSvg=()=>`<svg viewBox="0 0 64 64" width="84" height="84"><defs><linearGradient id="bl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe98a"/><stop offset="1" stop-color="#ffaa10"/></linearGradient></defs><path d="M32 8c-9 0-15 7-15 16v10l-5 8h40l-5-8V24c0-9-6-16-15-16z" fill="url(#bl)"/><circle cx="32" cy="50" r="6" fill="#ff8a3d"/><ellipse cx="25" cy="20" rx="4" ry="7" fill="#fff" opacity=".6" transform="rotate(25 25 20)"/><circle cx="48" cy="14" r="7" fill="#ff3d64"/></svg>`;
 const flameSvg=()=>`<svg viewBox="0 0 24 24" width="18" height="18" style="vertical-align:-3px"><path fill="#ff9d1f" d="M12 2s5.5 5 5.5 10.5a5.5 5.5 0 0 1-11 0c0-2.2 1-3.8 2.2-5 0 2.2 1 3.3 2.2 3.3 0-4.4-1-6.6 1.1-8.8z"/></svg>`;
@@ -2015,8 +2255,6 @@ const TUT_BASE=[
    build:()=>custom(3,2,[3,0,4,4,0,3],[{c:0},{c:3}],[4],[]),taps:[[1.0,1],[2.5,4]]},
   {title:'Fill the jars',text:'Three matching jellies fill a jar. Then the next jar slides in.',dur:4.4,
    build:()=>custom(3,2,[4,0,3,3,4,4],[{c:0,f:2},{c:3}],[4],[]),taps:[[1.0,1]]},
-  {title:'Stacks',text:'Some spots hold a stack. Take the front jelly and the next one pops up. The little badge shows which flavor is next.',dur:4.4,
-   build:()=>custom(3,2,[3,0,4,4,3,4],[{c:0},{c:4}],[3],[],{1:[4,0]}),taps:[[1.0,1],[2.3,1]]},
   {title:'Watch the shelf',text:'No matching jar? The jelly waits on the shelf until its jar arrives. If all five spots fill up, the level is lost.',dur:5,
    build:()=>custom(3,2,[5,1,2,0,3,4],[{c:0},{c:4}],[3],[3,6,2]),taps:[[1.0,0],[2.3,1]]}
 ];
@@ -2024,7 +2262,10 @@ const TUT_GRAB={title:'Grab',icon:'grab',text:'Stuck? Tap Grab, then tap any jel
    build:()=>custom(3,2,[3,4,2,2,0,4],[{c:0},{c:1}],[3],[]),taps:[[1.6,4,'grab']]};
 const TUT_MAG={title:'Magnet',icon:'magnet',text:'Tap Magnet to pull three jellies into a jar at once, from anywhere on the board.',dur:4.6,
    build:()=>custom(3,3,[3,4,2,0,2,0,4,0,3],[{c:0},{c:4}],[3,2],[]),taps:[[1.2,null,'magnet']]};
-const TUT_ALL=[...TUT_BASE,TUT_GRAB,TUT_MAG];
+/* stacks are taught when they first appear (level 6), so the first-run tutorial is 3 cards, not 4 */
+const TUT_STACK={title:'Stacks',text:'Some spots hold a stack. Take the front jelly and the next one pops up. The little badge shows which flavor is next.',dur:4.4,
+   build:()=>custom(3,2,[3,0,4,4,3,4],[{c:0},{c:4}],[3],[],{1:[4,0]}),taps:[[1.0,1],[2.3,1]]};
+const TUT_ALL=[...TUT_BASE,TUT_STACK,TUT_GRAB,TUT_MAG];
 let TUT=TUT_BASE,tutLast="Let's play";
 function custom(cols,rows,grid,act,queue,shelf,stacks={}){
   const S={cols,rows,grid:grid.slice(),st:grid.map((_,k)=>(stacks[k]||[]).slice()),hidden:grid.map(()=>0),queue:queue.slice(),active:[null,null],shelf:[],cap:5,won:false,lost:false,total:act.length+queue.length,doneJars:0};
@@ -2079,8 +2320,8 @@ function hud(){
   $('streak').hidden=G.streak<2||mode==='home'||!!ch;$('streakN').textContent=G.streak;
   $('progFill').style.width=S&&mode==='game'?(S.doneJars/S.total*100)+'%':'0';
   const gb=$('bGrab'),mb=$('bMagnet');gb.classList.toggle('locked',!G.unl.grab);mb.classList.toggle('locked',!G.unl.magnet);gb.classList.toggle('on',grabMode);
-  const gc=G.grab+freeGrab;$('cGrab').textContent=!G.unl.grab?'4':gc>0?gc:'+';$('cGrab').classList.toggle('buy',G.unl.grab&&gc<=0);$('cGrab').classList.toggle('free',G.unl.grab&&freeGrab>0);
-  const mc=G.magnet+freeMag;$('cMagnet').textContent=!G.unl.magnet?'8':mc>0?mc:'+';$('cMagnet').classList.toggle('buy',G.unl.magnet&&mc<=0);$('cMagnet').classList.toggle('free',G.unl.magnet&&freeMag>0);
+  const gc=G.grab+freeGrab;$('cGrab').textContent=!G.unl.grab?'5':gc>0?gc:'+';$('cGrab').classList.toggle('buy',G.unl.grab&&gc<=0);$('cGrab').classList.toggle('free',G.unl.grab&&freeGrab>0);
+  const mc=G.magnet+freeMag;$('cMagnet').textContent=!G.unl.magnet?'9':mc>0?mc:'+';$('cMagnet').classList.toggle('buy',G.unl.magnet&&mc<=0);$('cMagnet').classList.toggle('free',G.unl.magnet&&freeMag>0);
   if(hud.mus!==G.music){hud.mus=G.music;$('musBtn').innerHTML=`<svg viewBox="0 0 24 24"><path d="M9 18V6l11-2v12" stroke="#fff" stroke-width="2.4" fill="none" stroke-linejoin="round"/><circle cx="6.5" cy="18" r="2.6" fill="#fff"/><circle cx="17.5" cy="16" r="2.6" fill="#fff"/>${G.music?'':'<path d="M3 3l18 18" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/>'}</svg>`;$('musBtn').classList.toggle('off',!G.music)}
   if(hud.snd!==G.sfx){hud.snd=G.sfx;$('sndBtn').innerHTML=`<svg viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z" fill="#fff"/>${G.sfx?'<path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12" stroke="#fff" stroke-width="2.2" fill="none" stroke-linecap="round"/>':'<path d="M16 9l5 6M21 9l-5 6" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/>'}</svg>`;$('sndBtn').classList.toggle('off',!G.sfx)}
   if(L){
@@ -2106,12 +2347,13 @@ $('playBtn').onclick=()=>{audioInit();sfx.click();startLevel()};
 $('bookBtn').onclick=()=>{audioInit();sfx.click();jellyBook()};
 $('questBtn').onclick=()=>{audioInit();sfx.click();showQuests()};
 $('worldChip').onclick=()=>{audioInit();sfx.click();worldPath()};
+$('rankBtn').onclick=()=>{audioInit();sfx.click();if(lbwOn())window.NativeBridge.lbw.show()};
 $('howBtn').onclick=()=>{audioInit();sfx.click();runTutorial(null,TUT_ALL,'Done')};
 $('musBtn').onclick=()=>{audioInit();setMusic(!G.music);hud()};
 $('sndBtn').onclick=()=>{audioInit();setSfx(!G.sfx);hud();sfx.click()};
 $('homeBtn').onclick=()=>{if(busy)return;sfx.click();busy=true;
   if(ch){modal(`<h2>Paused</h2><p>The clock keeps running.</p>`,[{t:'Resume',back:true,fn:()=>{closeModal();busy=false}},{t:'Quit challenge',cls:'ghost',fn:()=>{track('daily_quit');ch=null;showHome()}}]);return}
-  modal(`<h2>Paused</h2><div class="homeRow" style="justify-content:center"><button class="round" id="pm" style="background:linear-gradient(180deg,var(--v1),var(--v2))"></button><button class="round" id="ps" style="background:linear-gradient(180deg,var(--v1),var(--v2))"></button></div>`,[{t:'Resume',back:true,fn:()=>{closeModal();busy=false}},...(moves>0?[]:[{t:'How to play',cls:'p',fn:()=>{closeModal();runTutorial(()=>{startLevel()},TUT_ALL,'Start level')}}]),...((window.NativeBridge&&window.NativeBridge.privacyRequired)?[{t:'Privacy settings',cls:'ghost',fn:()=>window.NativeBridge.showPrivacy()}]:[]),{t:'Quit level',cls:'ghost',fn:()=>{if(moves<=0)return showHome();modal(`<h2>Quit level?</h2><p>Leaving now costs a life${streakTier(G.streak)>=1?` and resets your <b>${G.streak}-win Hot Streak</b>`:''}.</p>`,[{t:'Keep playing',back:true,fn:()=>{closeModal();busy=false}},{t:'Quit',cls:'ghost',fn:()=>{loseHeart();G.streak=0;G.fails[G.level]=(G.fails[G.level]||0)+1;sessLevels++;G.cur=sessLevels;save();showHome()}}])}}]);
+  modal(`<h2>Paused</h2><div class="homeRow" style="justify-content:center"><button class="round" id="pm" style="background:linear-gradient(180deg,var(--v1),var(--v2))"></button><button class="round" id="ps" style="background:linear-gradient(180deg,var(--v1),var(--v2))"></button></div>`,[{t:'Resume',back:true,fn:()=>{closeModal();busy=false}},...(moves>0?[]:[{t:'How to play',cls:'p',fn:()=>{closeModal();runTutorial(()=>{startLevel()},TUT_ALL,'Start level')}}]),...((window.NativeBridge&&window.NativeBridge.privacyRequired)?[{t:'Privacy settings',cls:'ghost',fn:()=>window.NativeBridge.showPrivacy()}]:[]),{t:'Quit level',cls:'ghost',fn:()=>{if(moves<=0)return showHome();modal(`<h2>Quit level?</h2><p>Leaving now costs a life${streakTier(G.streak)>=1?` and resets your <b>${G.streak}-win Hot Streak</b>`:''}.</p>`,[{t:'Keep playing',back:true,fn:()=>{closeModal();busy=false}},{t:'Quit',cls:'ghost',fn:()=>{track('level_fail',{secs:Math.round((Date.now()-lvT)/1e3),level:G.level,attempt:(G.fails[G.level]||0)+1,progress_pct:S?Math.round(S.doneJars/S.total*100):0,revives:reviveCount,quit:1});loseHeart();G.streak=0;G.fails[G.level]=(G.fails[G.level]||0)+1;sessLevels++;G.cur=sessLevels;save();showHome()}}])}}]);
   const pm=$('pm'),ps=$('ps');pm.innerHTML=$('musBtn').innerHTML;ps.innerHTML=$('sndBtn').innerHTML;pm.onclick=()=>{setMusic(!G.music);hud();pm.innerHTML=$('musBtn').innerHTML};ps.onclick=()=>{setSfx(!G.sfx);hud();ps.innerHTML=$('sndBtn').innerHTML}};
 function quickHelp(){if(busy)return;busy=true;sfx.click();const row=(i,t)=>`<div class="help"><span class="hi">${i}</span><span>${t}</span></div>`;
   modal(`<p class="step">How to play</p><h2>Quick guide</h2>${row(1,'Tap jellies with <b>open eyes</b>. Sleepy ones wake up once a path to them opens.')}${row(2,'Three of a kind <b>fill a jar</b>, then the next jar slides in.')}${row(3,'No matching jar? The jelly waits on the <b>shelf</b>. If every shelf spot fills up, the level is lost.')}${row(4,'Stacks: the little badge shows which flavor pops up next.')}${row(grabSvg(),'<b>Grab</b> pulls out any jelly, even a sleeping one.')}${row(magSvg(),'<b>Magnet</b> fills a jar instantly, from anywhere on the board.')}${row(flameSvg(),'Win in a row for a <b>Hot Streak</b>: free boosters at the start of each level.')}${row(starSvg(true,24),'Win without revives or boosters for <b>3 stars</b>. Every 30 stars opens a <b>Star Chest</b>.')}`,
@@ -2134,7 +2376,10 @@ function buildNotifs(){
   [[1,19,30],[3,20,0],[7,20,0]].forEach(([dd,h,m],i)=>{const x=new Date();x.setDate(x.getDate()+dd);x.setHours(h,m,0,0);list.push({id:3+i,title:lines[i][0],body:lines[i][1],at:x.getTime()})});
   return list;
 }
-window.onAppPause=()=>{save();const NB=window.NativeBridge;if(NB&&NB.scheduleNotifications)NB.scheduleNotifications(buildNotifs())};
+window.onAppPause=()=>{save();const NBa=window.NativeBridge;const inAd=showAd.on||(NBa&&NBa.adOpen);try{if(inAd)throw 0;
+if(adEnd&&Date.now()-adEnd<20e3)track('quit_after_ad',{kind:adKind});
+if(mode==='game'&&!ch&&G.level<=10)track('bg_mid',{level:G.level,secs:Math.round((Date.now()-lvT)/1e3)});
+const b=sessLevels<1?'0':sessLevels<3?'1_2':sessLevels<6?'3_5':sessLevels<11?'6_10':'11p';track('sess_end',{lv:b,coins:G.coins,hearts:G.hearts})}catch(e){}const NB=window.NativeBridge;if(NB&&NB.scheduleNotifications)NB.scheduleNotifications(buildNotifs())};
 window.onAppResume=()=>{iapSync();const NB=window.NativeBridge;if(NB&&NB.scheduleNotifications)NB.scheduleNotifications([]);tickHearts();hud();if(mode==='home'){$('spinDot').hidden=!spinState().free;questDot();bookDot();if(dailyDue()&&$('modal').hidden)showDaily()}};
 window.onNativeBack=()=>{
   if(!$('dev').hidden){$('dev').hidden=true;return}
@@ -2145,14 +2390,36 @@ window.onNativeBack=()=>{
 };
 
 addEventListener('resize',()=>fitCamera());
+/* audio test hook: renders sound offline and reports peaks (used by QA only) */
+window.JJ_AUDIO=async(scn)=>{const sr=44100,dur=scn.dur||6;const OC=window.OfflineAudioContext;const keep=window.AudioContext;
+  window.AudioContext=function(){return new OC(2,sr*dur,sr)};for(const k in A)delete A[k];for(const k in BAKED)delete BAKED[k];bakeQ=Promise.resolve();G.sfx=true;G.music=scn.music?true:false;audioInit();window.AudioContext=keep;const C=A.ctx;if(scn.lead!=null)A.lead=scn.lead;
+  if(scn.music){musicStart(scn.wi||0,scn.n||4);clearInterval(M.timer);M.timer=null;if(scn.si!=null){M.si=scn.si;musCompose(scn.n||4)}A.mus.gain.cancelScheduledValues(0);A.mus.gain.value=musVol();let t=0.1,st=0;while(t<dur-0.3){playStep(st,t);t+=60/M.bpm/4*(st%2===0?M.sw:2-M.sw);st++}}
+  (scn.ev||[]).forEach(([t,fn,...a])=>{if(!t)sfx[fn](...a);else C.suspend(t).then(()=>{sfx[fn](...a);C.resume()})});
+  const t0=performance.now();const b=await C.startRendering();const ms=performance.now()-t0;let pk=0,over=0,hot=0,jumps=0;for(let ch=0;ch<2;ch++){const d=b.getChannelData(ch);for(let i=0;i<d.length;i++){const v=Math.abs(d[i]);if(v>pk)pk=v;if(v>1)over++;if(v>0.89)hot++;}}
+  /* clicks = loudness jumping more than 4x between back-to-back 1.5ms slices */
+  {const d=b.getChannelData(0),w=66;let prev=0;for(let i=0;i+w<d.length;i+=w){let e=0;for(let j=i;j<i+w;j++)e+=d[j]*d[j];e=Math.sqrt(e/w);if(e>0.02&&e>prev*4)jumps++;prev=e}}
+  return {peak:+pk.toFixed(3),clipped:over,hot,jumps,renderMs:Math.round(ms),load:+(ms/1000/dur).toFixed(3)}};
+window.JJ_BAKE=async()=>{audioInit();bakeQ=null;bakeAll();await bakeQ;const o={};for(const k in BAKED){const d=BAKED[k].getChannelData(0);let pk=0;for(let i=0;i<d.length;i++)pk=Math.max(pk,Math.abs(d[i]));o[k]=+pk.toFixed(3)}return o};
+window.JJ_DBG={ward:ci=>wardrobe(ci,false),get w(){return {worker:!!genW,pre:pre&&pre.key,job:preJob&&preJob.key}},gen:(n,f)=>{const t=performance.now();const L=genLevel(n,f||0,0);return {ms:Math.round(performance.now()-t),wr:L.wr}},get S(){return S},get G(){return G},get busy(){return busy},get mode(){return mode},get tapMask(){return tapMask},get ch(){return ch},tap:k=>onTap(k)};
+window.JJ_PARK=()=>{if(!S)return 'nostate';S.active.forEach(j=>{if(j)j.color=99});busy=false;parkTip();return {parkTip:G.parkTipN,mode}};window.JJ_HINT=()=>({hintK,busy});
 window.JJ={dbg:()=>{const out={busy,mode,flights:flights.length,tw:TW.length,modal:!$('modal').hidden,problems:[]};if(S&&mode==='game'){
     S.grid.forEach((v,k)=>{const g=cellG[k];if(v>=0&&!g)out.problems.push('missing cell '+k);else if(v>=0&&g.userData.ci!==v)out.problems.push('wrong colour cell '+k);else if(v<0&&g)out.problems.push('ghost cell '+k)});
     if(!flights.length)S.shelf.forEach((it,i)=>{if(!it.mesh)out.problems.push('shelf item without mesh '+i);else if(!it.mesh.parent)out.problems.push('shelf mesh detached '+i)});
     dispQ.forEach((q,i)=>{if(q[0]&&S.active[i]&&q[q.length-1]!==S.active[i])out.problems.push('jar queue mismatch slot '+i)});}
   out.won=S&&S.won;out.lost=S&&S.lost;return out},jars:()=>dispQ.map(q=>q.map(j=>({c:j.color,fill:j.fill,vis:j.vis,done:!!j.done}))),win:()=>onWin(),lose:()=>{if(S)S.lost=true;onLose()},board:(cols,rows,grid,awake)=>{mode='game';$('home').hidden=true;$('bar').hidden=false;closeModal();L={n:0,tier:'normal',wr:0,band:[0,1],ten:0};loadState(custom(cols,rows,grid,[{c:0,f:0},{c:1,f:0}],[],[]));if(awake){for(const k in cellG)setMode(cellG[k],'awake')}fitCamera()},genLevel,evaluate,newState,applyTap,tappable,get S(){return S},get G(){return G},get mode(){return mode},cellScreen:k=>{const g=cellG[k];return g?toScreen(g.position):null},get cellG(){return cellG}};
 
-if(window.NativeBridge&&window.NativeBridge.native&&!/dev=1/.test(location.search)){$('devBtn').hidden=true}
+/* dev panel: always on the web preview and in test builds (test ads); never in the Play production build */
+if(window.NativeBridge&&window.NativeBridge.native&&!window.NativeBridge.testing&&!/dev=1/.test(location.search)){$('devBtn').hidden=true}
+(function(){try{
+if(!G.born){G.born=Date.now();save()}
+const day=t=>{const d=new Date(t);return Math.floor((Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()))/864e5)};
+const age=day(Date.now())-day(G.born);G.retSent=G.retSent||{};
+if([1,2,3,7].includes(age)&&!G.retSent[age]){G.retSent[age]=1;save();track('ret',{d:age})}
+let sec=0;const sent={};setInterval(()=>{if(document.hidden)return;sec+=15;[[1,60],[3,180],[10,600],[20,1200]].forEach(([m,t])=>{if(sec>=t&&!sent[m]){sent[m]=1;track('play_min',{m})}})},15000)
+}catch(e){}})();
 showHome();pregen();requestAnimationFrame(frame);
+setTimeout(()=>lvAbandon('closed'),3000);
+if(G.ab==null){G.ab=Math.random()<0.5?0:1;save()}setTimeout(()=>{try{const NB=window.NativeBridge;if(NB&&NB.setProp)NB.setProp('ab',G.ab)}catch(e){}},2000);
 setTimeout(()=>{iapLoad().then(()=>{iapSync();setTimeout(()=>{if(mode==='home'&&$('modal').hidden&&!dailyDue())starterOffer()},800)})},4000);
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{Object.keys(FACE).forEach(k=>delete FACE[k]);fitCamera()});
 })();
