@@ -4,121 +4,123 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
-<meta name="theme-color" content="#2a1a5e">
-<title>Jelly Jars 2.0 prototype</title>
-<style>
-@font-face{font-family:Baloo;src:url(fonts/baloo-2-latin-800-normal.woff2) format('woff2');font-weight:800;font-display:block}
-@font-face{font-family:Nunito;src:url(fonts/nunito-latin-800-normal.woff2) format('woff2');font-weight:800;font-display:swap}
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
-html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none;touch-action:none}
-body{font-family:Nunito,system-ui,sans-serif;font-weight:800;color:#fff;
- background:radial-gradient(120% 70% at 50% 18%,#7d52e8 0%,#4b2bb0 38%,#26135e 75%,#170a3a 100%)}
-body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.5;
- background:radial-gradient(circle at 12% 30%,rgba(255,120,200,.35) 0 2px,transparent 3px) 0 0/90px 110px,
- radial-gradient(circle at 70% 60%,rgba(140,220,255,.3) 0 1.5px,transparent 2.5px) 0 0/70px 80px}
-#c{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}
-#hud{position:fixed;left:0;right:0;top:0;padding:max(10px,env(safe-area-inset-top)) 16px 0;display:flex;justify-content:space-between;align-items:flex-start;pointer-events:none}
-#scoreBox{pointer-events:none}
-#score{font-family:Baloo;font-size:clamp(38px,11vw,56px);line-height:1;text-shadow:0 3px 0 #2a0f6b,0 6px 16px rgba(0,0,0,.35);display:inline-block}
-#score.bump{animation:bump .3s}
-@keyframes bump{40%{transform:scale(1.14)}}
-.lbl{font-size:12px;opacity:.75;letter-spacing:.08em;text-transform:uppercase}
-#bestBox{font-size:15px;opacity:.9;margin-top:2px}
-#pause{pointer-events:auto;width:44px;height:44px;border-radius:14px;border:0;background:rgba(255,255,255,.16);color:#fff;font-size:20px;font-family:Baloo;box-shadow:inset 0 -3px 0 rgba(0,0,0,.18)}
-#fx{position:fixed;inset:0;pointer-events:none;overflow:hidden}
-.pop{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);font-family:Baloo;white-space:nowrap;animation:popin 1.25s cubic-bezier(.2,1.4,.4,1) forwards}
-.pop.big{font-size:clamp(40px,12vw,64px);color:#fff;text-shadow:0 4px 0 #c0307a,0 8px 22px rgba(120,0,80,.5)}
-.pop.combo{top:52%;font-size:clamp(28px,8vw,40px);color:#ffe14d;text-shadow:0 3px 0 #b5651d,0 6px 16px rgba(0,0,0,.3)}
-.pop.best{top:16%;font-size:26px;color:#7dffb5;text-shadow:0 3px 0 #127048}
-@keyframes popin{0%{transform:translate(-50%,-50%) scale(.2);opacity:0}18%{transform:translate(-50%,-50%) scale(1.12);opacity:1}30%{transform:translate(-50%,-50%) scale(1)}75%{opacity:1;transform:translate(-50%,-60%) scale(1)}100%{opacity:0;transform:translate(-50%,-80%) scale(.9)}}
-.pts{position:absolute;transform:translate(-50%,-50%);font-family:Baloo;font-size:26px;color:#fff;text-shadow:0 2px 0 #5a2bb8,0 4px 10px rgba(0,0,0,.35);animation:rise 1s ease-out forwards}
-@keyframes rise{0%{opacity:0;transform:translate(-50%,-30%) scale(.6)}15%{opacity:1;transform:translate(-50%,-50%) scale(1.1)}100%{opacity:0;transform:translate(-50%,-160%) scale(1)}}
-.screen{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;opacity:0;pointer-events:none;transition:opacity .25s;padding:24px;text-align:center}
-.screen.on{opacity:1;pointer-events:auto}
-#title{background:radial-gradient(80% 60% at 50% 45%,rgba(40,14,100,.55),rgba(16,6,40,.88));backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)}
-body.attitle #hud{opacity:0}
-#hud{transition:opacity .3s}
-#title h1{font-family:Baloo;font-size:clamp(52px,16vw,84px);line-height:.9;margin:0;text-shadow:0 5px 0 #c0307a,0 10px 30px rgba(0,0,0,.4);transform:rotate(-3deg)}
-#title h1 span{display:block;color:#ffe14d;text-shadow:0 5px 0 #b5651d,0 10px 30px rgba(0,0,0,.4)}
-#title p{margin:0;opacity:.85;max-width:300px;line-height:1.35}
-.btn{border:0;font-family:Baloo;font-size:26px;color:#fff;padding:14px 44px;border-radius:22px;background:linear-gradient(#ff6fb0,#e8327f);box-shadow:inset 0 -6px 0 rgba(0,0,0,.2),0 8px 20px rgba(200,30,110,.45);min-width:200px}
-.btn:active{transform:translateY(3px) scale(.98)}
-.btn.alt{background:rgba(255,255,255,.16);box-shadow:inset 0 -4px 0 rgba(0,0,0,.18);font-size:20px;padding:10px 30px}
-#gameover{background:rgba(20,8,50,.55);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
-.card{background:linear-gradient(#5b37c9,#3a1f8e);border-radius:28px;padding:22px 26px 26px;box-shadow:inset 0 2px 0 rgba(255,255,255,.2),0 20px 50px rgba(0,0,0,.45);display:flex;flex-direction:column;align-items:center;gap:10px;min-width:270px;transform:scale(.85);transition:transform .35s cubic-bezier(.2,1.5,.4,1)}
-.screen.on .card{transform:scale(1)}
-#goTitle{font-family:Baloo;font-size:30px}
-#goScore{font-family:Baloo;font-size:64px;line-height:1;color:#ffe14d;text-shadow:0 4px 0 #b5651d}
-#goStats{font-size:14px;opacity:.8}
-#menu{background:rgba(20,8,50,.6)}
-#stuck{top:auto;bottom:calc(25% + env(safe-area-inset-bottom));inset-inline:0;height:auto;background:none;padding:0}
-#stuck .card{padding:14px 18px;gap:8px}
-#stuck p{margin:0;font-size:16px}
-#aimHint{position:fixed;left:5%;width:58%;top:calc(17% + env(safe-area-inset-top));text-align:left;line-height:1.1;font-family:Baloo;font-size:22px;opacity:0;transition:opacity .2s;pointer-events:none;text-shadow:0 2px 0 #c0307a}
-#aimHint.on{opacity:1}
-#jarBtn{position:fixed;transform-origin:50% 50%;white-space:nowrap;font-family:Baloo;font-size:15px;padding:4px 10px;border-radius:12px;background:#ff5fa8;opacity:0;translate:-50% 0;transform:scale(.5);transition:opacity .3s,transform .3s cubic-bezier(.2,1.6,.4,1);pointer-events:none;box-shadow:0 4px 12px rgba(200,30,110,.5)}
-#jarBtn.on{opacity:1;transform:scale(1);animation:nudge 1.2s infinite}
-@keyframes nudge{50%{transform:scale(1.12)}}
-#perf{position:fixed;left:4px;top:calc(92px + env(safe-area-inset-top));font:9px/1.3 ui-monospace,monospace;background:rgba(0,0,0,.55);padding:4px 6px;border-radius:8px;display:none;max-width:62vw;white-space:pre-wrap;z-index:9;color:#bfffcf;pointer-events:auto}
-#perf.min #perfTxt div:nth-child(n+3),#perf.min #knobs{display:none}
-#knobs{display:flex;flex-wrap:wrap;gap:2px}
-#perf.on{display:block}
-#perf select,#perf button{font:10px ui-monospace,monospace;padding:1px}
-</style>
+<meta name="theme-color" content="#ffd9e8">
+<title>Jelly Jars</title>
+<link rel="stylesheet" href="style.css?v=2">
 </head>
-<body class="attitle">
+<body>
+<div id="bg"><div class="cloud c1"></div><div class="cloud c2"></div><svg id="hills" viewBox="0 0 400 300" preserveAspectRatio="none"></svg></div>
 <canvas id="c"></canvas>
-<div id="hud">
-  <div id="scoreBox"><div id="score">0</div><div id="bestBox"><span class="lbl">Best</span> <span id="best">0</span></div></div>
-  <button id="pause" aria-label="Menu">II</button>
-</div>
 <div id="fx"></div>
-<div id="aimHint">Tap the board to pour your jelly</div>
-<div id="jarBtn">Tap me!</div>
 
-<div id="title" class="screen on">
-  <h1>Jelly<span>Jars</span></h1>
-  <p>Drag jellies onto the board. Fill a row or column to clear it. Clears fill your jar, then pour it to rescue a tight spot.</p>
-  <button class="btn" id="play">Play</button>
-</div>
+<!-- HOME -->
+<section id="home" class="screen">
+  <div class="top">
+    <button class="avatar" id="avatar"><img id="avatarImg" alt=""><b id="plv">Lv 1</b></button>
+    <div class="grow"></div>
+    <span class="pill"><svg viewBox="0 0 24 24"><path fill="#ffbf1f" stroke="#e89b00" stroke-width="1.5" d="M12 2.5l2.9 6 6.6.8-4.9 4.5 1.3 6.5L12 17l-5.9 3.3 1.3-6.5L2.5 9.3l6.6-.8z"/></svg><span id="hStars">0</span></span>
+    <span class="pill"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="13" rx="8" ry="6.5" fill="#ff7aa8" stroke="#e83d72" stroke-width="1.5"/><ellipse cx="9" cy="10.5" rx="2.6" ry="1.4" fill="#fff" opacity=".8"/></svg><span id="hBeans">0</span></span>
+    <button class="icon-btn" id="gear" aria-label="Settings"><svg viewBox="0 0 24 24"><path fill="#8a5a7f" d="M19.4 13a7.5 7.5 0 000-2l2-1.6-2-3.4-2.4 1a7 7 0 00-1.7-1L15 3.5h-4l-.4 2.5a7 7 0 00-1.7 1l-2.4-1-2 3.4L6.6 11a7.5 7.5 0 000 2l-2 1.6 2 3.4 2.4-1a7 7 0 001.7 1l.3 2.5h4l.4-2.5a7 7 0 001.7-1l2.4 1 2-3.4zM13 15.5a3.5 3.5 0 110-7 3.5 3.5 0 010 7z"/></svg></button>
+  </div>
+  <div class="hero">
+    <div class="world" id="hWorld">Strawberry Grove</div>
+    <button class="btn green playBtn" id="hPlay">Level 1<small id="hPlaySub">Clear 3 lines</small></button>
+    <div class="next" id="hNext"></div>
+  </div>
+  <div class="cards">
+    <button class="card panel" id="cClassic"><div class="ic" style="background:#ffeef4"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="2.5" fill="#ff5f8f"/><rect x="13" y="3" width="8" height="8" rx="2.5" fill="#4fa3ff"/><rect x="3" y="13" width="8" height="8" rx="2.5" fill="#ffc93c"/><rect x="13" y="13" width="8" height="8" rx="2.5" fill="#6fd65a"/></svg></div><b>Classic</b><span id="cClassicSub">Best 0</span></button>
+    <button class="card panel" id="cDaily"><div class="ic" style="background:#fff5d6"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="4" fill="#ffbf1f"/><rect x="3" y="5" width="18" height="5" rx="2" fill="#ff9f1c"/><text x="12" y="19" font-size="9" text-anchor="middle" fill="#fff" font-family="Baloo" id="dIco">1</text></svg></div><b>Daily</b><span id="cDailySub">New puzzle</span></button>
+    <button class="card panel" id="cMissions"><div class="ic" style="background:#e4fff6"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="4" fill="#2fc79a"/><path d="M8 9l2 2 4-4M8 15h8" stroke="#fff" stroke-width="2.2" fill="none" stroke-linecap="round"/></svg></div><b>Missions</b><span id="cMissionsSub">0/3</span></button>
+  </div>
+  <nav class="nav" id="nav">
+    <button data-go="home" class="on"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 3l9 8h-3v9h-5v-6h-2v6H6v-9H3z"/></svg>Home</button>
+    <button data-go="journey"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 2a7 7 0 00-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 00-7-7zm0 9.5A2.5 2.5 0 1112 6a2.5 2.5 0 010 5z"/></svg>Journey</button>
+    <button data-go="collection"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M7 3h10l1 3H6zm-2 4h14v12a3 3 0 01-3 3H8a3 3 0 01-3-3z"/></svg>Collection<i class="badge" id="colBadge" style="display:none">!</i></button>
+    <button data-go="awards"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M7 3h10v3h3v2a5 5 0 01-5 5 5 5 0 01-2 1.5V18h3v3H8v-3h3v-3.5A5 5 0 019 13a5 5 0 01-5-5V6h3zm-1 5a3 3 0 001 2V8zm12 0h-1v2a3 3 0 001-2z"/></svg>Awards</button>
+  </nav>
+</section>
 
-<div id="gameover" class="screen"><div class="card">
-  <div id="goTitle">Out of moves</div>
-  <div id="goScore">0</div>
-  <div><span class="lbl">Best</span> <span id="goBest">0</span></div>
-  <div id="goStats"></div>
-  <button class="btn" id="again">Play again</button>
-  <button class="btn alt" id="home">Home</button>
+<!-- JOURNEY -->
+<section id="journey" class="screen page">
+  <div class="pagehead"><button class="icon-btn back"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" stroke="#8a5a7f" stroke-width="3" fill="none" stroke-linecap="round"/></svg></button><h2>Jelly Journey</h2><span class="pill"><svg viewBox="0 0 24 24"><path fill="#ffbf1f" stroke="#e89b00" stroke-width="1.5" d="M12 2.5l2.9 6 6.6.8-4.9 4.5 1.3 6.5L12 17l-5.9 3.3 1.3-6.5L2.5 9.3l6.6-.8z"/></svg><span id="jStars">0</span></span></div>
+  <div class="scroll" id="map"></div>
+</section>
+
+<!-- COLLECTION -->
+<section id="collection" class="screen page">
+  <div class="pagehead"><button class="icon-btn back"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" stroke="#8a5a7f" stroke-width="3" fill="none" stroke-linecap="round"/></svg></button><h2>Collection</h2><span class="pill" id="colCount">0/18</span></div>
+  <div class="tabs"><button data-tab="friends" class="on">Jelly Friends</button><button data-tab="jars">Jars</button></div>
+  <div class="scroll"><div id="colGrid" class="grid"></div></div>
+</section>
+
+<!-- AWARDS / STATS -->
+<section id="awards" class="screen page">
+  <div class="pagehead"><button class="icon-btn back"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" stroke="#8a5a7f" stroke-width="3" fill="none" stroke-linecap="round"/></svg></button><h2>Awards</h2></div>
+  <div class="scroll"><div class="panel" style="padding:12px;margin-bottom:12px"><div class="statgrid" id="stats"></div></div><div id="achList"></div></div>
+</section>
+
+<!-- GAME HUD -->
+<section id="hud" class="screen">
+  <div class="bar">
+    <div class="left">
+      <button class="icon-btn" id="pause" aria-label="Pause"><svg viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1.5" fill="#8a5a7f"/><rect x="14" y="5" width="4" height="14" rx="1.5" fill="#8a5a7f"/></svg></button>
+      <div class="goal panel" id="goal"><div class="gi" id="goalIco"></div><div><b id="goalVal">0/3</b><span id="goalTxt">Lines</span></div></div>
+    </div>
+    <div class="right">
+      <div class="score panel"><b id="score">0</b><span id="scoreSub">Best 0</span></div>
+      <div class="moves panel" id="movesBox"><b id="moves">20</b><span>Moves</span></div>
+    </div>
+  </div>
+  <div class="jarTag" id="jarTag">Tap to pour!</div>
+  <div class="banner panel" id="stuck"><span id="stuckTxt">No room! Pour your jar.</span><button class="btn small ghost" id="giveUp">End</button></div>
+</section>
+
+<img class="hand" id="hand" alt="" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M24 6a5 5 0 0110 0v18l12 3a6 6 0 014 7l-3 16a8 8 0 01-8 7H28a8 8 0 01-6-3L10 38a5 5 0 017-7l7 6z' fill='%23fff' stroke='%234a2343' stroke-width='3' stroke-linejoin='round'/%3E%3C/svg%3E">
+<div class="coach panel" id="coach"></div>
+
+<!-- MODALS -->
+<div class="modal" id="mResult"><div class="sheet panel" id="resultBody"></div></div>
+<div class="modal" id="mLevel"><div class="sheet panel" id="levelBody"></div></div>
+<div class="modal" id="mPause"><div class="sheet panel">
+  <h2>Paused</h2>
+  <button class="btn green" id="resume" style="width:100%">Resume</button>
+  <button class="btn ghost" id="restart" style="width:100%">Restart</button>
+  <button class="btn ghost" id="quit" style="width:100%">Home</button>
+  <div class="row"><button class="btn small ghost" id="pMusic">Music</button><button class="btn small ghost" id="pSfx">Sound</button></div>
 </div></div>
-
-<div id="menu" class="screen"><div class="card">
-  <div id="goTitle2" style="font-family:Baloo;font-size:30px">Paused</div>
-  <button class="btn" id="resume">Resume</button>
-  <button class="btn alt" id="restart">Restart</button>
-  <button class="btn alt" id="sound">Sound: On</button>
-  <button class="btn alt" id="perfBtn">Perf overlay</button>
+<div class="modal" id="mSettings"><div class="sheet panel">
+  <h2>Settings</h2>
+  <button class="toggle" data-set="music">Music<i></i></button>
+  <button class="toggle" data-set="sfx">Sound effects<i></i></button>
+  <button class="toggle" data-set="haptics">Vibration<i></i></button>
+  <button class="toggle" data-set="saver">Battery saver<i></i></button>
+  <button class="btn small ghost" id="perfBtn">Performance overlay</button>
+  <button class="btn small ghost" id="resetBtn">Reset progress</button>
+  <button class="btn" data-close style="width:100%">Done</button>
+  <span class="sub">Jelly Jars 2.0 · development build</span>
 </div></div>
+<div class="modal" id="mMissions"><div class="sheet panel" id="missionsBody"></div></div>
+<div class="modal" id="mInfo"><div class="sheet panel" id="infoBody"></div></div>
 
-<div id="stuck" class="screen"><div class="card">
-  <p>No room! Pour your jar to make space.</p>
-  <button class="btn alt" id="giveUp">End run</button>
-</div></div>
-
-<div id="perf" class="min"><button id="perfMin" style="float:right;font:10px monospace">more</button><div id="perfTxt"></div>
+<div id="perf" class="min"><button id="perfMin" style="float:right">more</button><div id="perfTxt"></div>
   <div id="knobs">
     <select id="kMode"><option value="pour">Pour (fill)</option><option value="clear">Clear (old)</option></select>
     <select id="kShape"><option>3x3</option><option>plus</option><option>small</option><option>diamond</option><option>cross</option></select>
-    <select id="kCap"><option>4</option><option>5</option><option>6</option><option>8</option><option>10</option></select>
-    <select id="kGrow"><option>1</option><option>1.2</option><option>1.4</option><option>1.6</option><option>2</option></select>
-    <select id="kDpr"><option value="auto">DPR auto</option><option>1</option><option>1.5</option><option>2</option><option>3</option></select>
+    <select id="kCap"><option>4</option><option>6</option><option>8</option><option>10</option><option>12</option></select>
+    <select id="kGrow"><option>1</option><option>1.4</option><option>1.6</option><option>2</option><option>2.5</option></select>
+    <select id="kDpr"><option value="auto">DPR auto</option><option>0.75</option><option>1</option><option>1.5</option><option>2</option></select>
     <button id="perfCopy">Copy report</button>
   </div>
 </div>
+<div id="boot"><h1>Jelly<br>Jars</h1></div>
 
 <script src="vendor/three.min.js"></script>
-<script src="src/logic.js?v=1"></script>
-<script src="src/audio.js?v=1"></script>
-<script src="src/render.js?v=1"></script>
-<script src="src/main.js?v=1"></script>
+<script src="src/logic.js?v=2"></script>
+<script src="src/bot.js?v=2"></script>
+<script src="src/levels.js?v=2"></script>
+<script src="src/meta.js?v=2"></script>
+<script src="src/audio.js?v=2"></script>
+<script src="src/render.js?v=2"></script>
+<script src="src/app.js?v=2"></script>
 </body>
 </html>
