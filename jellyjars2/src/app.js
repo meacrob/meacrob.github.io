@@ -217,7 +217,7 @@
   $('rulesBtn').onclick = () => { closeModal('mSettings'); A.click(); rulesModal(); };
   $('pRules').onclick = () => { A.click(); closeModal('mPause'); rulesModal(); };
   function playtestReport() {
-    const ev = events.filter(e => /tutorial|drop_wrong|pour|level_|mechanic|home_tap|ad_|ads_|rv_|int_|consent|continue|beans_doubled/.test(e[1])).map(e => `${new Date(e[0]).toTimeString().slice(0, 8)} ${e[1]} ${JSON.stringify(e[2])}`);
+    const ev = events.filter(e => /onboarding|drop_wrong|pour|journey_|mechanic|home_tap|ad_|ads_|rv_|int_|consent|continue|beans_doubled|help_/.test(e[1])).map(e => `${new Date(e[0]).toTimeString().slice(0, 8)} ${e[1]} ${JSON.stringify(e[2])}`);
     const ls = Object.entries(save.levelStats).map(([id, v]) => `L${id}: tries ${v.att}, wins ${v.wins}, fails ${v.fails}, quits ${v.quits}, ${v.secs}s`);
     return `Jelly Jars playtest report\n${navigator.userAgent}\nhome variant: ${save.homeVar}\n\nPERFORMANCE\n${perfText()}\n\nOVER TIME (every 30s: watch for falling fps = thermal throttling)\n${perf.hist.join('\n')}\n\nADS\n${Ads.report()}\n\nLEVELS\n${ls.join('\n') || 'none'}\n\nEVENTS (this session)\n${ev.join('\n')}`;
   }
@@ -312,10 +312,10 @@
     const ls = save.levelStats[id] = save.levelStats[id] || { att: 0, wins: 0, fails: 0, quits: 0, secs: 0 }; ls.att++;
     begin('level', L.create(Object.assign(LV.config(lv), knobCfg(), { jarCap: 8 }), LV.seedOf(lv)), { level: id, attempt: ls.att });
     if (window.JJSess) JJSess.levels++;
-    track('level_start', { level: id, attempt: ls.att, world: lv.world, replay: save.stars[id] ? 1 : 0, goal: lv.type, moves: (LV.config(lv).goal || {}).moves || 0 });
+    track('journey_start', { level: id, attempt: ls.att, world: lv.world, replay: save.stars[id] ? 1 : 0, goal: lv.type, moves: (LV.config(lv).goal || {}).moves || 0 });
   }
   const beansDaily = n => beans(n, 'daily');
-  function startDaily() { if (save.run && save.run.mode === 'daily' && save.run.day === M.dayKey()) { begin('daily', save.run.state, { target: M.dailyConfig().target }); return; } const dc = M.dailyConfig(); begin('daily', L.create(Object.assign({}, dc.cfg), dc.seed), { target: dc.target }); if (window.JJSess) JJSess.daily++; track('daily_start', { day: M.dayKey(), days_played: M.daily(save).total }); }
+  function startDaily() { if (save.run && save.run.mode === 'daily' && save.run.day === M.dayKey()) { begin('daily', save.run.state, { target: M.dailyConfig().target }); return; } const dc = M.dailyConfig(); begin('daily', L.create(Object.assign({}, dc.cfg), dc.seed), { target: dc.target }); if (window.JJSess) JJSess.daily++; track('daily_challenge_start', { day: M.dayKey(), days_played: M.daily(save).total }); }
   function saveRun() { if (G && G.mode === 'school') return; if (!S || S.over) { if (save.run) { save.run = null; persist(); } return; } save.run = { mode: G.mode, level: G.level, day: M.dayKey(), state: S }; persist(); }
 
   function hudGoal(instant) {
@@ -473,7 +473,8 @@
     if (lv.id === 1) save.tut.level1 = true;
     const newWorld = lv.id % 10 === 0 && !prev && lv.id < 30;
     const lst = save.levelStats[lv.id]; if (lst) { lst.wins++; lst.secs += Math.round((performance.now() - G.startT) / 1000); }
-    track('level_complete', { level: lv.id, stars, prev_stars: prev, moves_left: p.movesLeft, moves_used: S.placements, attempt: G.attempt, secs: runSecs(), score: S.score, lines: S.lines, best_combo: S.bestCombo, pours: S.pops, continued: G.continueUsed ? 1 : 0, replay: prev ? 1 : 0, beans: rw.beans });
+    helpFollowup('win', lv.id); save.failStreak = 0;
+    track('journey_complete', { level: lv.id, stars, prev_stars: prev, moves_left: p.movesLeft, moves_used: S.placements, attempt: G.attempt, secs: runSecs(), score: S.score, lines: S.lines, best_combo: S.bestCombo, pours: S.pops, continued: G.continueUsed ? 1 : 0, replay: prev ? 1 : 0, beans: rw.beans });
     beans(rw.beans, 'level_win', { level: lv.id });
     A.win(); V.celebrate(50); V.setMood(3); Ads.noteResult();
     const friends = M.checkChars(save, f => !!JJMascot.DEF[ART[f]]); friends.forEach(f => track('character_unlocked', { id: f, level: lv.id }));
@@ -530,26 +531,58 @@
     }
     V.setMood(0); popText(moves ? `+${n} moves!` : 'Second chance!', 'big'); A.ready(); hudGoal(); saveRun();
   }
+  // ---- optional help after 2 Journey fails in a row: short practical tips with tiny board pictures, never forced ----
+  const MINI_C = { 1: '#ff5d8f', 2: '#4d8dff', 3: '#ffc93c', 4: '#9b6bff', 5: '#46c96b', 6: '#ff8a3d' };
+  function miniBoard(rows) { // rows: '.' empty, 1-6 jelly, '*' where to place (highlight), 'x' a bad isolated hole
+    const n = rows.length, z = 15; let g = '';
+    rows.forEach((r, y) => [...r].forEach((ch, x) => { const X = x * z + 1, Y = y * z + 1;
+      g += ch === '.' || ch === 'x' ? `<rect x="${X}" y="${Y}" width="${z - 2}" height="${z - 2}" rx="3" fill="#f3e6ee"${ch === 'x' ? ' stroke="#e0447e" stroke-width="1.6"' : ''}/>` : ch === '*' ? `<rect x="${X}" y="${Y}" width="${z - 2}" height="${z - 2}" rx="3" fill="#ffe58a" stroke="#f5a623" stroke-width="1.6"/>` : `<rect x="${X}" y="${Y}" width="${z - 2}" height="${z - 2}" rx="3" fill="${MINI_C[ch]}"/>`; }));
+    return `<svg viewBox="0 0 ${rows[0].length * z} ${n * z}" width="${rows[0].length * 13}" height="${n * 13}" style="flex:none">${g}</svg>`;
+  }
+  const TIPS = [
+    ['Finish lines, not piles', 'Put pieces where they complete a row or a column.', ['12.34', '21.43', '35*12', '12.53', '.....']],
+    ['Keep one big open space', 'Room for a 3x3 or a long piece saves you later.', ['12...', '21...', '35...', '1243.', '2135.']],
+    ['Place the awkward piece first', 'Big and odd shapes need the space. Small ones fit anywhere.', ['*****', '*....', '.....', '..12.', '.215.']],
+    ['Avoid single holes', 'A lonely gap can only take a 1-block piece.', ['12x34', '213x5', '3512x', '12.53', '.....']],
+    ['Pour where it finishes 2 lines', 'When the jar is full, aim the pour at the busiest spot.', ['1234.', '213.4', '35*12', '1253.', '2.135']]];
+  function showTips(onRetry, onHome) {
+    $('infoBody').innerHTML = `<h2 style="margin:0 0 6px">Quick tips</h2>` + TIPS.map(([t, d, b]) => `<div style="display:flex;gap:10px;align-items:center;text-align:left;margin:7px 0">${miniBoard(b)}<div><b>${t}</b><div class="sub" style="margin:2px 0 0">${d}</div></div></div>`).join('') +
+      `<button class="btn green" id="tRetry" style="width:100%">Try again</button><button class="btn small ghost" id="tHome">Home</button>`;
+    openModal('mInfo'); $('tRetry').onclick = () => { A.click(); closeModal('mInfo'); onRetry(); }; $('tHome').onclick = () => { A.click(); closeModal('mInfo'); onHome(); };
+  }
+  function helpFollowup(result, level) { const h = save.helpPending; if (!h) return; track('help_followup', { result, accepted: h.accepted, level, same_level: level === h.level ? 1 : 0, streak: save.failStreak || 0 }); save.helpPending = null; }
   function gameOver() {
     if (G.ended || !S.over) return;
     if (continueOffer()) return;
     G.ended = true;
     V.gameOverAnim(); A.over(); finishCommon(); Ads.noteResult();
     if (G.mode === 'level') {
-      const lv = LV.LEVELS[G.level - 1], p = L.progress(S); save.stats.fails++; const lsf = save.levelStats[lv.id]; if (lsf) { lsf.fails++; lsf.secs += Math.round((performance.now() - G.startT) / 1000); } track('level_failed', { attempt: G.attempt, level: lv.id, progress: Math.round(p.v / p.n * 100) / 100, reason: p.movesLeft === 0 ? 'moves' : 'room', moves_used: S.placements, moves_left: p.movesLeft || 0, score: S.score, lines: S.lines, best_combo: S.bestCombo, pours: S.pops, secs: runSecs(), continued: G.continueUsed ? 1 : 0, continue_offered: G.continued ? 1 : 0 });
+      const lv = LV.LEVELS[G.level - 1], p = L.progress(S); save.stats.fails++; helpFollowup('fail', lv.id); save.failStreak = (save.failStreak || 0) + 1;
+      const offerHelp = save.failStreak >= 2 && (save.helpLastFails == null || save.stats.fails - save.helpLastFails >= 3); if (offerHelp) save.helpLastFails = save.stats.fails; const lsf = save.levelStats[lv.id]; if (lsf) { lsf.fails++; lsf.secs += Math.round((performance.now() - G.startT) / 1000); } track('journey_fail', { attempt: G.attempt, level: lv.id, progress: Math.round(p.v / p.n * 100) / 100, reason: p.movesLeft === 0 ? 'moves' : 'room', moves_used: S.placements, moves_left: p.movesLeft || 0, score: S.score, lines: S.lines, best_combo: S.bestCombo, pours: S.pops, secs: runSecs(), continued: G.continueUsed ? 1 : 0, continue_offered: G.continued ? 1 : 0 });
       persist(true);
       $('resultBody').innerHTML = `<div class="ribbon fail">${S.stuck || p.movesLeft > 0 ? 'Out of room' : 'Out of moves'}</div><div class="goal panel"><div class="gi">${goalIcon(lv.type)}</div><div style="text-align:left"><b>${Math.round(p.v) + ' / ' + Math.round(p.n)}</b><span>${goalText(lv.type, lv.n)}</span></div></div>
         <div class="sub">${p.v / p.n > 0.7 ? 'So close! You can do it.' : 'Try clearing lines early to keep the board open.'}</div>
+        ${offerHelp ? `<div id="helpRow" class="panel" style="padding:8px 10px;margin:6px 0"><div style="font-weight:800;margin-bottom:6px">Need a little help?</div><div style="display:flex;gap:8px;justify-content:center"><button class="btn small" id="rHelp">Quick tips</button><button class="btn small ghost" id="rHelpX">No thanks</button></div></div>` : ''}
         <button class="btn green" id="rRetry" style="width:100%">Try again</button><button class="btn small ghost" id="rHome">Home</button>`;
       later(() => openModal('mResult'), 900);
       const fctx = { mode: 'level', level: lv.id, attempt: G.attempt, result: 'loss', continued: !!G.continueUsed };
-      $('rRetry').onclick = () => { A.click(); closeModal('mResult'); track('retry', { level: lv.id }); Ads.transition('results_loss', Object.assign({ action: 'retry' }, fctx)).then(() => V.wipeBoard(() => startLevel(lv.id))); };
-      $('rHome').onclick = () => { A.click(); closeModal('mResult'); Ads.transition('results_loss', Object.assign({ action: 'home' }, fctx)).then(() => V.wipeBoard(() => show('home'))); };
+      let helpAfter = null;
+      if (offerHelp) {
+        track('help_prompt_shown', { level: lv.id, streak: save.failStreak, attempt: G.attempt }); save.helpPending = { level: lv.id, accepted: 0 };
+        const after = action => track('help_after', { action, accepted: save.helpPending ? save.helpPending.accepted : 0, level: lv.id });
+        $('rHelpX').onclick = () => { A.click(); track('help_prompt_dismissed', { level: lv.id }); $('helpRow').remove(); };
+        $('rHelp').onclick = () => { A.click(); track('help_prompt_accepted', { level: lv.id }); if (save.helpPending) save.helpPending.accepted = 1; closeModal('mResult');
+          showTips(() => { after('retry'); track('journey_retry', { level: lv.id }); Ads.transition('results_loss', Object.assign({ action: 'retry' }, fctx)).then(() => V.wipeBoard(() => startLevel(lv.id))); },
+                   () => { after('home'); Ads.transition('results_loss', Object.assign({ action: 'home' }, fctx)).then(() => V.wipeBoard(() => show('home'))); }); };
+        helpAfter = after;
+      }
+      $('rRetry').onclick = () => { A.click(); if (helpAfter) helpAfter('retry'); closeModal('mResult'); track('journey_retry', { level: lv.id }); Ads.transition('results_loss', Object.assign({ action: 'retry' }, fctx)).then(() => V.wipeBoard(() => startLevel(lv.id))); };
+      $('rHome').onclick = () => { A.click(); if (helpAfter) helpAfter('home'); closeModal('mResult'); Ads.transition('results_loss', Object.assign({ action: 'home' }, fctx)).then(() => V.wipeBoard(() => show('home'))); };
       return;
     }
     let title = 'Out of moves', extra = '', isBest = false;
     if (G.mode === 'classic') { isBest = S.score > save.best; if (isBest) save.best = S.score; done(M.progress(save, 'classic', 1)); title = isBest && S.score > 0 ? 'New best!' : 'Game over'; track('classic_end', { score: S.score, best: isBest ? 1 : 0, lines: S.lines, best_combo: S.bestCombo, placements: S.placements, pours: S.pops, secs: runSecs(), continued: G.continueUsed ? 1 : 0, reason: 'room' }); }
-    else { const d = M.daily(save), first = !d.played; d.played = true; isBest = S.score > d.best; d.best = Math.max(d.best, S.score); let beans = 0; if (first) { beans += 40; d.total++; } if (S.score >= G.target && !d.claimed) { d.claimed = true; beans += 30; } save.beans += beans; title = 'Daily done!'; extra = beans ? `<div class="rewards"><span class="pill">${BEAN}+${beans}</span></div>` : ''; track('daily_complete', { score: S.score, target: G.target, target_hit: S.score >= G.target ? 1 : 0, first: first ? 1 : 0, best: isBest ? 1 : 0, lines: S.lines, best_combo: S.bestCombo, pours: S.pops, secs: runSecs(), days_played: d.total }); beansDaily(beans); }
+    else { const d = M.daily(save), first = !d.played; d.played = true; isBest = S.score > d.best; d.best = Math.max(d.best, S.score); let beans = 0; if (first) { beans += 40; d.total++; } if (S.score >= G.target && !d.claimed) { d.claimed = true; beans += 30; } save.beans += beans; title = 'Daily done!'; extra = beans ? `<div class="rewards"><span class="pill">${BEAN}+${beans}</span></div>` : ''; track('daily_challenge_complete', { score: S.score, target: G.target, target_hit: S.score >= G.target ? 1 : 0, first: first ? 1 : 0, best: isBest ? 1 : 0, lines: S.lines, best_combo: S.bestCombo, pours: S.pops, secs: runSecs(), days_played: d.total }); beansDaily(beans); }
     const cards = unlockCards(); persist(true);
     $('resultBody').innerHTML = `<div class="ribbon">${title}</div><div class="bigScore" id="rScore">0</div><div class="sub">${G.mode === 'classic' ? 'Best ' + fmt(save.best) : 'Best today ' + fmt(M.daily(save).best) + ' · target ' + fmt(G.target)}</div>
       <div class="statgrid"><div><b>${S.lines}</b><span>Lines</span></div><div><b>x${S.bestCombo}</b><span>Best combo</span></div><div><b>${S.pops}</b><span>Jelly pours</span></div><div><b>${S.placements}</b><span>Pieces placed</span></div></div>${extra}${cards}
@@ -557,7 +590,7 @@
     later(() => { openModal('mResult'); if (isBest && S.score > 0) { A.best(); V.celebrate(40); } }, 900);
     countUp('rScore', S.score, 900);
     const cctx = { mode: G.mode, result: G.mode === 'classic' ? 'loss' : 'daily', score: S.score, continued: !!G.continueUsed }, plc = G.mode === 'classic' ? 'results_classic' : 'results_daily';
-    $('rAgain').onclick = () => { A.click(); closeModal('mResult'); track('retry', { mode: G.mode }); Ads.transition(plc, Object.assign({ action: 'again' }, cctx)).then(() => V.wipeBoard(() => { if (G.mode === 'classic') { G0again = true; startClassic(); } else startDaily(); })); };
+    $('rAgain').onclick = () => { A.click(); closeModal('mResult'); track('journey_retry', { mode: G.mode }); Ads.transition(plc, Object.assign({ action: 'again' }, cctx)).then(() => V.wipeBoard(() => { if (G.mode === 'classic') { G0again = true; startClassic(); } else startDaily(); })); };
     $('rHome').onclick = () => { A.click(); closeModal('mResult'); Ads.transition(plc, Object.assign({ action: 'home' }, cctx)).then(() => V.wipeBoard(() => show('home'))); };
   }
   function countUp(id, to, ms, tick) { const t0 = performance.now(); let last = 0; const step = () => { const k = Math.min(1, (performance.now() - t0) / ms), v = Math.round(to * (1 - Math.pow(1 - k, 3))); const el = $(id); if (!el) return; el.textContent = fmt(v); if (tick && v !== last && k < 1 && Math.random() < 0.3) tick(); last = v; if (k < 1) requestAnimationFrame(step); }; later(step, 300); }
@@ -566,8 +599,8 @@
   $('pause').onclick = () => { A.click(); syncSettings(); openModal('mPause'); };
   $('resume').onclick = () => { A.click(); closeModal('mPause'); };
   const progOf = () => { try { const p = L.progress(S); return p.n ? Math.round(p.v / p.n * 100) / 100 : 0; } catch (e) { return 0; } };
-  $('restart').onclick = () => { A.click(); closeModal('mPause'); if (G && G.mode === 'level') track('level_quit', { level: G.level, attempt: G.attempt, kind: 'restart', moves_used: S.placements, progress: progOf(), secs: runSecs() }); else if (G && G.mode !== 'school') track('run_quit', { mode: G.mode, kind: 'restart', score: S.score, secs: runSecs() }); save.run = null; V.wipeBoard(() => G.mode === 'level' ? startLevel(G.level) : G.mode === 'daily' ? startDaily() : (save.run = null, begin('classic', L.create(classicCfg())))); };
-  $('quit').onclick = () => { A.click(); closeModal('mPause'); if (G && G.mode === 'level') { const q = save.levelStats[G.level]; if (q) q.quits++; track('level_quit', { level: G.level, attempt: G.attempt, kind: 'quit', moves_used: S.placements, progress: progOf(), secs: runSecs() }); } else if (G && (G.mode === 'classic' || G.mode === 'daily')) track('run_quit', { mode: G.mode, kind: 'quit', score: S.score, secs: runSecs() }); if (G && G.mode === 'school') track('tutorial_quit', { step: G.stage + 1 }); saveRun(); V.wipeBoard(() => show('home')); };
+  $('restart').onclick = () => { A.click(); closeModal('mPause'); if (G && G.mode === 'level') track('journey_quit', { level: G.level, attempt: G.attempt, kind: 'restart', moves_used: S.placements, progress: progOf(), secs: runSecs() }); else if (G && G.mode !== 'school') track('run_quit', { mode: G.mode, kind: 'restart', score: S.score, secs: runSecs() }); save.run = null; V.wipeBoard(() => G.mode === 'level' ? startLevel(G.level) : G.mode === 'daily' ? startDaily() : (save.run = null, begin('classic', L.create(classicCfg())))); };
+  $('quit').onclick = () => { A.click(); closeModal('mPause'); if (G && G.mode === 'level') { const q = save.levelStats[G.level]; if (q) q.quits++; track('journey_quit', { level: G.level, attempt: G.attempt, kind: 'quit', moves_used: S.placements, progress: progOf(), secs: runSecs() }); } else if (G && (G.mode === 'classic' || G.mode === 'daily')) track('run_quit', { mode: G.mode, kind: 'quit', score: S.score, secs: runSecs() }); if (G && G.mode === 'school') track('onboarding_quit', { step: G.stage + 1 }); saveRun(); V.wipeBoard(() => show('home')); };
 
   // ---------- tutorial (level 1): hand shows the first two drags, then the clear ----------
   const E8 = '........';
@@ -581,14 +614,14 @@
     { lead: 'You get 3 pieces. Use all 3 and new ones arrive.', trays: [[['3h', 3], ['l3a', 4], ['1', 6]], [['sq3', 1], ['2h', 5], ['o', 2]]],
       text: 'Place all 3 anywhere. Keep room for big pieces!', pulseTray: true, done: s => s.traysDealt >= 2, after: "New pieces! You're ready", last: true }
   ];
-  function skipSchool() { if (!G || G.mode !== 'school') return; track('tutorial_skip', { step: G.stage + 1, secs: Math.round((performance.now() - (G.schoolT || G.startT)) / 1000), replay: schoolReplay ? 1 : 0 }); save.tut.basics = true; persist(true); $('skipTut').classList.remove('on'); hand(null); coach(''); V.hintOff(); V.wipeBoard(() => startLevel(1)); }
+  function skipSchool() { if (!G || G.mode !== 'school') return; track('onboarding_skip', { step: G.stage + 1, secs: Math.round((performance.now() - (G.schoolT || G.startT)) / 1000), replay: schoolReplay ? 1 : 0 }); save.tut.basics = true; persist(true); $('skipTut').classList.remove('on'); hand(null); coach(''); V.hintOff(); V.wipeBoard(() => startLevel(1)); }
   $('skipTut').onclick = () => { A.click(); skipSchool(); };
   let schoolReplay = false;
   function startSchool(i) {
     i = i || 0; const st = SCHOOL[i];
     const t0 = G && G.schoolT || performance.now();
     begin('school', L.create({ preset: st.preset, trays: st.trays, jarCap: 99 }), { stage: i, wrong: 0, deferBoard: true, paused: true, schoolT: i ? t0 : performance.now() });
-    if (i === 0) { schoolReplay = !!save.tut.basics; track('tutorial_start', { replay: schoolReplay ? 1 : 0 }); }
+    if (i === 0) { schoolReplay = !!save.tut.basics; track('onboarding_start', { replay: schoolReplay ? 1 : 0 }); }
     if (st.lead) coach(st.lead, { top: true });            // say what is about to change...
     later(() => { V.loadBoard(S); later(() => { V.setTray(S.tray, L); later(showStage, 450); }, st.preset ? 600 : 100); }, st.lead ? 1100 : 300); // ...then change it
   }
@@ -603,11 +636,11 @@
     const st = SCHOOL[G.stage];
     if (!st.done(S) || G.stageDone) { if (st.pulseTray && !G.stageDone) { hand(null); const left = S.tray.filter(t => !t.used).length; if (left) coach(`${left} left. Keep room for big pieces!`, { top: true }); } return; }
     G.stageDone = true; G.paused = true; hand(null); V.hintOff(); V.trayPulse(false); coach('');
-    track('tutorial_step', { step: G.stage + 1, secs: Math.round((performance.now() - G.stageT) / 1000), wrong: G.wrong });
+    track('onboarding_step', { step: G.stage + 1, secs: Math.round((performance.now() - G.stageT) / 1000), wrong: G.wrong });
     A.star(G.stage % 3); later(() => popText(st.after, 'info'), 350);
     later(() => V.wipeBoard(() => {
       if (!st.last) startSchool(G.stage + 1);
-      else { save.tut.basics = true; persist(true); track('tutorial_complete', { secs: Math.round((performance.now() - G.schoolT) / 1000), replay: schoolReplay ? 1 : 0 }); startLevel(1); }
+      else { save.tut.basics = true; persist(true); track('onboarding_complete', { secs: Math.round((performance.now() - G.schoolT) / 1000), replay: schoolReplay ? 1 : 0 }); startLevel(1); }
     }), st.last ? 1500 : 1100);
   }
   function coach(txt, o) {
@@ -742,7 +775,7 @@
   }, 120000);
   function userProps() {
     if (!window.JJNative) return; const P2 = JJNative.setProp;
-    P2('app_gen', '2'); P2('home_var', save.homeVar); P2('from_v1', save.fromV1 ? '1' : '0'); P2('no_ads', save.noAds ? '1' : '0'); P2('buddy', save.buddy || 'rosie');
+    P2('app_gen', '2'); P2('build', DEV ? 'dev' : window.JJ_TEST_ADS ? 'test' : 'live'); /* test traffic is excluded from business reports by build != live */ P2('home_var', save.homeVar); P2('from_v1', save.fromV1 ? '1' : '0'); P2('no_ads', save.noAds ? '1' : '0'); P2('buddy', save.buddy || 'rosie');
     const ml = maxLevel(); P2('journey_band', ml >= 30 ? '30' : ml >= 20 ? '20-29' : ml >= 10 ? '10-19' : ml >= 5 ? '5-9' : ml >= 1 ? '1-4' : '0');
     const cr = save.stats.classicRuns || 0; P2('classic_band', cr >= 20 ? '20+' : cr >= 5 ? '5-19' : cr >= 1 ? '1-4' : '0');
     P2('daily_band', (M.daily(save).total || 0) >= 7 ? '7+' : String(M.daily(save).total || 0));
@@ -790,6 +823,7 @@
       const mv = () => { if (!drag) return; k += 0.25; onDragMove(from.x + (tgt.x - from.x) * Math.min(1, k), from.y + (tgt.y - from.y) * Math.min(1, k)); if (k < 1) later(mv, 30 / speed); else { drag.cell = { r: bm.r, c: bm.c }; drag.ok = true; onDrop(); later(think, 420 / speed); } };
       mv();
     };
+    window.JJBotThink = think; // trailer capture: restart the bot after setting up a board
     later(think, 1200);
   }
 })();

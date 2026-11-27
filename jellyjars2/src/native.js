@@ -20,13 +20,13 @@
   N.track = function (name, p) {
     p = p || {};
     if (FA) { const q = {}; for (const k of Object.keys(p).slice(0, 24)) { const v = p[k]; q[k.slice(0, 40)] = typeof v === 'number' ? v : String(v).slice(0, 100); } for (const k of ['level', 'attempt']) if (q[k] != null) q[k] = String(q[k]); safe(FA.logEvent({ name: name.slice(0, 40), params: q })); }
-    // Meta: standard events usable for campaign optimisation + a few level milestones (same names as 1.0)
-    if (name === 'level_complete') { meta('fb_mobile_level_achieved', { fb_level: String(p.level) }); if (p.level <= 10) meta('lvl_win_' + p.level); if (MILESTONE.includes(p.level)) meta('reached_level_' + p.level); }
-    else if ((name === 'level_start' || name === 'level_failed') && p.level <= 10) meta((name === 'level_start' ? 'lvl_start_' : 'lvl_fail_') + p.level);
-    else if (name === 'tutorial_complete') meta('fb_mobile_tutorial_completion', { fb_success: 1 });
+    // Meta: 2.0 custom events carry a j2_ prefix so they can never be confused with 1.0's sort-game events of the same idea
+    if (name === 'journey_complete') { meta('fb_mobile_level_achieved', { fb_level: 'j2_' + p.level }); if (p.level <= 10) meta('j2_lvl_win_' + p.level); if (MILESTONE.includes(p.level)) meta('j2_reached_level_' + p.level); }
+    else if ((name === 'journey_start' || name === 'journey_fail') && p.level <= 10) meta((name === 'journey_start' ? 'j2_lvl_start_' : 'j2_lvl_fail_') + p.level);
+    else if (name === 'onboarding_complete') meta('fb_mobile_tutorial_completion', { fb_success: 1, fb_content_id: 'j2_onboarding' });
     else if (name === 'ad_paid') meta('AdImpression', { fb_ad_type: p.ad_format === 'rewarded' ? 'rewarded_video' : 'interstitial', fb_currency: p.currency || 'USD' }, p.ad_value || 0); // one per impression
-    else if (name === 'day_active' && [1, 3, 7, 14, 30].includes(p.day)) meta('ret_d' + p.day); // came back N days after install (1.0 used the same names)
-    else if (['continue_used', 'beans_doubled', 'daily_complete', 'classic_end', 'classic_start', 'character_unlocked'].includes(name)) meta(name);
+    else if (name === 'day_active' && [1, 3, 7, 14, 30].includes(p.day)) meta('j2_ret_d' + p.day);
+    else if (['continue_used', 'beans_doubled', 'daily_challenge_complete', 'classic_end', 'classic_start', 'character_unlocked'].includes(name)) meta('j2_' + name);
   };
   N.setProp = (key, value) => { if (FA) safe(FA.setUserProperty({ key, value: String(value).slice(0, 36) })); };
 

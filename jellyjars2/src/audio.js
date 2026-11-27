@@ -163,6 +163,9 @@
     intensity(v) { Music.intensity = v; if (ctx) Music.setLift(); },
     voices() { for (let i = live.length - 1; i >= 0; i--) if (!ctx || live[i].end < ctx.currentTime) live.splice(i, 1); return live.length; },
     stats() { return { voices: S.voices(), cached: Object.keys(cache).length, rate: ctx ? ctx.sampleRate : 0, latency: ctx ? Math.round(((ctx.baseLatency || 0) + (ctx.outputLatency || 0)) * 1000) : 0, state: ctx ? ctx.state : 'off' }; },
+    // offline export for trailers/tests: AudioBuffers of a sound effect or a music loop (base, lift)
+    async exportSfx(name, key) { if (!ctx) init(); const id = name + ':' + (key == null ? 0 : key); bufFor(name, key == null ? 0 : key); return cache[id] || pending[id]; },
+    exportMusic(name) { if (!ctx) init(); return Music.load(name); },
     pause(on) { if (!ctx) return; adPause = on; if (on) ctx.suspend(); else if (!document.hidden) ctx.resume(); }, // full-screen ads: silence the game
     tap() { const d = ctx.createMediaStreamDestination(); limiter.connect(d); return d.stream; }
   };
