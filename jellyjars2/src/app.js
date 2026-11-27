@@ -12,7 +12,7 @@
   const fmt = n => Math.round(n).toLocaleString('en-US');
   let save = M.load();
   const events = []; // analytics buffer (Firebase in the app build)
-  function track(name, p) { events.push([Date.now(), name, p || {}]); if (events.length > 300) events.shift(); if (Q.get('debug') === '1') console.log('[track]', name, JSON.stringify(p || {})); }
+  function track(name, p) { if (window.JJNative) JJNative.track(name, p || {}); events.push([Date.now(), name, p || {}]); if (events.length > 300) events.shift(); if (Q.get('debug') === '1') console.log('[track]', name, JSON.stringify(p || {})); }
   let saveTimer = 0; function persist(now) { clearTimeout(saveTimer); if (now) M.save(save); else saveTimer = later(() => M.save(save), 250); }
 
   // ---------- icons ----------
@@ -494,7 +494,7 @@
   }
   // ---------- rewarded Continue: one per run / level attempt, offered before the results screen ----------
   function continueOffer() {
-    if (G.continued || G.offering || !(G.mode === 'classic' || G.mode === 'level') || !Ads.cfg.rv_continue_enabled || !Ads.rvReady()) return false;
+    if (S.popReady || G.continued || G.offering || !(G.mode === 'classic' || G.mode === 'level') || !Ads.cfg.rv_continue_enabled || !Ads.rvReady()) return false;
     G.offering = true; V.setMood(1);
     const p = L.progress(S), moves = G.mode === 'level' && p.movesLeft === 0, n = Ads.cfg.rv_continue_moves;
     const ctx = { mode: G.mode, level: G.level || 0, attempt: G.attempt || 0, result: 'loss', reason: moves ? 'moves' : 'room', score: S.score };
@@ -681,18 +681,46 @@
   if (Q.get('home')) save.homeVar = Q.get('home');
   track(save.stats.sessions === 1 ? 'first_open' : 'session_start', { session: save.stats.sessions, home_variant: save.homeVar });
   requestAnimationFrame(loop);
-  const go = () => { $('boot').classList.add('gone'); if (!save.tut.basics && !save.stats.games && !Q.get('bot')) startSchool(0); else if (!save.stars[1] && !save.stats.games && !Q.get('bot')) startLevel(save.run && save.run.mode === 'level' ? save.run.level : 1, true); else show('home'); };
+  const welcomeV1 = then => { // once, for players updating from Jelly Jars 1.0
+    const f = save.fromV1; if (!f || f.shown) return then();
+    f.shown = true; persist(true); track('v1_migrated', { v1_level: f.level, gift: f.gift, no_ads: f.noAds ? 1 : 0 });
+    $('infoBody').innerHTML = `<div class="ribbon">Welcome to Jelly Jars 2.0!</div><div style="font-size:16px;line-height:1.45;margin:8px 0">Thanks for playing Jelly Jars! We rebuilt the game from the ground up: a brand-new jelly block puzzle with Jelly Pour, Rosie and her friends.</div>
+      <div class="rewards"><span class="pill">${BEAN}+${f.gift}</span></div><div class="sub">A thank-you gift for your ${fmt(f.level)} levels in 1.0${f.noAds ? '. Your No Ads purchase still counts: no videos between games.' : ''}</div><button class="btn green" id="v1Go" style="width:100%">Let's play!</button>`;
+    openModal('mInfo'); $('v1Go').onclick = () => { A.click(); A.coin(); closeModal('mInfo'); then(); };
+  };
+  const go = () => { $('boot').classList.add('gone'); welcomeV1(go2); };
+  const go2 = () => { if (!save.tut.basics && !save.stats.games && !Q.get('bot')) startSchool(0); else if (!save.stars[1] && !save.stats.games && !Q.get('bot')) startLevel(save.run && save.run.mode === 'level' ? save.run.level : 1, true); else show('home'); };
   (document.fonts ? document.fonts.load('800 20px Baloo').catch(() => {}) : Promise.resolve()).then(() => later(go, 350));
   if (DEV && Q.get('debug') === '1') togglePerf(true);
   if (!DEV) for (const id of ['perfBtn', 'reportBtn', 'perf', 'styleBtn']) $(id).remove();
-  else { // dev only: compare jelly cell styles on the phone (0 current, 1 Jelly Friends, 2 buddy skin)
+  { // jelly cells: style 1 "Jelly Friends" for everyone (approved). Dev builds can cycle styles to compare on the phone.
     const SN = ['Current', 'Jelly Friends', 'Buddy skin'], FL = { rosie: 1, bluu: 2, sunny: 3, snooze: 4, zest: 5, pip: 6 };
-    const applyStyle = () => { const st = save.cellStyle || 0; V.setCellStyle(st, FL[save.buddy] || 1); $('styleBtn').textContent = 'Jelly style: ' + SN[st]; };
-    $('styleBtn').onclick = () => { A.click(); save.cellStyle = ((save.cellStyle || 0) + 1) % 3; persist(); applyStyle(); track('cell_style', { style: save.cellStyle }); };
+    const applyStyle = () => { const st = DEV && save.cellStyle != null ? save.cellStyle : 1; V.setCellStyle(st, FL[save.buddy] || 1); if ($('styleBtn')) $('styleBtn').textContent = 'Jelly style: ' + SN[st]; };
+    if (DEV) $('styleBtn').onclick = () => { A.click(); save.cellStyle = ((save.cellStyle == null ? 1 : save.cellStyle) + 1) % 3; persist(); applyStyle(); track('cell_style', { style: save.cellStyle }); };
     applyStyle();
   }
   // ads: active play time = on the board, not paused, touched in the last 20 s, app visible
-  Ads.init({ dev: DEV, track, onFull: on => A.pause(on) });
+  Ads.init({ dev: DEV, track, onFull: on => A.pause(on) }); if (save.noAds) Ads.setNoAds(true);
+  // ---- native app only (same Play app as 1.0) ----
+  const NV = window.JJNative;
+  if (NV && NV.native) {
+    NV.setProp('app_gen', '2'); NV.setProp('home_var', save.homeVar); if (save.fromV1) NV.setProp('from_v1', '1');
+    if (!save.v1RemindersCleared) NV.clearOldReminders().then(n => { save.v1RemindersCleared = true; persist(); track('v1_reminders_cleared', { n }); });
+    NV.restorePurchases().then(r => {
+      if (r.noAds && !save.noAds) { save.noAds = true; Ads.setNoAds(true); persist(); track('no_ads_restored', {}); }
+      if (r.coins) { const b = Math.round(r.coins / 10); save.beans += b; persist(); toast(`Purchase restored: ${BEAN}+${b}`); track('iap_delivered_late', { coins: r.coins, beans: b }); }
+    });
+    NV.onResume = () => Ads.resumed();
+    NV.onPause = () => { saveRun(); persist(true); };
+    NV.onBack = () => { // Android back: close the top popup, pause a game, go home, or leave the app from home
+      if (document.getElementById('simAd')) return;
+      const open = [...document.querySelectorAll('.modal.on')];
+      if (open.length) { const m = open[open.length - 1]; if (m.id === 'mPause') { closeModal('mPause'); return; } const c = m.querySelector('[data-close], #cNo, #rHome, .back'); if (c) c.click(); return; }
+      if (screen === 'hud') { if (G && G.mode !== 'school' && !aiming) $('pause').click(); return; }
+      if (screen !== 'home') { show('home'); return; }
+      NV.minimize();
+    };
+  }
   setInterval(() => { if (screen === 'hud' && G && G.mode !== 'school' && S && !S.over && !document.hidden && !$('mPause').classList.contains('on') && (performance.now() - lastInput < 20000 || window.JJBotOn)) Ads.activeTick(1); }, 1000);
   $('privacyBtn').onclick = () => { A.click(); Ads.showPrivacy(); };
   document.addEventListener('visibilitychange', () => { if (document.hidden) { saveRun(); persist(true); } });

@@ -48,7 +48,19 @@
   }
   const Meta = {
     CHARS, JARS, MISSIONS, dayKey, starCount,
-    load() { try { const raw = localStorage.getItem(KEY); if (raw) { const s = Object.assign(fresh(), JSON.parse(raw)); s.chars[1] = true; s.stats = Object.assign(fresh().stats, s.stats); s.settings = Object.assign(fresh().settings, s.settings); return s; } } catch (e) {} return fresh(); },
+    // first 2.0 launch on a phone that had 1.0: same app, same storage. 1.0's save ('jellyjars_v3') is left untouched (safe to roll back);
+    // 2.0 starts its own save and carries over what still means something: sound settings, No Ads, and a thank-you gift based on 1.0 progress.
+    fromV1() {
+      try {
+        const raw = localStorage.getItem('jellyjars_v3'); if (!raw) return null; const o = JSON.parse(raw), s = fresh();
+        const level = Math.max(1, +o.level || 1), paid = !!o.noAds || ((o.stats && o.stats.iap) || 0) > 0;
+        s.settings.music = o.music !== false; s.settings.sfx = o.sfx !== false;
+        s.noAds = !!o.noAds; s.beans = Math.min(800, 150 + Math.floor(Math.min(level, 130) * 5)) + (paid ? 300 : 0);
+        s.fromV1 = { level, coins: +o.coins || 0, noAds: !!o.noAds, iap: (o.stats && o.stats.iap) || 0, gift: s.beans, at: Date.now(), shown: false };
+        return s;
+      } catch (e) { return null; }
+    },
+    load() { try { const raw = localStorage.getItem(KEY); if (!raw) { const m = this.fromV1(); if (m) return m; } if (raw) { const s = Object.assign(fresh(), JSON.parse(raw)); s.chars[1] = true; s.stats = Object.assign(fresh().stats, s.stats); s.settings = Object.assign(fresh().settings, s.settings); return s; } } catch (e) {} return fresh(); },
     save(s) { try { localStorage.setItem(KEY, JSON.stringify(s)); return true; } catch (e) { return false; } },
     reset() { try { localStorage.removeItem(KEY); } catch (e) {} return fresh(); },
     playerLevel(s) { const lv = Math.floor(Math.sqrt(s.xp / 60)) + 1, a = (lv - 1) * (lv - 1) * 60, b = lv * lv * 60; return { lv, frac: (s.xp - a) / (b - a) }; },
