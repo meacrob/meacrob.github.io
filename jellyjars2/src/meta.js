@@ -42,19 +42,22 @@
   function fresh() {
     return { v: 1, created: Date.now(), beans: 0, xp: 0, stars: {}, best: 0, bestCombo: 0,
       stats: { games: 0, lines: 0, pours: 0, placed: 0, wins: 0, fails: 0, missions: 0, sessions: 0, seconds: 0, bestDaily: 0 },
-      chars: [false, false, false, false, false, false, false], jars: { grove: true }, jar: 'grove', seenJars: { grove: true },
+      chars: [false, true, false, false, false, false, false], buddy: 'rosie', homeVar: Math.random() < 0.5 ? 'journey' : 'classic', levelStats: {}, jars: { grove: true }, jar: 'grove', seenJars: { grove: true },
       missions: null, daily: { day: 0, best: 0, played: false, total: 0, claimed: false }, settings: { music: true, sfx: true, haptics: true, saver: false },
       tut: { level1: false, pour: false }, run: null, ach: {}, days: [] };
   }
   const Meta = {
     CHARS, JARS, MISSIONS, dayKey, starCount,
-    load() { try { const raw = localStorage.getItem(KEY); if (raw) { const s = Object.assign(fresh(), JSON.parse(raw)); s.stats = Object.assign(fresh().stats, s.stats); s.settings = Object.assign(fresh().settings, s.settings); return s; } } catch (e) {} return fresh(); },
+    load() { try { const raw = localStorage.getItem(KEY); if (raw) { const s = Object.assign(fresh(), JSON.parse(raw)); s.chars[1] = true; s.stats = Object.assign(fresh().stats, s.stats); s.settings = Object.assign(fresh().settings, s.settings); return s; } } catch (e) {} return fresh(); },
     save(s) { try { localStorage.setItem(KEY, JSON.stringify(s)); return true; } catch (e) { return false; } },
     reset() { try { localStorage.removeItem(KEY); } catch (e) {} return fresh(); },
     playerLevel(s) { const lv = Math.floor(Math.sqrt(s.xp / 60)) + 1, a = (lv - 1) * (lv - 1) * 60, b = lv * lv * 60; return { lv, frac: (s.xp - a) / (b - a) }; },
     nextLevel(s, LEVELS) { for (const l of LEVELS) if (!done(s, l.id)) return l; return LEVELS[LEVELS.length - 1]; },
     unlocked(s, id) { return id === 1 || done(s, id - 1); },
     // newly met jar conditions -> list of jar defs (and marks them owned)
+    // jelly friends join at Journey milestones (Rosie from the start): a real collectible, not tied to board colours
+    CHAR_AT: [0, 0, 5, 10, 15, 20, 25],
+    checkChars(s) { const out = []; for (let f = 1; f <= 6; f++) if (!s.chars[f] && (this.CHAR_AT[f] === 0 || done(s, this.CHAR_AT[f]))) { s.chars[f] = true; out.push(f); } return out; },
     checkJars(s) { const out = []; for (const j of JARS) if (!s.jars[j.id] && j.test(s)) { s.jars[j.id] = true; out.push(j); } return out; },
     nextJarHint(s) { const j = JARS.find(j => !s.jars[j.id]); return j ? j : null; },
     // ---- daily missions: 3 per day, picked from the date, achievable in normal play ----

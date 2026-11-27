@@ -1,0 +1,31 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
+<title>Jelly Jars mascot prototypes</title>
+<style>@font-face{font-family:Baloo;src:url(../fonts/baloo-2-latin-800-normal.woff2) format('woff2');font-weight:800}
+html,body{margin:0;height:100%;overflow:hidden;font-family:Baloo,sans-serif;background:radial-gradient(120% 80% at 50% 30%,#fff4f8,#ffd9e8 70%,#ffc4da)}
+canvas{position:fixed;inset:0;width:100%;height:100%}
+#ui{position:fixed;left:0;right:0;bottom:10px;display:flex;flex-wrap:wrap;gap:6px;justify-content:center;padding:0 8px}
+#ui button{font:800 15px Baloo,sans-serif;border:0;border-radius:12px;padding:8px 12px;background:#fff;color:#c22a5a;box-shadow:0 3px 0 rgba(150,40,90,.15)}
+#lbl{position:fixed;top:14px;left:0;right:0;text-align:center;font-size:26px;color:#40213b}
+.cap #ui{display:none}</style></head><body>
+<canvas id="c"></canvas><div id="lbl"></div>
+<div id="ui"><button data-c="rosie">Rosie</button><button data-c="bluu">Bluu</button>|
+<button data-v="front">Front</button><button data-v="q">3/4</button><button data-v="side">Side</button><button data-v="back">Back</button>|
+<button data-e="base">Base</button><button data-e="happy">Happy</button><button data-e="worried">Worried</button><button data-e="excited">Excited</button><button data-e="sleepy">Sleepy</button>|
+<button id="jump">Squash jump</button></div>
+<script src="../vendor/three.min.js"></script><script src="../src/mascot.js"></script>
+<script>
+const Q = new URLSearchParams(location.search); if (Q.get('cap')) document.body.classList.add('cap');
+const R = new THREE.WebGLRenderer({ canvas: document.getElementById('c'), antialias: true, alpha: true, preserveDrawingBuffer: true }); R.outputEncoding = THREE.sRGBEncoding; R.setPixelRatio(Math.min(2, devicePixelRatio));
+const scene = new THREE.Scene(), cam = new THREE.PerspectiveCamera(26, 1, 0.1, 50);
+const VIEWS = { front: 0, q: -0.75, side: -Math.PI / 2, back: Math.PI };
+let cur = null, view = Q.get('view') || 'q';
+function size() { const w = innerWidth, h = innerHeight; R.setSize(w, h, false); cam.aspect = w / h; const fit = Math.max(4.1 / (2 * Math.tan(13 * Math.PI / 180)), 3.0 / (2 * Math.tan(13 * Math.PI / 180) * cam.aspect)); cam.position.set(0, 0.9, fit * 1.1); cam.lookAt(0, 0.45, 0); cam.updateProjectionMatrix(); }
+function set(c, v, e) { if (c && (!cur || cur.id !== c)) { if (cur) scene.remove(cur.group); cur = JJMascot.create(c); scene.add(cur.group); } if (v) view = v; if (e) cur.setExpr(e); cur.group.rotation.y = VIEWS[view]; document.getElementById('lbl').textContent = Q.get('cap') ? '' : cur.def.name; }
+document.querySelectorAll('[data-c]').forEach(b => b.onclick = () => set(b.dataset.c)); document.querySelectorAll('[data-v]').forEach(b => b.onclick = () => set(null, b.dataset.v)); document.querySelectorAll('[data-e]').forEach(b => b.onclick = () => set(null, null, b.dataset.e));
+document.getElementById('jump').onclick = () => cur.jump();
+addEventListener('resize', size); size(); set(Q.get('char') || 'rosie', view, Q.get('expr') || 'base');
+let last = performance.now(); const still = Q.get('still') === '1';
+function loop(now) { requestAnimationFrame(loop); const dt = Math.min(0.05, (now - last) / 1000); last = now; if (!still) cur.update(dt); R.render(scene, cam); }
+if (Q.get('manual') !== '1') requestAnimationFrame(loop);
+window.P = { set, jump: () => cur.jump(), m: () => cur, step: dt => { cur.update(dt); R.render(scene, cam); } };
+</script></body></html>

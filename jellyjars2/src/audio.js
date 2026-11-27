@@ -12,7 +12,7 @@
     ctx = new AC({ latencyHint: 'interactive' });
     comp = ctx.createDynamicsCompressor(); comp.threshold.value = -14; comp.ratio.value = 5; comp.attack.value = 0.003; comp.release.value = 0.15;
     master = ctx.createGain(); master.gain.value = 0.8; master.connect(comp); comp.connect(ctx.destination);
-    sfxBus = ctx.createGain(); sfxBus.gain.value = sfxOn ? 0.6 : 0; sfxBus.connect(master);
+    sfxBus = ctx.createGain(); sfxBus.gain.value = sfxOn ? 0.85 : 0; sfxBus.connect(master);
     musBus = ctx.createGain(); musBus.gain.value = 0; musBus.connect(master);
     noiseBuf = ctx.createBuffer(1, ctx.sampleRate * 0.5, ctx.sampleRate); const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
     document.addEventListener('visibilitychange', () => { if (!ctx) return; if (document.hidden) ctx.suspend(); else ctx.resume(); });
@@ -60,7 +60,7 @@
     want: null, cur: null, step: 0, timer: null, next: 0, intensity: 0,
     play(name) {
       this.want = name; if (!ctx || !musOn) return; if (this.cur === name && this.timer) return;
-      const fadeIn = () => { musBus.gain.cancelScheduledValues(now()); musBus.gain.setValueAtTime(musBus.gain.value, now()); musBus.gain.linearRampToValueAtTime(0.32, now() + 0.8); };
+      const fadeIn = () => { musBus.gain.cancelScheduledValues(now()); musBus.gain.setValueAtTime(musBus.gain.value, now()); musBus.gain.linearRampToValueAtTime(0.5, now() + 0.8); };
       if (this.timer) { musBus.gain.setTargetAtTime(0, now(), 0.15); clearInterval(this.timer); this.timer = null; setTimeout(() => this.start(name, fadeIn), 350); }
       else this.start(name, fadeIn);
     },
@@ -89,7 +89,7 @@
 
   const S = {
     init, Music,
-    set(o) { if (o.sfx != null) { sfxOn = o.sfx; if (sfxBus) sfxBus.gain.value = sfxOn ? 0.6 : 0; } if (o.music != null) { musOn = o.music; if (!musOn) { const w = Music.want; Music.stop(); Music.want = w; } else if (Music.want) Music.play(Music.want); } if (o.haptics != null) hapOn = o.haptics; },
+    set(o) { if (o.sfx != null) { sfxOn = o.sfx; if (sfxBus) sfxBus.gain.value = sfxOn ? 0.85 : 0; } if (o.music != null) { musOn = o.music; if (!musOn) { const w = Music.want; Music.stop(); Music.want = w; } else if (Music.want) Music.play(Music.want); } if (o.haptics != null) hapOn = o.haptics; },
     get state() { return { sfx: sfxOn, music: musOn, haptics: hapOn }; },
     intensity(v) { Music.intensity = v; },
     pick() { if (!gate('pick', 40, 1)) return; const g = voice(0.15); tone('sine', 520, 820, 0.08, 0.2, now(), g); vib(6); },
@@ -115,7 +115,8 @@
     best() { if (!gate('best', 800, 3)) return; const g = voice(1.6), t = now(); [72, 76, 79, 84, 88].forEach((m, i) => tone('triangle', midi(m), midi(m), 0.35, 0.16, t + i * 0.09, g)); },
     whoosh() { if (!gate('whoosh', 150, 0)) return; const g = voice(0.4), s = ctx.createBufferSource(); s.buffer = noiseBuf; const f = ctx.createBiquadFilter(); f.type = 'bandpass'; f.Q.value = 2; const t = now(); f.frequency.setValueAtTime(400, t); f.frequency.exponentialRampToValueAtTime(3000, t + 0.25); const e = ctx.createGain(); e.gain.setValueAtTime(0.0001, t); e.gain.exponentialRampToValueAtTime(0.12, t + 0.08); e.gain.exponentialRampToValueAtTime(0.0001, t + 0.3); s.connect(f); f.connect(e); e.connect(g); s.start(t); s.stop(t + 0.35); },
     click() { if (!gate('click', 60, 1)) return; const g = voice(0.1), t = now(); tone('sine', 900, 650, 0.05, 0.14, t, g); vib(5); },
-    voices() { return live.length; }
+    voices() { return live.length; },
+    tap() { const d = ctx.createMediaStreamDestination(); comp.connect(d); return d.stream; } // for recording audio samples
   };
   window.JJAudio = S;
 })();

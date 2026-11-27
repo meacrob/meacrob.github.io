@@ -4,13 +4,14 @@
    Characters, faces, blinking, breathing and squash are all in one shader: no textures per character, no lights, no shadow maps. */
 (function () {
   'use strict';
+  const later = (f, ms) => setTimeout(f, (ms || 0) / (window.JJTS || 1)); // time scale: ?ts=0.25 slows gameplay for capture
   const T = THREE;
   // flavour palette (sRGB): 1 strawberry, 2 blueberry, 3 mango, 4 grape, 5 lime, 6 orange, 7 jar jelly, 8 crate
   const PAL = [null, '#ff5f8f', '#4fa3ff', '#ffc93c', '#a67cff', '#6fd65a', '#ff9440', '#ff7ab8', '#e6b47a'];
   const NAMES = [null, 'Strawberry', 'Blueberry', 'Mango', 'Grape', 'Lime', 'Orange'];
   const N = 8, BOX = 0.9, BZ = 0.3;
   const TRAY_Y = -6.55, TRAY_X = [-3.1, 0, 3.1], TRAY_S = 0.66;
-  const JAR_POS = new T.Vector3(0, 6.15, 0.4);
+  const JAR_POS = new T.Vector3(0, 6.3, 0.4);
   const lin = h => new T.Color(h).convertSRGBToLinear();
 
   // ---------- procedural textures ----------
@@ -275,7 +276,7 @@
         fragmentShader: `uniform sampler2D uMatcap; uniform vec3 uColor; varying vec3 vN; varying vec3 vV; varying float vTop;
           void main(){ vec3 n = normalize(vN), v = normalize(vV); vec3 x = normalize(vec3(v.z, 0.0, -v.x)), y = cross(v, x); vec3 mc = texture2D(uMatcap, vec2(dot(x, n), dot(y, n)) * 0.495 + 0.5).rgb;
             vec3 c = uColor * (0.55 + 0.6 * mc.r) + uColor * 0.35 * pow(clamp(dot(n, v), 0.0, 1.0), 2.0); c = mix(c, vec3(1.0), clamp(mc.g, 0.0, 1.0) * 0.8); if (vTop > 0.5) c = mix(c, vec3(1.0, 0.85, 0.92), 0.25);
-            gl_FragColor = vec4(c, 1.0); }`
+            gl_FragColor = vec4(c, vTop > 0.5 ? 0.8 : 0.62); }`
       });
       const fill = new T.Mesh(fillGeo, fillMat); fill.position.y = -H / 2 + 0.1;
       const bn = 26, bp = new Float32Array(bn * 3); for (let i = 0; i < bn; i++) { const a = Math.random() * 6.28, rr = Math.random() * R * 0.7; bp[i * 3] = Math.cos(a) * rr; bp[i * 3 + 1] = Math.random(); bp[i * 3 + 2] = Math.sin(a) * rr; }
@@ -298,8 +299,10 @@
       label.position.y = -0.25; label.renderOrder = 5;
       const glow = new T.Mesh(new T.PlaneGeometry(4.6, 4.6), new T.MeshBasicMaterial({ map: blobTex('rgba(255,170,215,0.9)', 'rgba(255,170,215,0)'), transparent: true, depthWrite: false, blending: T.AdditiveBlending }));
       glow.position.z = -1.2; glow.renderOrder = 0; glow.material.opacity = 0;
-      group.add(glow, fill, bubbles, glass, label, lid); group.rotation.x = 0.28;
-      return { group, glass, glassMat, fill, fillMat, bubbles, bubMat, lid, lidMat, label, lc, lt, glow, H, R, shown: 0, target: 0, base: JAR_POS.clone(), face: '' };
+      label.visible = false; const buddySlot = new T.Group(); buddySlot.position.y = -H / 2 + 0.52;
+      fillMat.transparent = true; fillMat.depthWrite = false; fill.renderOrder = 3;
+      group.add(glow, buddySlot, fill, bubbles, glass, label, lid); group.rotation.x = 0.28;
+      return { group, glass, glassMat, fill, fillMat, bubbles, bubMat, lid, lidMat, label, lc, lt, glow, H, R, shown: 0, target: 0, base: JAR_POS.clone(), face: '', buddySlot };
     },
     jarFace(state) { // empty, fill, almost, ready, pour, after
       const J = this.jar; if (J.face === state) return; J.face = state; const x = J.lc.getContext('2d'); x.clearRect(0, 0, 256, 160);
@@ -318,6 +321,12 @@
       x.fillStyle = 'rgba(255,120,160,0.45)'; x.beginPath(); x.arc(72, 98, 12, 0, 7); x.arc(184, 98, 12, 0, 7); x.fill();
       J.lt.needsUpdate = true; this.dirty = true;
     },
+    setBuddy(id) {
+      const J = this.jar; if (!window.JJMascot || !JJMascot.DEF[id]) return;
+      if (this.buddy) J.buddySlot.remove(this.buddy.group);
+      const m = this.buddy = JJMascot.create(id); m.group.scale.setScalar(0.42); m.shadow.visible = false; J.buddySlot.add(m.group); this.dirty = true;
+    },
+    buddyReact(kind) { const b = this.buddy; if (!b) return; if (kind === 'clear') { if (b.jumpT < 0) { b.jump(); b.prevExpr = 'happy'; } } else if (kind === 'combo') { b.jump(); } this.dirty = true; },
     setJarStyle(st) { const J = this.jar; J.lidMat.uniforms.uColor.value = lin(st.lid); J.fillMat.uniforms.uColor.value = lin(st.jelly); J.glassMat.uniforms.uTint.value = new T.Color(st.glass || '#d9edff'); this.jarAccent = st.accent || st.lid; this.pourColor = lin(st.jelly); this.colors[7] = lin(st.jelly); const f = J.face; J.face = ''; this.jarFace(f || 'empty'); },
 
     resize() {
@@ -393,7 +402,7 @@
           b.mood = 0; this.tween(0.34, k => { const sq = Math.sin(k * Math.PI) * (1 - k); b.sz = 1 - 0.4 * sq; b.sx = b.sy = 1 + 0.22 * sq; }, 0, () => { b.sx = b.sy = b.sz = 1; }); b.wob = 0.12;
         });
       });
-      setTimeout(() => { for (const [r, c] of ev.cells) for (const [dr, dc] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const rr = r + dr, cc = c + dc; if (rr >= 0 && rr < N && cc >= 0 && cc < N && this.board[rr * N + cc]) this.board[rr * N + cc].wob = Math.max(this.board[rr * N + cc].wob, 0.07); } }, 80);
+      later(() => { for (const [r, c] of ev.cells) for (const [dr, dc] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const rr = r + dr, cc = c + dc; if (rr >= 0 && rr < N && cc >= 0 && cc < N && this.board[rr * N + cc]) this.board[rr * N + cc].wob = Math.max(this.board[rr * N + cc].wob, 0.07); } }, 80);
     },
     clearLines(ev, origin, onJar) {
       const o = origin || { r: 3.5, c: 3.5 }, combo = ev.combo || 1, big = (ev.lines || 1) >= 2 || combo >= 3;
@@ -412,25 +421,26 @@
       });
       if (ev.gains) for (const [r, c] of ev.gains.jam || []) this.setJam(r, c, 0);
       if (ev.boardClear) for (let q = 0; q < 30; q++) { const a = Math.random() * 6.28; this.parts.emit({ x: 0, y: 0, z: 1.5, vx: Math.cos(a) * 9, vy: Math.sin(a) * 9, g: -5, life: 1.1, s: 0.5, c: this.colors[1 + q % 6].clone(), type: 1 + (q % 3) }); }
-      setTimeout(() => onJar && onJar(), (maxD + 0.62) * 1000);
+      later(() => onJar && onJar(), (maxD + 0.62) * 1000);
       if (big || ev.boardClear) this.shake(ev.boardClear ? 0.35 : 0.08 + (ev.lines || 1) * 0.04 + Math.min(combo, 6) * 0.02);
     },
     setJar(level, ready) {
       const J = this.jar, old = J.target; J.target = Math.max(0, Math.min(1, level)); J.ready = ready;
       if (J.target > old + 0.001) { J.slosh = 1; J.squash = 1; }
-      if (!this.pouring) this.jarFace(ready ? 'ready' : J.target <= 0.01 ? 'empty' : J.target >= 0.72 ? 'almost' : 'fill'); this.dirty = true;
+      if (!this.pouring) this.jarFace(ready ? 'ready' : J.target <= 0.01 ? 'empty' : J.target >= 0.72 ? 'almost' : 'fill');
+      if (this.buddy && this.buddy.jumpT < 0) this.buddy.setExpr(ready ? 'excited' : J.target <= 0.01 ? 'sleepy' : J.target >= 0.72 ? 'happy' : 'base'); this.dirty = true;
     },
     jarScreen() { return this.toScreen(JAR_POS.x, JAR_POS.y, JAR_POS.z); },
-    jarHit(px, py) { const p = this.jarScreen(), s = this.toScreen(JAR_POS.x + this.jar.R, JAR_POS.y, JAR_POS.z); return Math.hypot(px - p.x, py - p.y) < Math.abs(s.x - p.x) * 1.4; },
+    jarHit(px, py) { const p = this.jarScreen(), s = this.toScreen(JAR_POS.x + this.jar.R, JAR_POS.y, JAR_POS.z); return Math.hypot(px - p.x, py - p.y) < Math.abs(s.x - p.x) * 1.4 * (this.jar.bs || 1); },
     pourAnim(ev, onLand) {
       const J = this.jar, tc = this.cellPos(ev.r, ev.c), tgt = new T.Vector3(tc.x + 1.5, tc.y + 2.6, 2.6), start = J.group.position.clone(), col = this.pourColor || this.colors[7];
-      this.pouring = true; this.jarFace('pour');
+      this.pouring = true; this.jarFace('pour'); if (this.buddy) this.buddy.setExpr('excited');
       this.tween(0.25, k => { J.lid.position.y = J.H / 2 + 0.12 + k * 1.2; J.lid.rotation.z = k * 0.8; });
-      this.tween(0.35, k => { const e = easeInOut(k); J.group.position.lerpVectors(start, tgt, e); J.group.rotation.z = 1.15 * e; J.group.scale.setScalar(1 - 0.15 * e); }, 0.12, () => {
+      this.tween(0.35, k => { const e = easeInOut(k); J.group.position.lerpVectors(start, tgt, e); J.group.rotation.z = 1.15 * e; J.group.scale.setScalar((J.bs || 1) * (1 - 0.15 * e)); }, 0.12, () => {
         const mouth = () => J.group.localToWorld(new T.Vector3(0, J.H / 2, 0));
-        for (let q = 0; q < 40; q++) setTimeout(() => { const m = mouth(), cell = ev.area[q % ev.area.length], p = this.cellPos(cell[0], cell[1]); this.parts.emit({ sx: m.x, sy: m.y, sz: m.z, x: m.x, y: m.y, z: m.z, target: { x: p.x + (Math.random() - 0.5) * 0.3, y: p.y, z: 0.5 }, arc: 0.3, life: 0.26, s: 0.42, c: col.clone(), type: 0 }); }, q * 9);
+        for (let q = 0; q < 40; q++) later(() => { const m = mouth(), cell = ev.area[q % ev.area.length], p = this.cellPos(cell[0], cell[1]); this.parts.emit({ sx: m.x, sy: m.y, sz: m.z, x: m.x, y: m.y, z: m.z, target: { x: p.x + (Math.random() - 0.5) * 0.3, y: p.y, z: 0.5 }, arc: 0.3, life: 0.26, s: 0.42, c: col.clone(), type: 0 }); }, q * 9);
         J.target = 0;
-        setTimeout(() => {
+        later(() => {
           ev.poured.forEach(([r, c], n) => {
             const p = this.cellPos(r, c), b = this.jelly.add({ x: p.x, y: p.y, z: BZ + 0.6, sx: 0.01, sy: 0.01, sz: 0.01, c: this.colors[7].clone(), fl: 7 });
             this.board[r * N + c] = b;
@@ -438,10 +448,10 @@
             for (let q = 0; q < 3; q++) this.parts.emit({ x: p.x, y: p.y, z: 0.8, vx: (Math.random() - 0.5) * 5, vy: Math.random() * 4 + 1, g: -14, life: 0.45, s: 0.2, c: col.clone(), type: 0 });
           });
           this.shake(0.12);
-          setTimeout(() => onLand && onLand(), 340 + ev.poured.length * 30);
+          later(() => onLand && onLand(), 340 + ev.poured.length * 30);
         }, 280);
-        this.tween(0.4, k => { const e = easeInOut(k); J.group.position.lerpVectors(tgt, J.base, e); J.group.rotation.z = 1.15 * (1 - e); J.group.scale.setScalar(0.85 + 0.15 * e); }, 0.8);
-        this.tween(0.35, k => { J.lid.position.y = J.H / 2 + 1.32 - 1.2 * backOut(k); J.lid.rotation.z = 0.8 * (1 - k); }, 1.15, () => { this.pouring = false; J.squash = 1; this.jarFace('after'); setTimeout(() => { if (this.jar.target < 0.01 && !this.pouring) this.jarFace('empty'); }, 1800); });
+        this.tween(0.4, k => { const e = easeInOut(k); J.group.position.lerpVectors(tgt, J.base, e); J.group.rotation.z = 1.15 * (1 - e); J.group.scale.setScalar((J.bs || 1) * (0.85 + 0.15 * e)); }, 0.8);
+        this.tween(0.35, k => { J.lid.position.y = J.H / 2 + 1.32 - 1.2 * backOut(k); J.lid.rotation.z = 0.8 * (1 - k); }, 1.15, () => { this.pouring = false; J.squash = 1; this.jarFace('after'); later(() => { if (this.jar.target < 0.01 && !this.pouring) this.jarFace('empty'); }, 1800); });
       });
     },
     popAnim(ev) {
@@ -469,16 +479,22 @@
       let d = 0; for (let k = 0; k < N * N; k++) { const b = this.board[k]; if (!b) continue; this.board[k] = null; const dl = (k % N) * 0.014 + Math.floor(k / N) * 0.02; d = Math.max(d, dl); this.tween(0.16, t => { b.sx = b.sy = b.sz = 1 - t; }, dl, () => { b.alive = false; }); }
       for (const arr of this.trayB) for (const b of arr) b.alive = false; this.trayB = [[], [], []]; this.ghostHide();
       for (const s of this.sockets.items) if (s.jam) { s.jam = 0; s.c.copy(this.slotColor); s.sz = 1; }
-      setTimeout(done, d * 1000 + 200);
+      later(done, d * 1000 + 200);
     },
-    showMascot(fl, y) {
+    showMascot(id) {
+      this.hideMascot(true); if (!window.JJMascot || !JJMascot.DEF[id]) return;
+      const m = this.mascotM = JJMascot.create(id); m.group.position.set(-0.2, 1.7, 1.2); m.group.scale.setScalar(0.01); m.group.rotation.x = 0.12; this.scene.add(m.group);
+      this.tween(0.55, k => m.group.scale.setScalar(2.0 * backOut(k)), 0.1);
+      this.mascotHome = true; return m;
+    },
+    showMascotCube(fl, y) {
       if (this.mascot) this.mascot.alive = false;
       const b = this.mascot = this.jelly.add({ x: 0, y: y || 0.6, z: 1, sx: 0.01, sy: 0.01, sz: 0.01, c: this.colors[fl].clone(), fl, big: 1 }); b.home = y || 0.6;
       this.tween(0.6, k => { b.sx = b.sy = b.sz = 3.2 * backOut(k); }, 0.1, () => { b.wob = 0.15; });
       return b;
     },
-    pokeMascot() { const b = this.mascot; if (!b) return; b.wob = 0.2; b.mood = 3; this.tween(0.5, k => { const s = Math.sin(k * Math.PI) * (1 - k); b.sz = 3.2 * (1 - 0.35 * s); b.sx = b.sy = 3.2 * (1 + 0.2 * s); b.y = b.home + Math.sin(k * Math.PI) * 0.9; }, 0, () => { b.mood = 0; }); for (let q = 0; q < 8; q++) this.parts.emit({ x: b.x + (Math.random() - 0.5) * 2.5, y: b.y + 1.8, z: 2.5, vx: (Math.random() - 0.5) * 5, vy: 4 + Math.random() * 3, g: -8, life: 0.9, s: 0.4, c: new T.Color('#ff8fb5'), type: 2 }); },
-    hideMascot() { if (this.mascot) { const b = this.mascot; this.mascot = null; this.tween(0.2, k => { b.sx = b.sy = b.sz = 3.2 * (1 - k); }, 0, () => { b.alive = false; }); } },
+    pokeMascot() { if (this.mascotM) { this.mascotM.jump(); for (let q = 0; q < 8; q++) this.parts.emit({ x: -0.5 + (Math.random() - 0.5) * 2.5, y: 3, z: 2.5, vx: (Math.random() - 0.5) * 5, vy: 4 + Math.random() * 3, g: -8, life: 0.9, s: 0.4, c: new T.Color('#ff8fb5'), type: 2 }); this.dirty = true; return; } const b = this.mascot; if (!b) return; b.wob = 0.2; b.mood = 3; this.tween(0.5, k => { const s = Math.sin(k * Math.PI) * (1 - k); b.sz = 3.2 * (1 - 0.35 * s); b.sx = b.sy = 3.2 * (1 + 0.2 * s); b.y = b.home + Math.sin(k * Math.PI) * 0.9; }, 0, () => { b.mood = 0; }); for (let q = 0; q < 8; q++) this.parts.emit({ x: b.x + (Math.random() - 0.5) * 2.5, y: b.y + 1.8, z: 2.5, vx: (Math.random() - 0.5) * 5, vy: 4 + Math.random() * 3, g: -8, life: 0.9, s: 0.4, c: new T.Color('#ff8fb5'), type: 2 }); },
+    hideMascot(now) { if (this.mascotM) { const g = this.mascotM.group; this.mascotM = null; if (now) this.scene.remove(g); else this.tween(0.2, k => g.scale.setScalar(2.0 * (1 - k)), 0, () => this.scene.remove(g)); } if (this.mascot) { const b = this.mascot; this.mascot = null; this.tween(0.2, k => { b.sx = b.sy = b.sz = 3.2 * (1 - k); }, 0, () => { b.alive = false; }); } },
 
     frame(dt, idleAnim) {
       this.time += dt; const busy = this.tweens.length > 0 || !!this.drag;
@@ -492,17 +508,18 @@
       J.glow.material.opacity = J.glassMat.uniforms.uGlow.value * (0.55 + 0.25 * Math.sin(this.time * 6));
       J.squash = (J.squash || 0) * Math.pow(0.02, dt);
       if (!this.pouring) {
-        const s = Math.sin(this.time * 14) * J.squash * 0.08; J.group.scale.set(1 + s, 1 - s, 1 + s);
+        const s = Math.sin(this.time * 14) * J.squash * 0.08, bs = J.bs || 1; J.group.scale.set((1 + s) * bs, (1 - s) * bs, (1 + s) * bs);
         if (J.ready) { J.lid.position.y = J.H / 2 + 0.12 + Math.abs(Math.sin(this.time * 7)) * 0.12; J.lid.rotation.z = Math.sin(this.time * 14) * 0.06; J.group.rotation.z = Math.sin(this.time * 3) * 0.04; if (Math.random() < dt * 4) this.parts.emit({ x: JAR_POS.x + (Math.random() - 0.5) * 2.6, y: JAR_POS.y + (Math.random() - 0.3) * 2.4, z: 1.6, vx: 0, vy: 0.6, g: 0, life: 0.9, s: 0.38, c: new T.Color(1, 0.95, 0.7), type: 3 }); }
         else { J.lid.position.y = J.H / 2 + 0.12; J.lid.rotation.z = J.target > 0.72 ? Math.sin(this.time * 20) * 0.02 : 0; J.group.rotation.z *= 0.9; }
       }
       if (this.mascot && !busy) { const b = this.mascot; b.y = b.home + Math.abs(Math.sin(this.time * 2.2)) * 0.18; b.sz = 3.2 * (1 - 0.05 * Math.max(0, Math.cos(this.time * 4.4))); }
       if (this.shakeAmp > 0.001) { this.shakeAmp *= Math.pow(0.002, dt); this.cam.position.x = (Math.random() - 0.5) * this.shakeAmp; } else if (this.shakeAmp) { this.shakeAmp = 0; this.cam.position.x = 0; }
       if (this.hints) { const k = 0.45 + 0.35 * Math.sin(this.time * 6); for (const i of this.hints) { const s = this.sockets.items[i]; s.c.copy(s.jam ? this.jamColor : this.slotColor).lerp(this.hintColor, k); } }
+      if (this.mascotM) this.mascotM.update(dt); if (this.buddy) { this.buddy.update(dt); if (J.ready && this.buddy.jumpT < 0 && Math.random() < dt * 0.8) this.buddy.jump(); }
       const np = this.parts.update(dt);
       for (const m of this.mats) { m.uniforms.uTime.value = this.time; m.uniforms.uBreath.value = idleAnim ? 1 : 0; }
       J.glassMat.uniforms.uTime.value = J.fillMat.uniforms.uTime.value = J.bubMat.uniforms.uTime.value = this.time;
-      const active = busy || wob || np > 0 || Math.abs(J.shown - J.target) > 0.002 || J.ready || J.slosh > 0.02 || J.squash > 0.02 || this.dirty || this.shakeAmp > 0 || this.glowing || !!this.hints;
+      const active = busy || wob || np > 0 || Math.abs(J.shown - J.target) > 0.002 || J.ready || J.slosh > 0.02 || J.squash > 0.02 || this.dirty || this.shakeAmp > 0 || this.glowing || !!this.hints || (this.mascotM && this.mascotM.jumpT >= 0) || (this.buddy && this.buddy.jumpT >= 0);
       this.active = active; return active;
     },
     render() {

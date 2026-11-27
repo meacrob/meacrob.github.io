@@ -7,7 +7,23 @@ body{font-family:Nunito,system-ui,sans-serif;font-weight:800;color:var(--ink);ba
 button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 /* ---------- world backdrop ---------- */
 #bg{position:fixed;inset:0;background:linear-gradient(180deg,var(--sky1) 0%,var(--sky2) 55%,var(--sky1) 100%);transition:background .6s}
-#bg svg{position:absolute;left:0;width:100%;bottom:0;height:46%}
+#scene{position:absolute;inset:0}
+#scene .lay{position:absolute;inset:0 -5%;will-change:transform}
+#scene .lay svg{width:100%;height:100%;display:block}
+#scene .far{transform:translate3d(calc(var(--px,0)*-5px),calc(var(--py,0)*-3px),0);animation:drift2 40s ease-in-out infinite alternate}
+#scene .mid{transform:translate3d(calc(var(--px,0)*-10px),calc(var(--py,0)*-5px),0)}
+#scene .near{transform:translate3d(calc(var(--px,0)*-18px),calc(var(--py,0)*-8px),0)}
+@keyframes drift2{from{translate:-6px 0}to{translate:6px 0}}
+.sway{transform-box:fill-box;transform-origin:50% 100%;animation:sway 4.5s ease-in-out infinite alternate}
+.sway2{transform-box:fill-box;transform-origin:50% 100%;animation:sway 3.2s ease-in-out infinite alternate-reverse}
+.bob{animation:bob2 3s ease-in-out infinite alternate}
+.wave{animation:wave 6s linear infinite}
+@keyframes sway{from{transform:rotate(-4deg)}to{transform:rotate(4deg)}}
+@keyframes bob2{from{transform:translateY(-1.5px) rotate(-3deg)}to{transform:translateY(1.5px) rotate(3deg)}}
+@keyframes wave{from{transform:translateX(0)}to{transform:translateX(40px)}}
+.petal{position:absolute;top:-4%;width:9px;height:7px;border-radius:60% 0 60% 0;opacity:.75;animation:fall 16s linear infinite}
+@keyframes fall{0%{transform:translate(0,0) rotate(0)}50%{transform:translate(30px,55vh) rotate(200deg)}100%{transform:translate(-10px,110vh) rotate(400deg)}}
+body.saver .sway,body.saver .sway2,body.saver .bob,body.saver .wave,body.saver .petal,body.saver .far{animation:none}
 #bg .cloud{position:absolute;background:#fff;border-radius:50px;opacity:.75;filter:blur(.3px)}
 #bg .cloud:before,#bg .cloud:after{content:"";position:absolute;background:#fff;border-radius:50%}
 #bg .cloud:before{width:55%;height:150%;left:15%;top:-60%}#bg .cloud:after{width:40%;height:120%;right:12%;top:-40%}
@@ -112,12 +128,15 @@ h2{font-family:Baloo;font-size:30px;line-height:1.05}
 .jarTag{position:fixed;transform:translate(-50%,0);font-family:Baloo;font-size:16px;color:#fff;background:var(--pink);padding:3px 12px;border-radius:999px;box-shadow:0 4px 10px rgba(232,61,114,.4);opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap}
 .jarTag.on{opacity:1;animation:nudge 1s infinite}
 @keyframes nudge{50%{transform:translate(-50%,0) scale(1.1)}}
-.pourBar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(9% + var(--safe-b));padding:8px 8px 8px 14px;border-radius:20px;display:none;align-items:center;gap:8px;font-size:15px;white-space:nowrap;z-index:31}
-.pourBar.on{display:flex}.pourBar #pourInfo{min-width:120px}.pourBar button:disabled{opacity:.45}
+.pourBar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(9% + var(--safe-b));padding:8px 8px 8px 12px;border-radius:20px;display:none;align-items:center;gap:6px;font-size:14px;line-height:1.2;width:max-content;max-width:94vw;z-index:31}
+.pourBar.on{display:flex}.pourBar #pourInfo{flex:1;min-width:0}.pourBar .btn{flex:none}.pourBar button:disabled{opacity:.45}
 .gbar{display:block;height:6px;border-radius:9px;background:#f3dbe6;margin-top:3px;overflow:hidden;width:180px}.gbar i{display:block;height:100%;background:linear-gradient(90deg,#ffb3cb,var(--pink));border-radius:9px}
 .introIco{width:96px;height:96px;display:grid;place-items:center;background:#fff3f8;border-radius:28px}.introIco svg{width:70px;height:70px}
 .price{display:inline-flex;align-items:center;gap:3px;color:var(--pink2)}
 #plv{display:none}
+.skip{display:none;position:fixed;right:10px;top:calc(8px + var(--safe-t));z-index:32}.skip.on{display:inline-flex}
+.rule{width:100%;text-align:left;background:#fff2f7;border-radius:14px;padding:9px 12px}.rule b{display:block;font-family:Baloo;font-size:17px}.rule span{font-size:14px;line-height:1.35;color:var(--ink2)}.rule.locked{opacity:.5}
+.unlockCard.friend img{width:96px;height:96px}
 .banner{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(27% + var(--safe-b));padding:10px 16px;border-radius:20px;display:none;align-items:center;gap:10px;font-size:15px;white-space:nowrap}
 .banner.on{display:flex}
 #fx{position:fixed;inset:0;pointer-events:none;overflow:hidden}
