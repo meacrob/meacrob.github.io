@@ -75,7 +75,7 @@
   function show(name) {
     for (const s of ['home', 'journey', 'collection', 'awards', 'hud']) $(s).classList.toggle('on', s === name);
     document.querySelectorAll('#nav button').forEach(b => b.classList.toggle('on', b.dataset.go === name));
-    const was = screen; screen = name;
+    const was = screen; screen = name; document.body.classList.toggle('playing', name === 'hud');
     if (name !== 'hud') { coach(''); hand(null); drag = null; aiming = false; }
     if (was === 'hud' && name !== 'hud') V.clearAll();
     const inGame = name === 'hud';
@@ -215,7 +215,7 @@
   function playtestReport() {
     const ev = events.filter(e => /tutorial|drop_wrong|pour|level_|mechanic|home_tap/.test(e[1])).map(e => `${new Date(e[0]).toTimeString().slice(0, 8)} ${e[1]} ${JSON.stringify(e[2])}`);
     const ls = Object.entries(save.levelStats).map(([id, v]) => `L${id}: tries ${v.att}, wins ${v.wins}, fails ${v.fails}, quits ${v.quits}, ${v.secs}s`);
-    return `Jelly Jars playtest report\n${navigator.userAgent}\nhome variant: ${save.homeVar}\n\nPERFORMANCE\n${perfText()}\n\nLEVELS\n${ls.join('\n') || 'none'}\n\nEVENTS (this session)\n${ev.join('\n')}`;
+    return `Jelly Jars playtest report\n${navigator.userAgent}\nhome variant: ${save.homeVar}\n\nPERFORMANCE\n${perfText()}\n\nOVER TIME (every 30s: watch for falling fps = thermal throttling)\n${perf.hist.join('\n')}\n\nLEVELS\n${ls.join('\n') || 'none'}\n\nEVENTS (this session)\n${ev.join('\n')}`;
   }
   $('reportBtn').onclick = () => { const t = playtestReport(); (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => toast('Report copied')).catch(() => prompt('Copy this report:', t)); };
   $('tutBtn').onclick = () => { closeModal('mSettings'); A.click(); startSchool(0); };
@@ -518,31 +518,25 @@
 
   // ---------- tutorial (level 1): hand shows the first two drags, then the clear ----------
   const E8 = '........';
+  // Jelly School: 3 quick hands-on steps, no Next buttons. Each step says what is about to change, the board changes,
+  // the player does it, and the next step follows by itself. Advanced mechanics are taught later, in context.
   const SCHOOL = [
-    { intro: "Welcome to Jelly School! Pieces are shapes made of jelly cells. You drag the whole shape onto the board.", btn: "Let's go",
-      trays: [[['o', 1]]], text: 'Drag the piece onto the glowing spot', hint: [[3, 3], [3, 4], [4, 3], [4, 4]], target: { ti: 0, r: 3, c: 3 }, done: s => s.placements >= 1,
-      after: 'Nice! A placed piece stays where you put it.' },
-    { intro: "Next: clearing a row. I'll put a row of different jellies on the board for you.", btn: 'Show me',
-      preset: [E8, E8, E8, E8, E8, E8, '123456..', E8], trays: [[['2h', 2]]], text: "Colours don't need to match! Fill the last 2 slots to clear the row", hint: [[6, 6], [6, 7]], target: { ti: 0, r: 6, c: 6 }, strict: true, done: s => s.lines >= 1,
-      after: 'Row cleared! Any colours work. A full row is all you need.' },
-    { intro: "Columns clear the same way. I'll add a column that is almost full.", btn: 'Show me',
-      preset: ['..4.....', '..1.....', '..6.....', '..3.....', '..5.....', '..2.....', E8, E8], trays: [[['2v', 3]]], text: 'Fill the bottom 2 slots to clear the column', hint: [[6, 2], [7, 2]], target: { ti: 0, r: 6, c: 2 }, strict: true, done: s => s.lines >= 1,
-      after: 'Column cleared! Rows and columns both count.' },
-    { intro: 'You get 3 pieces at a time. When all 3 are placed, 3 new ones arrive.', btn: 'OK',
-      trays: [[['3h', 3], ['l3a', 4], ['1', 6]], [['2h', 1], ['3v', 5], ['o', 2]]], text: 'Place all 3 pieces anywhere you like', pulseTray: true, done: s => s.traysDealt >= 2,
-      after: 'See? 3 new pieces arrived. That happens every time the tray is empty.' },
-    { intro: "Last lesson: big pieces need big spaces. I'll fill most of the board so you can see why.", btn: 'Show me',
-      preset: ['1234.612', '34.61234', '6123.561', '23456.23', '4.612345', '....3456', '...456..', '...61234'], trays: [[['sq3', 2], ['1', 1], ['2h', 3]]], text: 'Only one spot fits the big square piece. Find it!', hint: [[5, 0], [5, 1], [5, 2], [6, 0], [6, 1], [6, 2], [7, 0], [7, 1], [7, 2]], target: { ti: 0, r: 5, c: 0 }, done: s => s.tray[0].used,
-      after: 'Great! Always keep room for big pieces, or you can run out of space.', last: true }
+    { preset: [E8, E8, E8, E8, E8, E8, '123456..', E8], trays: [[['2h', 2]]],
+      text: "Drag the piece into the gap. Colours don't need to match: a full row clears!", hint: [[6, 6], [6, 7]], target: { ti: 0, r: 6, c: 6 }, strict: true, done: s => s.lines >= 1, after: 'Row cleared!' },
+    { lead: 'Columns clear too!', preset: ['..4.....', '..1.....', '..6.....', '..3.....', '..5.....', '..2.....', E8, E8], trays: [[['2v', 3]]],
+      text: 'Fill the column to clear it', hint: [[6, 2], [7, 2]], target: { ti: 0, r: 6, c: 2 }, strict: true, done: s => s.lines >= 1, after: 'Column cleared!' },
+    { lead: 'You get 3 pieces. Use all 3 and new ones arrive.', trays: [[['3h', 3], ['l3a', 4], ['1', 6]], [['sq3', 1], ['2h', 5], ['o', 2]]],
+      text: 'Place all 3 anywhere. Keep room for big pieces!', pulseTray: true, done: s => s.traysDealt >= 2, after: "New pieces! You're ready", last: true }
   ];
   function skipSchool() { if (!G || G.mode !== 'school') return; track('tutorial_skip', { step: G.stage + 1 }); save.tut.basics = true; persist(true); $('skipTut').classList.remove('on'); hand(null); coach(''); V.hintOff(); V.wipeBoard(() => startLevel(1)); }
   $('skipTut').onclick = () => { A.click(); skipSchool(); };
   function startSchool(i) {
     i = i || 0; const st = SCHOOL[i];
-    begin('school', L.create({ preset: st.preset, trays: st.trays, jarCap: 99 }), { stage: i, wrong: 0, deferBoard: true, paused: true });
+    const t0 = G && G.schoolT || performance.now();
+    begin('school', L.create({ preset: st.preset, trays: st.trays, jarCap: 99 }), { stage: i, wrong: 0, deferBoard: true, paused: true, schoolT: i ? t0 : performance.now() });
     if (i === 0) track('tutorial_start', {});
-    // explain first; the board only changes after the player taps the button
-    later(() => coach(`<b>Step ${i + 1} of ${SCHOOL.length}</b><br>${st.intro}`, { btn: st.btn, top: true, onBtn: () => { V.loadBoard(S); later(() => { V.setTray(S.tray, L); later(showStage, 550); }, st.preset ? 700 : 150); } }), 350);
+    if (st.lead) coach(st.lead, { top: true });            // say what is about to change...
+    later(() => { V.loadBoard(S); later(() => { V.setTray(S.tray, L); later(showStage, 450); }, st.preset ? 600 : 100); }, st.lead ? 1100 : 300); // ...then change it
   }
   function showStage() {
     if (!G || G.mode !== 'school') return; const st = SCHOOL[G.stage];
@@ -553,14 +547,14 @@
   }
   function schoolCheck() {
     const st = SCHOOL[G.stage];
-    if (!st.done(S) || G.stageDone) { if (st.pulseTray) { hand(null); const left = S.tray.filter(t => !t.used).length; coach(left ? `${left} left. Place them all!` : st.text, { top: true }); } return; }
-    G.stageDone = true; G.paused = true; hand(null); V.hintOff(); V.trayPulse(false);
+    if (!st.done(S) || G.stageDone) { if (st.pulseTray && !G.stageDone) { hand(null); const left = S.tray.filter(t => !t.used).length; if (left) coach(`${left} left. Keep room for big pieces!`, { top: true }); } return; }
+    G.stageDone = true; G.paused = true; hand(null); V.hintOff(); V.trayPulse(false); coach('');
     track('tutorial_step', { step: G.stage + 1, secs: Math.round((performance.now() - G.stageT) / 1000), wrong: G.wrong });
-    A.star(G.stage % 3);
-    later(() => coach(st.after, { btn: st.last ? 'Start playing' : 'Next', top: true, onBtn: () => V.wipeBoard(() => {
+    A.star(G.stage % 3); later(() => popText(st.after, 'info'), 350);
+    later(() => V.wipeBoard(() => {
       if (!st.last) startSchool(G.stage + 1);
-      else { save.tut.basics = true; persist(true); track('tutorial_complete', {}); popText("You're ready!", 'big'); later(() => startLevel(1), 900); }
-    }) }), 900);
+      else { save.tut.basics = true; persist(true); track('tutorial_complete', { secs: Math.round((performance.now() - G.schoolT) / 1000) }); startLevel(1); }
+    }), st.last ? 1500 : 1100);
   }
   function coach(txt, o) {
     o = o || {}; const el = $('coach'); el.classList.toggle('on', !!txt); if (!txt) { el.innerHTML = ''; return; }
@@ -580,7 +574,7 @@
   }
   const handAt = p => hand(p);
   // ---------- performance overlay (?debug=1 or Settings) ----------
-  const perf = { cpu: [], frames: [], longFrames: 0, rendered: 0, runs: [], start: performance.now(), dprLog: [], lastAdapt: performance.now(), goodSince: performance.now(), first: 0 };
+  const perf = { hist: [], histT: performance.now(), cpu: [], frames: [], longFrames: 0, rendered: 0, runs: [], start: performance.now(), dprLog: [], lastAdapt: performance.now(), goodSince: performance.now(), first: 0 };
   let gpu = ''; try { const gl = V.renderer.getContext(), ext = gl.getExtension('WEBGL_debug_renderer_info'); gpu = ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER); } catch (e) {}
   if (navigator.getBattery) navigator.getBattery().then(b => { perf.bat = b; perf.bat0 = { lv: b.level, t: performance.now() }; b.addEventListener('chargingchange', () => { perf.bat0 = { lv: b.level, t: performance.now() }; }); }).catch(() => {});
   function batteryLine() { const b = perf.bat; if (!b) return 'battery n/a'; const hrs = (performance.now() - perf.bat0.t) / 3600000, drop = (perf.bat0.lv - b.level) * 100; return `battery ${Math.round(b.level * 100)}%${b.charging ? ' (charging)' : hrs > 0.05 ? `, drain ${(drop / hrs).toFixed(1)}%/h over ${Math.round(hrs * 60)} min` : ''}`; }
@@ -593,7 +587,7 @@
       `CPU ${cpuAvg.toFixed(1)}ms p95 ${pct(perf.cpu, 0.95).toFixed(1)} -> ${avg && cpuAvg < avg * 0.4 ? 'GPU/display bound' : 'CPU bound'}`,
       `slow frames >33ms: ${perf.longFrames}/${perf.rendered}`, `draw calls ${info.render.calls} tris ${info.render.triangles} particles ${V.parts.list.length}`,
       `DPR ${V.dpr.toFixed(2)}/${V.dprMax} canvas ${V.canvas.width}x${V.canvas.height}`, `warm-up ${perf.first.toFixed(0)}ms  heap ${mem}  geo ${info.memory.geometries} tex ${info.memory.textures}`,
-      batteryLine(), `voices ${A.voices()}  ${V.active ? 'animating' : 'idle'}  cores ${navigator.hardwareConcurrency || '?'} RAM ${navigator.deviceMemory || '?'}GB`, `GPU ${gpu}`].join('\n');
+      batteryLine(), `audio ${JSON.stringify(A.stats())}  voices ${A.voices()}  ${V.active ? 'animating' : 'idle'}  cores ${navigator.hardwareConcurrency || '?'} RAM ${navigator.deviceMemory || '?'}GB`, `GPU ${gpu}`].join('\n');
   }
   $('perfMin').onclick = () => { $('perf').classList.toggle('min'); $('perfMin').textContent = $('perf').classList.contains('min') ? 'more' : 'less'; };
   $('perfCopy').onclick = () => {
@@ -606,26 +600,32 @@
 
   // ---------- main loop: render on demand; gentle idle life at ~20 fps unless battery saver ----------
   let lastT = performance.now(), lastUi = 0, lastIdle = 0, warm = 0;
+  // Frame pacing: never above 60 fps (90/120 Hz phones were rendering 2x for nothing), 30 fps for gentle motion,
+  // ~12 fps for idle breathing, and fully asleep after 25 s without a touch.
+  let lastInput = performance.now(); document.addEventListener('pointerdown', () => { lastInput = performance.now(); }, { capture: true, passive: true });
   function loop(now) {
     requestAnimationFrame(loop);
-    const raw = Math.max(0, now - lastT), dt = Math.min(0.05, raw / 1000) * (window.JJTS || 1); lastT = now;
-    const idleLife = !save.settings.saver && (screen === 'hud' || screen === 'home');
-    const c0 = performance.now(), active = V.frame(dt, idleLife);
-    if (active || (idleLife && now - lastIdle > 50)) {
-      if (!active) lastIdle = now;
+    const since = now - lastT, want = V.want == null ? 2 : V.want, idleLife = !save.settings.saver && (screen === 'hud' || screen === 'home') && now - lastInput < 25000;
+    const minGap = want === 2 ? 15.5 : want === 1 ? 32 : 82;
+    if (since < minGap - 1) return;
+    if (want === 0 && !idleLife && !V.dirty && !V.tweens.length) { V.want = V.frame(0, false); if (V.want === 0) return; }
+    const raw = Math.max(0, since), dt = Math.min(0.05, raw / 1000) * (window.JJTS || 1); lastT = now;
+    const c0 = performance.now(); V.want = V.frame(dt, idleLife);
+    {
       V.render(); const cpu = performance.now() - c0;
       if (warm++ < 20) { perf.first = Math.max(perf.first, cpu); }
-      else if (active) {
+      else if (want === 2) {
         perf.rendered++; perf.cpu.push(cpu); perf.frames.push(raw); if (perf.frames.length > 180) { perf.frames.shift(); perf.cpu.shift(); } if (raw > 33.5) perf.longFrames++;
         if ((save.dprLock || 'auto') === 'auto' && now - perf.lastAdapt > 2000 && perf.frames.length > 60) {
           const rec = perf.frames.slice(-60), avg = rec.reduce((a, b) => a + b, 0) / rec.length;
           if (avg > 24 && V.dpr > 1) { V.setDpr(V.dpr - 0.25); perf.dprLog.push(V.dpr.toFixed(2) + '@' + Math.round(avg) + 'ms'); perf.goodSince = now; perf.frames.length = perf.cpu.length = 0; }
-          else if (avg < 17.5 && V.dpr < Math.min(V.dprMax, 1.75) && now - perf.goodSince > 8000) { V.setDpr(V.dpr + 0.25); perf.dprLog.push(V.dpr.toFixed(2) + '+'); perf.goodSince = now; perf.frames.length = perf.cpu.length = 0; }
+          else if (avg < 17.5 && V.dpr < Math.min(V.dprMax, V.dprCap) && now - perf.goodSince > 10000) { V.setDpr(V.dpr + 0.25); perf.dprLog.push(V.dpr.toFixed(2) + '+'); perf.goodSince = now; perf.frames.length = perf.cpu.length = 0; }
           else if (avg >= 17.5) perf.goodSince = now;
           perf.lastAdapt = now;
         }
       }
     }
+    if (now - perf.histT > 30000) { perf.histT = now; const f = perf.frames.slice(-120), a = f.length ? f.reduce((x, y) => x + y, 0) / f.length : 0; perf.hist.push(`${Math.round((now - perf.start) / 60000)}min: ${a ? Math.round(1000 / a) : '-'}fps p95 ${pct(f, 0.95).toFixed(0)}ms dpr ${V.dpr.toFixed(2)} heap ${performance.memory ? Math.round(performance.memory.usedJSHeapSize / 1048576) + 'MB' : '?'} ${batteryLine()}`); if (perf.hist.length > 40) perf.hist.shift(); }
     const pe = $('perf'); if (pe && pe.classList.contains('on') && now - lastUi > 500) { $('perfTxt').innerHTML = perfText().split('\n').map(l => '<div>' + l.replace(/</g, '&lt;') + '</div>').join(''); lastUi = now; }
   }
 

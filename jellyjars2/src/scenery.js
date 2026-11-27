@@ -54,8 +54,8 @@
     parallax(el) {
       let tx = 0, ty = 0, cx = 0, cy = 0, raf = 0;
       const apply = () => { cx += (tx - cx) * 0.08; cy += (ty - cy) * 0.08; el.style.setProperty('--px', cx.toFixed(2)); el.style.setProperty('--py', cy.toFixed(2)); raf = Math.abs(tx - cx) + Math.abs(ty - cy) > 0.01 ? requestAnimationFrame(apply) : 0; };
-      const go = () => { if (!raf && !document.body.classList.contains('saver')) raf = requestAnimationFrame(apply); };
-      window.addEventListener('deviceorientation', e => { if (e.gamma == null) return; tx = Math.max(-1, Math.min(1, e.gamma / 25)); ty = Math.max(-1, Math.min(1, (e.beta - 45) / 30)); go(); });
+      const go = () => { const b = document.body.classList; if (!raf && !b.contains('saver') && !b.contains('playing')) raf = requestAnimationFrame(apply); };
+      window.addEventListener('deviceorientation', e => { if (e.gamma == null) return; const nx = Math.max(-1, Math.min(1, e.gamma / 25)), ny = Math.max(-1, Math.min(1, (e.beta - 45) / 30)); if (Math.abs(nx - tx) + Math.abs(ny - ty) < 0.04) return; tx = nx; ty = ny; go(); }); // ignore hand tremor
       window.addEventListener('pointermove', e => { if (e.pointerType !== 'mouse') return; tx = e.clientX / innerWidth * 2 - 1; ty = e.clientY / innerHeight * 2 - 1; go(); });
     }
   };

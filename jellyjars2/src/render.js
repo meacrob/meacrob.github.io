@@ -222,7 +222,7 @@
       this.canvas = canvas;
       const r = this.renderer = new T.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance', stencil: false });
       r.setClearColor(0, 0); r.outputEncoding = T.sRGBEncoding;
-      this.dprMax = Math.min(window.devicePixelRatio || 1, 2); this.dpr = Math.min(this.dprMax, 1.75);
+      this.dprMax = Math.min(window.devicePixelRatio || 1, 2); const low = (navigator.deviceMemory || 4) <= 4 || (navigator.hardwareConcurrency || 8) <= 4; this.dprCap = low ? 1.5 : 1.75; this.dpr = Math.min(this.dprMax, low ? 1.25 : 1.5);
       this.scene = new T.Scene(); this.cam = new T.PerspectiveCamera(30, 1, 1, 120);
       this.matcap = View.matcap = matcapTex();
       this.colors = PAL.map(h => h ? lin(h) : null);
@@ -521,12 +521,15 @@
       const np = this.parts.update(dt);
       for (const m of this.mats) { m.uniforms.uTime.value = this.time; m.uniforms.uBreath.value = idleAnim ? 1 : 0; }
       J.glassMat.uniforms.uTime.value = J.fillMat.uniforms.uTime.value = J.bubMat.uniforms.uTime.value = this.time;
-      const active = busy || wob || np > 0 || Math.abs(J.shown - J.target) > 0.002 || J.ready || J.slosh > 0.02 || J.squash > 0.02 || this.dirty || this.shakeAmp > 0 || this.glowing || !!this.hints || (this.pulse != null && this.pulse !== false) || (this.mascotM && this.mascotM.jumpT >= 0) || (this.buddy && this.buddy.jumpT >= 0);
+      // 2 = moving (60 fps), 1 = gently alive (30 fps: full jar, hints, pulsing, previews), 0 = idle (breathing only, ~12 fps or asleep)
+      const moving = busy || wob || np > 0 || Math.abs(J.shown - J.target) > 0.002 || J.slosh > 0.02 || J.squash > 0.02 || this.dirty || this.shakeAmp > 0 || (this.mascotM && this.mascotM.jumpT >= 0) || (this.buddy && this.buddy.jumpT >= 0);
+      const lively = J.ready || !!this.mascotM || this.glowing || !!this.hints || (this.pulse != null && this.pulse !== false);
+      const active = moving ? 2 : lively ? 1 : 0;
       this.active = active; return active;
     },
     render() {
       this.jelly.sync(); this.ghost.sync(); this.sockets.sync();
-      let n = 0; const m4 = new T.Matrix4(), q = new T.Quaternion(), p = new T.Vector3(), s = new T.Vector3();
+      let n = 0; const m4 = this._m4 || (this._m4 = new T.Matrix4()), q = this._q || (this._q = new T.Quaternion()), p = this._p || (this._p = new T.Vector3()), s = this._s || (this._s = new T.Vector3()); // reused: no per-frame garbage
       for (const b of this.jelly.items) { if (!b.alive || !b.shadow || n >= 200) continue; const h = Math.max(0, b.z - BZ), k = Math.max(0.3, 1 - h * 0.35) * b.sx; if (b.big) { p.set(b.x + 0.15, b.y - b.sx * 0.5 - 0.1, -0.3); s.set(b.sx * 1.1, b.sx * 0.4, 1); } else { p.set(b.x + 0.12 + h * 0.25, b.y - 0.14 - h * 0.35, BZ - 0.42); s.set(k, k, 1); } m4.compose(p, q, s); this.shadows.setMatrixAt(n++, m4); }
       this.shadows.count = n; this.shadows.instanceMatrix.needsUpdate = true;
       this.renderer.render(this.scene, this.cam); this.dirty = false;
