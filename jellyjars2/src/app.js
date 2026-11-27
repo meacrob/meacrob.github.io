@@ -7,6 +7,7 @@
   const $ = id => document.getElementById(id), Q = new URLSearchParams(location.search);
   if (Q.get('ts')) window.JJTS = +Q.get('ts');
   // dev tools: dev APK (JJ_DEV), the github.io test link, or a local dev server. A production app (https://localhost, no port) has none.
+  const Ads = window.JJAds;
   const DEV = window.JJ_DEV === true || /github\.io$/.test(location.hostname) || (/^(localhost|127\.0\.0\.1)$/.test(location.hostname) && !!location.port);
   const fmt = n => Math.round(n).toLocaleString('en-US');
   let save = M.load();
@@ -187,7 +188,7 @@
   function floatScore(txt, at) { const p = V.cellPos(at.r - 0.5, at.c - 0.5), s = V.toScreen(p.x, p.y, 1), el = document.createElement('div'); el.className = 'pts'; el.textContent = txt; el.style.left = s.x + 'px'; el.style.top = s.y + 'px'; $('fx').appendChild(el); later(() => el.remove(), 1000); }
 
   // ---------- settings ----------
-  function syncSettings() { A.set(save.settings); document.body.classList.toggle('saver', !!save.settings.saver); document.querySelectorAll('[data-set]').forEach(b => b.classList.toggle('on', !!save.settings[b.dataset.set])); $('pMusic').textContent = 'Music ' + (save.settings.music ? 'on' : 'off'); $('pSfx').textContent = 'Sound ' + (save.settings.sfx ? 'on' : 'off'); }
+  function syncSettings() { const pb = $('privacyBtn'); if (pb) pb.style.display = Ads.privacyRequired() ? '' : 'none'; A.set(save.settings); document.body.classList.toggle('saver', !!save.settings.saver); document.querySelectorAll('[data-set]').forEach(b => b.classList.toggle('on', !!save.settings[b.dataset.set])); $('pMusic').textContent = 'Music ' + (save.settings.music ? 'on' : 'off'); $('pSfx').textContent = 'Sound ' + (save.settings.sfx ? 'on' : 'off'); }
   document.querySelectorAll('[data-set]').forEach(b => b.onclick = () => { const k = b.dataset.set; save.settings[k] = !save.settings[k]; syncSettings(); A.click(); persist(); });
   $('pMusic').onclick = () => { save.settings.music = !save.settings.music; syncSettings(); persist(); };
   $('pSfx').onclick = () => { save.settings.sfx = !save.settings.sfx; syncSettings(); A.click(); persist(); };
@@ -213,9 +214,9 @@
   $('rulesBtn').onclick = () => { closeModal('mSettings'); A.click(); rulesModal(); };
   $('pRules').onclick = () => { A.click(); closeModal('mPause'); rulesModal(); };
   function playtestReport() {
-    const ev = events.filter(e => /tutorial|drop_wrong|pour|level_|mechanic|home_tap/.test(e[1])).map(e => `${new Date(e[0]).toTimeString().slice(0, 8)} ${e[1]} ${JSON.stringify(e[2])}`);
+    const ev = events.filter(e => /tutorial|drop_wrong|pour|level_|mechanic|home_tap|ad_|ads_|rv_|int_|consent|continue|beans_doubled/.test(e[1])).map(e => `${new Date(e[0]).toTimeString().slice(0, 8)} ${e[1]} ${JSON.stringify(e[2])}`);
     const ls = Object.entries(save.levelStats).map(([id, v]) => `L${id}: tries ${v.att}, wins ${v.wins}, fails ${v.fails}, quits ${v.quits}, ${v.secs}s`);
-    return `Jelly Jars playtest report\n${navigator.userAgent}\nhome variant: ${save.homeVar}\n\nPERFORMANCE\n${perfText()}\n\nOVER TIME (every 30s: watch for falling fps = thermal throttling)\n${perf.hist.join('\n')}\n\nLEVELS\n${ls.join('\n') || 'none'}\n\nEVENTS (this session)\n${ev.join('\n')}`;
+    return `Jelly Jars playtest report\n${navigator.userAgent}\nhome variant: ${save.homeVar}\n\nPERFORMANCE\n${perfText()}\n\nOVER TIME (every 30s: watch for falling fps = thermal throttling)\n${perf.hist.join('\n')}\n\nADS\n${Ads.report()}\n\nLEVELS\n${ls.join('\n') || 'none'}\n\nEVENTS (this session)\n${ev.join('\n')}`;
   }
   $('reportBtn').onclick = () => { const t = playtestReport(); (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => toast('Report copied')).catch(() => prompt('Copy this report:', t)); };
   $('tutBtn').onclick = () => { closeModal('mSettings'); A.click(); startSchool(0); };
@@ -465,26 +466,66 @@
     const newWorld = lv.id % 10 === 0 && !prev && lv.id < 30;
     const lst = save.levelStats[lv.id]; if (lst) { lst.wins++; lst.secs += Math.round((performance.now() - G.startT) / 1000); }
     track('level_complete', { level: lv.id, stars, moves_left: p.movesLeft, attempt: G.attempt, secs: Math.round((performance.now() - G.startT) / 1000) });
-    A.win(); V.celebrate(50); V.setMood(3);
+    A.win(); V.celebrate(50); V.setMood(3); Ads.noteResult();
     const friends = M.checkChars(save, f => !!JJMascot.DEF[ART[f]]); friends.forEach(f => track('character_unlocked', { id: f, level: lv.id }));
     const friendCards = friends.map(f => `<div class="unlockCard friend"><img src="${charImg(f)}" alt=""><b>New friend: ${M.CHARS[f].name}!</b><span class="sub">${M.CHARS[f].bio}</span>${JJMascot.DEF[ART[f]] ? `<button class="btn small" data-buddy="${ART[f]}">Make jar buddy</button>` : ''}</div>`).join('');
     const cards = friendCards + unlockCards(newWorld ? `<div class="unlockCard"><b>${LV.WORLDS[lv.world + 1].name} unlocked!</b><span class="sub">A new world to explore</span></div>` : '');
     persist(true);
     const hasNext = lv.id < LV.LEVELS.length;
     $('resultBody').innerHTML = `<div class="ribbon">Level ${lv.id} complete!</div><div class="bigstars">${[0, 1, 2].map(k => STAR(k < stars, 'bs' + k)).join('')}</div>
-      <div class="bigScore" id="rScore">0</div><div class="rewards"><span class="pill">${BEAN}+<span id="rBeans">0</span></span></div>${cards}
+      <div class="bigScore" id="rScore">0</div><div class="rewards"><span class="pill">${BEAN}+<span id="rBeans">0</span></span></div><button class="btn gold" id="rDouble" style="width:100%;display:none"></button>${cards}
       <button class="btn green" id="rNext" style="width:100%">${hasNext ? 'Next level' : 'Journey complete!'}</button><div class="row"><button class="btn small ghost" id="rReplay">Replay</button><button class="btn small ghost" id="rHome">Home</button></div>`;
     later(() => openModal('mResult'), 600); if (friends.length) later(() => A.unlock(), 1500);
     $('resultBody').querySelectorAll('[data-buddy]').forEach(b => b.onclick = () => { setBuddy(b.dataset.buddy); b.textContent = 'In your jar!'; b.disabled = true; });
     [0, 1, 2].forEach(k => later(() => { if (k < stars) { $('bs' + k).classList.add('on'); A.star(k); } else $('bs' + k).classList.add('on'); }, 1000 + k * 380));
     countUp('rScore', S.score, 1000); countUp('rBeans', rw.beans, 1600, () => A.coin());
-    $('rNext').onclick = () => { A.click(); closeModal('mResult'); V.wipeBoard(() => hasNext ? startLevel(lv.id + 1) : show('journey')); };
-    $('rReplay').onclick = () => { A.click(); closeModal('mResult'); V.wipeBoard(() => startLevel(lv.id)); };
-    $('rHome').onclick = () => { A.click(); closeModal('mResult'); V.wipeBoard(() => show('home')); };
+    const rctx = { mode: 'level', level: lv.id, attempt: G.attempt, result: 'win', stars }; let dbl = 'none';
+    if (rw.beans > 0 && Ads.cfg.rv_double_enabled && Ads.rvReady()) later(() => { // normal reward first, then the offer
+      const b = $('rDouble'); if (!b || dbl === 'done' || !$('mResult').classList.contains('on')) return; b.innerHTML = `&#9654; Double your beans! ${BEAN}+${rw.beans}`; b.style.display = ''; dbl = 'offered'; Ads.offer('double_beans', rctx);
+      b.onclick = () => { A.click(); b.disabled = true; Ads.showRewarded('double_beans', rctx).then(r => {
+        if (!r.rewarded) { b.disabled = false; if (r.unavailable) { toast('No ad available right now'); b.remove(); } return; }
+        save.beans += rw.beans; persist(true); dbl = 'used'; track('beans_doubled', { level: lv.id, beans: rw.beans }); countUp('rBeans', rw.beans * 2, 900, () => A.coin()); b.textContent = 'Beans doubled!'; b.disabled = true; rctx.rv_here = 1;
+      }); };
+    }, 2300);
+    const leave = (action, fn) => () => { A.click(); if (dbl === 'offered') Ads.declined('double_beans', rctx); dbl = 'done'; closeModal('mResult'); Ads.transition('results_win', Object.assign({ action }, rctx)).then(() => V.wipeBoard(fn)); };
+    $('rNext').onclick = leave('next', () => hasNext ? startLevel(lv.id + 1) : show('journey'));
+    $('rReplay').onclick = leave('replay', () => startLevel(lv.id));
+    $('rHome').onclick = leave('home', () => show('home'));
+  }
+  // ---------- rewarded Continue: one per run / level attempt, offered before the results screen ----------
+  function continueOffer() {
+    if (G.continued || G.offering || !(G.mode === 'classic' || G.mode === 'level') || !Ads.cfg.rv_continue_enabled || !Ads.rvReady()) return false;
+    G.offering = true; V.setMood(1);
+    const p = L.progress(S), moves = G.mode === 'level' && p.movesLeft === 0, n = Ads.cfg.rv_continue_moves;
+    const ctx = { mode: G.mode, level: G.level || 0, attempt: G.attempt || 0, result: 'loss', reason: moves ? 'moves' : 'room', score: S.score };
+    const gift = moves ? `<b>+${n} moves</b> to finish the level` : `We clear a space on your board and give you <b>fresh pieces</b>`;
+    $('infoBody').innerHTML = `<div class="ribbon fail">${moves ? 'Out of moves!' : 'No room left!'}</div><h2 style="margin:6px 0">One more chance!</h2>
+      <div style="font-size:16px;line-height:1.4">Watch a short ad and get:<br>${gift}</div>
+      <button class="btn green" id="cWatch" style="width:100%">&#9654; Watch ad: ${moves ? '+' + n + ' moves' : 'keep playing'}</button><button class="btn small ghost" id="cNo">No thanks</button>`;
+    later(() => openModal('mInfo'), 450); Ads.offer('continue', ctx);
+    const end = () => { closeModal('mInfo'); G.offering = false; G.continued = true; gameOver(); };
+    $('cNo').onclick = () => { A.click(); Ads.declined('continue', ctx); end(); };
+    $('cWatch').onclick = () => { A.click(); $('cWatch').disabled = true; Ads.showRewarded('continue', ctx).then(r => {
+      if (!r.rewarded) { if (r.unavailable) toast('No ad available right now'); end(); return; }
+      closeModal('mInfo'); G.offering = false; G.continued = G.continueUsed = true; applyContinue(moves, n); track('continue_used', ctx);
+    }); };
+    return true;
+  }
+  function applyContinue(moves, n) {
+    let ev = [];
+    if (moves) { S.cfg.goal = Object.assign({}, S.cfg.goal, { moves: S.cfg.goal.moves + n }); S.over = false; S.stuck = false; }
+    if (!moves || !L.anyMove(S)) {
+      ev = L.revive(S, 0); const cl = ev[0].cleared;
+      if (cl.length) { const r = Math.round(cl.reduce((a, q) => a + q[0], 0) / cl.length), c = Math.round(cl.reduce((a, q) => a + q[1], 0) / cl.length); V.popAnim({ r, c, cleared: cl }); A.pop(); }
+      later(() => V.setTray(S.tray, L), 400);
+    }
+    V.setMood(0); popText(moves ? `+${n} moves!` : 'Second chance!', 'big'); A.ready(); hudGoal(); saveRun();
   }
   function gameOver() {
-    if (G.ended || !S.over) return; G.ended = true;
-    V.gameOverAnim(); A.over(); finishCommon();
+    if (G.ended || !S.over) return;
+    if (continueOffer()) return;
+    G.ended = true;
+    V.gameOverAnim(); A.over(); finishCommon(); Ads.noteResult();
     if (G.mode === 'level') {
       const lv = LV.LEVELS[G.level - 1], p = L.progress(S); save.stats.fails++; const lsf = save.levelStats[lv.id]; if (lsf) { lsf.fails++; lsf.secs += Math.round((performance.now() - G.startT) / 1000); } track('level_failed', { attempt: G.attempt, level: lv.id, progress: p.v / p.n });
       persist(true);
@@ -492,8 +533,9 @@
         <div class="sub">${p.v / p.n > 0.7 ? 'So close! You can do it.' : 'Try clearing lines early to keep the board open.'}</div>
         <button class="btn green" id="rRetry" style="width:100%">Try again</button><button class="btn small ghost" id="rHome">Home</button>`;
       later(() => openModal('mResult'), 900);
-      $('rRetry').onclick = () => { A.click(); closeModal('mResult'); track('retry', { level: lv.id }); V.wipeBoard(() => startLevel(lv.id)); };
-      $('rHome').onclick = () => { A.click(); closeModal('mResult'); V.wipeBoard(() => show('home')); };
+      const fctx = { mode: 'level', level: lv.id, attempt: G.attempt, result: 'loss', continued: !!G.continueUsed };
+      $('rRetry').onclick = () => { A.click(); closeModal('mResult'); track('retry', { level: lv.id }); Ads.transition('results_loss', Object.assign({ action: 'retry' }, fctx)).then(() => V.wipeBoard(() => startLevel(lv.id))); };
+      $('rHome').onclick = () => { A.click(); closeModal('mResult'); Ads.transition('results_loss', Object.assign({ action: 'home' }, fctx)).then(() => V.wipeBoard(() => show('home'))); };
       return;
     }
     let title = 'Out of moves', extra = '', isBest = false;
@@ -505,8 +547,9 @@
       <button class="btn green" id="rAgain" style="width:100%">Play again</button><button class="btn small ghost" id="rHome">Home</button>`;
     later(() => { openModal('mResult'); if (isBest && S.score > 0) { A.best(); V.celebrate(40); } }, 900);
     countUp('rScore', S.score, 900);
-    $('rAgain').onclick = () => { A.click(); closeModal('mResult'); track('retry', { mode: G.mode }); V.wipeBoard(() => G.mode === 'classic' ? startClassic() : startDaily()); };
-    $('rHome').onclick = () => { A.click(); closeModal('mResult'); V.wipeBoard(() => show('home')); };
+    const cctx = { mode: G.mode, result: G.mode === 'classic' ? 'loss' : 'daily', score: S.score, continued: !!G.continueUsed }, plc = G.mode === 'classic' ? 'results_classic' : 'results_daily';
+    $('rAgain').onclick = () => { A.click(); closeModal('mResult'); track('retry', { mode: G.mode }); Ads.transition(plc, Object.assign({ action: 'again' }, cctx)).then(() => V.wipeBoard(() => G.mode === 'classic' ? startClassic() : startDaily())); };
+    $('rHome').onclick = () => { A.click(); closeModal('mResult'); Ads.transition(plc, Object.assign({ action: 'home' }, cctx)).then(() => V.wipeBoard(() => show('home'))); };
   }
   function countUp(id, to, ms, tick) { const t0 = performance.now(); let last = 0; const step = () => { const k = Math.min(1, (performance.now() - t0) / ms), v = Math.round(to * (1 - Math.pow(1 - k, 3))); const el = $(id); if (!el) return; el.textContent = fmt(v); if (tick && v !== last && k < 1 && Math.random() < 0.3) tick(); last = v; if (k < 1) requestAnimationFrame(step); }; later(step, 300); }
 
@@ -642,17 +685,22 @@
   (document.fonts ? document.fonts.load('800 20px Baloo').catch(() => {}) : Promise.resolve()).then(() => later(go, 350));
   if (DEV && Q.get('debug') === '1') togglePerf(true);
   if (!DEV) for (const id of ['perfBtn', 'reportBtn', 'perf']) $(id).remove();
+  // ads: active play time = on the board, not paused, touched in the last 20 s, app visible
+  Ads.init({ dev: DEV, track, onFull: on => A.pause(on) });
+  setInterval(() => { if (screen === 'hud' && G && G.mode !== 'school' && S && !S.over && !document.hidden && !$('mPause').classList.contains('on') && (performance.now() - lastInput < 20000 || window.JJBotOn)) Ads.activeTick(1); }, 1000);
+  $('privacyBtn').onclick = () => { A.click(); Ads.showPrivacy(); };
   document.addEventListener('visibilitychange', () => { if (document.hidden) { saveRun(); persist(true); } });
 
   // ---------- test hooks + autoplay bot (?bot=1 classic, ?bot=journey) ----------
-  window.JJApp = { state: () => S, game: () => G, save: () => save, events, perf, perfText, check: () => { const bad = []; for (let k = 0; k < 64; k++) if (!!S.board[k] !== !!V.board[k]) bad.push(k); return bad; }, show, startLevel, startClassic, startDaily, demo: cfg => begin('classic', L.create(cfg)), rescue: r => rescuePour(r) };
+  window.JJApp = { end: { over: () => gameOver(), win: () => levelWin() }, state: () => S, game: () => G, save: () => save, events, perf, perfText, check: () => { const bad = []; for (let k = 0; k < 64; k++) if (!!S.board[k] !== !!V.board[k]) bad.push(k); return bad; }, show, startLevel, startClassic, startDaily, demo: cfg => begin('classic', L.create(cfg)), rescue: r => rescuePour(r) };
   if (Q.get('bot')) {
     const speed = +(Q.get('speed') || 1), journey = Q.get('bot') === 'journey'; window.JJBotOn = true;
     const think = () => {
       if (!window.JJBotOn) return;
       const rm = $('mResult').classList.contains('on'), lm = $('mLevel').classList.contains('on');
       if (lm) { $('lvGo').click(); return later(think, 900 / speed); }
-      if (rm) { const b = $('rNext') || $('rRetry') || $('rAgain'); if (b) b.click(); return later(think, 1200 / speed); }
+      if ($('mInfo').classList.contains('on')) { const b = (Q.get('botrv') === '0' ? $('cNo') : $('cWatch')) || $('introGo') || $('cNo'); if (b && !b.disabled) b.click(); return later(think, 900 / speed); }
+      if (rm) { G.botSeen = G.botSeen || performance.now(); if (performance.now() - G.botSeen < 2600) return later(think, 300); const d = $('rDouble'); if (d && d.style.display !== 'none' && !d.disabled && d.textContent.includes('Double') && Q.get('botrv') !== '0' && Math.random() < 0.6) { d.click(); return later(think, 4500); } const b = $('rNext') || $('rRetry') || $('rAgain'); if (b) b.click(); return later(think, 1200 / speed); }
       if (screen === 'home') { journey ? playJourney() : startClassic(); return later(think, 900 / speed); }
       if (screen !== 'hud' || !S || S.over || V.tweens.length > 3 || performance.now() < busyUntil) return later(think, 150 / speed);
       if (S.popReady && (S.stuck || Math.random() < 0.1)) { const p = B.bestPop(S); aiming = true; aimCell = { r: p.r, c: p.c }; doPour(); return later(think, 1800 / speed); }

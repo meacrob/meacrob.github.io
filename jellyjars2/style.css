@@ -42,6 +42,8 @@ body.playing #scene *,body.saver .sway,body.saver .sway2,body.saver .bob,body.sa
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-family:Baloo;font-size:24px;color:#fff;padding:12px 30px;border-radius:22px;background:linear-gradient(#ff7aa3,var(--pink2));box-shadow:inset 0 -6px 0 rgba(0,0,0,.16),inset 0 3px 0 rgba(255,255,255,.35),0 6px 14px rgba(232,61,114,.35);text-shadow:0 2px 0 rgba(150,20,60,.3);transition:transform .08s}
 .btn:active{transform:translateY(3px) scale(.98)}
 .btn.green{background:linear-gradient(#5be0a8,#1fb57f);box-shadow:inset 0 -6px 0 rgba(0,0,0,.16),inset 0 3px 0 rgba(255,255,255,.35),0 6px 14px rgba(31,181,127,.35);text-shadow:0 2px 0 rgba(10,100,60,.3)}
+.btn.gold{background:linear-gradient(#ffd95a,#f5a623);box-shadow:inset 0 -6px 0 rgba(0,0,0,.14),inset 0 3px 0 rgba(255,255,255,.4),0 6px 14px rgba(245,166,35,.35);text-shadow:0 2px 0 rgba(140,80,0,.3);font-size:17px}
+.btn.gold svg{width:20px;height:20px;vertical-align:-4px}
 .btn.blue{background:linear-gradient(#6fb8ff,#2f86f0);box-shadow:inset 0 -6px 0 rgba(0,0,0,.16),inset 0 3px 0 rgba(255,255,255,.35),0 6px 14px rgba(47,134,240,.35)}
 .btn.ghost{background:#fff;color:var(--pink2);text-shadow:none;box-shadow:inset 0 -4px 0 rgba(232,61,114,.15),0 4px 10px rgba(150,60,100,.12);font-size:20px;padding:10px 22px}
 .btn.small{font-size:17px;padding:8px 16px;border-radius:16px}

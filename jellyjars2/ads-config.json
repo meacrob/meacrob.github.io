@@ -1,0 +1,14 @@
+{
+  "ads_enabled": true,
+  "rv_continue_enabled": true,
+  "rv_continue_moves": 5,
+  "rv_double_enabled": true,
+  "int_enabled": true,
+  "int_min_results": 2,
+  "int_min_active_sec": 330,
+  "int_every_n": 2,
+  "int_cooldown_sec": 180,
+  "int_max_per_window": 3,
+  "int_window_sec": 1800,
+  "int_skip_after_rv_sec": 90
+}

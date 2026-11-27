@@ -7,7 +7,7 @@
    caused crackles (buffer underruns) and extra heat. Playback is capped at 8 voices with priorities and a limiter. */
 (function () {
   'use strict';
-  let ctx = null, master, limiter, sfxBus, musBus, liftGain, sfxOn = true, musOn = true, hapOn = true;
+  let adPause = false, ctx = null, master, limiter, sfxBus, musBus, liftGain, sfxOn = true, musOn = true, hapOn = true;
   const SR = 32000, PENTA = [0, 2, 4, 7, 9, 12, 14, 16, 19, 21, 24], MAX = 8;
   const midi = m => 440 * Math.pow(2, (m - 69) / 12);
   const live = [], last = {}, cache = {}, pending = {};
@@ -152,7 +152,7 @@
     sfxBus = ctx.createGain(); sfxBus.gain.value = sfxOn ? 0.8 : 0; sfxBus.connect(master);
     musBus = ctx.createGain(); musBus.gain.value = 0.5; musBus.connect(master);
     liftGain = ctx.createGain(); liftGain.gain.value = 0;
-    document.addEventListener('visibilitychange', () => { if (!ctx) return; if (document.hidden) ctx.suspend(); else ctx.resume(); });
+    document.addEventListener('visibilitychange', () => { if (!ctx) return; if (document.hidden) ctx.suspend(); else if (!adPause) ctx.resume(); });
     prewarm(); Music.load('menu'); setTimeout(() => Music.load('game'), 1500);
     if (Music.want) Music.play(Music.want);
   }
@@ -163,6 +163,7 @@
     intensity(v) { Music.intensity = v; if (ctx) Music.setLift(); },
     voices() { for (let i = live.length - 1; i >= 0; i--) if (!ctx || live[i].end < ctx.currentTime) live.splice(i, 1); return live.length; },
     stats() { return { voices: S.voices(), cached: Object.keys(cache).length, rate: ctx ? ctx.sampleRate : 0, latency: ctx ? Math.round(((ctx.baseLatency || 0) + (ctx.outputLatency || 0)) * 1000) : 0, state: ctx ? ctx.state : 'off' }; },
+    pause(on) { if (!ctx) return; adPause = on; if (on) ctx.suspend(); else if (!document.hidden) ctx.resume(); }, // full-screen ads: silence the game
     tap() { const d = ctx.createMediaStreamDestination(); limiter.connect(d); return d.stream; }
   };
   for (const k of Object.keys(SFX)) S[k] = (a, b) => play(k, a, b);
