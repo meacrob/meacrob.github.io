@@ -684,7 +684,13 @@
   const go = () => { $('boot').classList.add('gone'); if (!save.tut.basics && !save.stats.games && !Q.get('bot')) startSchool(0); else if (!save.stars[1] && !save.stats.games && !Q.get('bot')) startLevel(save.run && save.run.mode === 'level' ? save.run.level : 1, true); else show('home'); };
   (document.fonts ? document.fonts.load('800 20px Baloo').catch(() => {}) : Promise.resolve()).then(() => later(go, 350));
   if (DEV && Q.get('debug') === '1') togglePerf(true);
-  if (!DEV) for (const id of ['perfBtn', 'reportBtn', 'perf']) $(id).remove();
+  if (!DEV) for (const id of ['perfBtn', 'reportBtn', 'perf', 'styleBtn']) $(id).remove();
+  else { // dev only: compare jelly cell styles on the phone (0 current, 1 Jelly Friends, 2 buddy skin)
+    const SN = ['Current', 'Jelly Friends', 'Buddy skin'], FL = { rosie: 1, bluu: 2, sunny: 3, snooze: 4, zest: 5, pip: 6 };
+    const applyStyle = () => { const st = save.cellStyle || 0; V.setCellStyle(st, FL[save.buddy] || 1); $('styleBtn').textContent = 'Jelly style: ' + SN[st]; };
+    $('styleBtn').onclick = () => { A.click(); save.cellStyle = ((save.cellStyle || 0) + 1) % 3; persist(); applyStyle(); track('cell_style', { style: save.cellStyle }); };
+    applyStyle();
+  }
   // ads: active play time = on the board, not paused, touched in the last 20 s, app visible
   Ads.init({ dev: DEV, track, onFull: on => A.pause(on) });
   setInterval(() => { if (screen === 'hud' && G && G.mode !== 'school' && S && !S.over && !document.hidden && !$('mPause').classList.contains('on') && (performance.now() - lastInput < 20000 || window.JJBotOn)) Ads.activeTick(1); }, 1000);

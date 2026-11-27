@@ -69,11 +69,12 @@
       gl_Position = projectionMatrix * mv;
     }`;
   const FS = `
-    uniform sampler2D uMatcap; uniform float uAlpha; uniform float uGloss; uniform float uSSS; uniform float uInvert; uniform float uTime;
+    uniform float uStyle; uniform float uBuddy; uniform sampler2D uMatcap; uniform float uAlpha; uniform float uGloss; uniform float uSSS; uniform float uInvert; uniform float uTime;
     varying vec3 vN; varying vec3 vV; varying vec3 vColor; varying vec3 vL; varying vec3 vON; varying vec3 vAF;
     float disc(vec2 p, vec2 c, float r){ return 1.0 - smoothstep(r - 0.01, r + 0.01, length(p - c)); }
     float ring(vec2 p, vec2 c, float r, float t){ return 1.0 - smoothstep(t - 0.008, t + 0.008, abs(length(p - c) - r)); }
     float seg(vec2 p, vec2 a, vec2 b, float t){ vec2 pa = p - a, ba = b - a; float h = clamp(dot(pa, ba)/dot(ba, ba), 0.0, 1.0); return 1.0 - smoothstep(t - 0.008, t + 0.008, length(pa - ba*h)); }
+    float hash(vec2 p){ return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
     float star(vec2 p, float r){ float a = atan(p.x, p.y); float s = r*(0.6 + 0.4*abs(cos(a*2.5))); return 1.0 - smoothstep(s - 0.01, s + 0.01, length(p)); }
     void main(){
       vec3 ink = vec3(0.22, 0.1, 0.2);
@@ -97,7 +98,7 @@
       if (fl > 0.5 && fl < 7.5 && vON.z > 0.55) {
         vec2 f = vL.xy;
         float blink = step(fract(uTime*0.23 + vAF.z*0.37), 0.022);
-        vec3 c = col;
+        vec3 c = col; float flv = fl; if (uStyle > 1.5) fl = uBuddy; // style 2: every cell wears the buddy's fruit pattern
         if (fl < 1.5) { // strawberry: seeds + leaf
           vec2 g = fract(f*9.0 + 0.5) - 0.5; float seeds = step(length(g), 0.07) * step(0.2, abs(f.y + 0.02) + abs(f.x)*0.6) * step(f.y, 0.25);
           c = mix(c, vec3(1.0, 0.9, 0.55), seeds*0.75);
@@ -117,6 +118,37 @@
           vec2 g = fract(f*13.0 + 0.3) - 0.5; c *= 1.0 - step(length(g), 0.08) * 0.08;
           c = mix(c, base*0.7, ring(f, vec2(0.02, 0.34), 0.05, 0.016) * step(f.x, 0.06));
         }
+        // style 1 "Jelly Friends": each flavour carries its friend's signature, readable at board size
+        if (uStyle > 0.5) {
+          float face = 1.0 - disc(f, vec2(0.0, -0.01), 0.24);
+          if (fl < 1.5) { // Rosie: bold seeds + leaf crown
+            vec2 g = fract(f*6.5 + vec2(0.5, 0.25)) - 0.5;
+            c = mix(c, vec3(1.0, 0.93, 0.62), step(length(g*vec2(1.0, 0.8)), 0.1) * face * step(f.y, 0.26) * 0.9);
+            float lf = 0.0; for (int i = -2; i <= 2; i++) lf += disc(f, vec2(float(i)*0.085, 0.405 - abs(float(i))*0.02), 0.058);
+            c = mix(c, vec3(0.3, 0.74, 0.32), clamp(lf, 0.0, 1.0));
+          } else if (fl < 2.5) { // Bluu: big 5-point crown + frosty bloom
+            c = mix(c, vec3(1.0), step(0.86, hash(floor(f*40.0))) * 0.18 * face);
+            c = mix(c, base*0.42, star(f - vec2(0.0, 0.34), 0.115));
+          } else if (fl < 3.5) { // Sunny: sun sparkle + bigger leaf
+            c = mix(c, vec3(0.31, 0.75, 0.35), clamp(disc(f, vec2(0.12, 0.38), 0.085) + disc(f, vec2(0.2, 0.39), 0.07), 0.0, 1.0));
+            c = mix(c, vec3(1.0, 0.98, 0.8), star(f - vec2(-0.3, 0.3), 0.07) * 0.9);
+          } else if (fl < 4.5) { // Snooze: grape bumps + a little z
+            float b = 0.0; for (int i = 0; i < 6; i++) { float a = float(i)*1.047 + 0.5; b += ring(f, vec2(cos(a), sin(a))*0.33, 0.085, 0.012); }
+            c = mix(c, base*1.25 + 0.05, clamp(b, 0.0, 1.0) * 0.55 * face);
+            vec2 z = f - vec2(0.27, 0.3); float zz = seg(z, vec2(-0.04, 0.035), vec2(0.04, 0.035), 0.012) + seg(z, vec2(0.04, 0.035), vec2(-0.04, -0.035), 0.012) + seg(z, vec2(-0.04, -0.035), vec2(0.04, -0.035), 0.012);
+            c = mix(c, vec3(1.0), clamp(zz, 0.0, 1.0) * 0.95);
+          } else if (fl < 5.5) { // Zest: lime-slice wedges + leaf
+            float a = atan(f.y, f.x), r = length(f); float w = (1.0 - smoothstep(0.0, 0.06, abs(sin(a*4.0)) * r)) * step(0.27, r) * step(r, 0.44);
+            c = mix(c, vec3(0.88, 1.0, 0.75), w * 0.55); c = mix(c, base*0.7, ring(f, vec2(0.0), 0.44, 0.02) * 0.5);
+            c = mix(c, vec3(0.2, 0.55, 0.22), disc(f, vec2(0.3, 0.33), 0.08));
+          } else if (fl < 6.5) { // Pip: stem + leaf + happy sparkles
+            c = mix(c, vec3(0.45, 0.3, 0.15), seg(f, vec2(0.0, 0.33), vec2(0.02, 0.43), 0.018));
+            c = mix(c, vec3(0.31, 0.72, 0.3), disc(f, vec2(0.1, 0.4), 0.07));
+            c = mix(c, vec3(1.0, 0.97, 0.75), (star(f - vec2(-0.32, 0.28), 0.05) + star(f - vec2(0.33, -0.3), 0.045)) * 0.9);
+          }
+          f *= 0.86; // bigger, more expressive faces
+        }
+        fl = flv;
         vec2 eL = vec2(-0.13, 0.06), eR = vec2(0.13, 0.06);
         float eyes = 0.0, shine = 0.0, lines = 0.0, er = 0.062, m = mood;
         bool happyEyes = (m > 2.5) || (fl > 2.5 && fl < 3.5 && m < 0.5) || fl > 6.5;
@@ -147,6 +179,7 @@
         else mouth = ring(f, mo + vec2(0.0, 0.04), 0.06, 0.013) * step(f.y, mo.y);
         c = mix(c, ink, clamp(mouth + fill, 0.0, 1.0));
         if (fill > 0.0) c = mix(c, vec3(1.0, 0.45, 0.55), disc(f, mo + vec2(0.0, -0.055), 0.04) * fill);
+        if (uStyle > 0.5 && fl < 1.5 && m < 0.5) c = mix(c, vec3(0.95, 0.3, 0.42), disc(f, mo + vec2(0.03, -0.07), 0.04) * step(f.y, mo.y - 0.04)); // Rosie sticks her tongue out
         float bl = (fl > 1.5 && fl < 2.5) ? 0.55 : 0.3;
         c = mix(c, vec3(1.0, 0.5, 0.62), (disc(f, vec2(-0.25, -0.05), 0.06) + disc(f, vec2(0.25, -0.05), 0.06)) * bl);
         col = c;
@@ -159,7 +192,7 @@
     }`;
   function mat(o) {
     return new T.ShaderMaterial({
-      uniforms: { uTime: { value: 0 }, uBreath: { value: 1 }, uMatcap: { value: View.matcap }, uAlpha: { value: o.alpha || 1 }, uGloss: { value: o.gloss == null ? 1 : o.gloss }, uSSS: { value: o.sss == null ? 0.3 : o.sss }, uInvert: { value: o.invert ? 1 : 0 }, uColor: { value: lin(o.color || '#ffffff') } },
+      uniforms: { uStyle: View.cellStyle, uBuddy: View.cellBuddy, uTime: { value: 0 }, uBreath: { value: 1 }, uMatcap: { value: View.matcap }, uAlpha: { value: o.alpha || 1 }, uGloss: { value: o.gloss == null ? 1 : o.gloss }, uSSS: { value: o.sss == null ? 0.3 : o.sss }, uInvert: { value: o.invert ? 1 : 0 }, uColor: { value: lin(o.color || '#ffffff') } },
       vertexShader: (o.instanced ? '' : 'uniform vec3 uColor;\n') + VS, fragmentShader: FS, defines: o.instanced ? { INST: 1 } : {},
       transparent: (o.alpha || 1) < 1, depthWrite: (o.alpha || 1) >= 1
     });
@@ -217,7 +250,8 @@
   }
 
   const View = {
-    PAL, NAMES, N, TRAY_Y, TRAY_X, TRAY_S, JAR_POS, BZ, tweens: [], time: 0, active: false,
+    PAL, NAMES, N, TRAY_Y, TRAY_X, TRAY_S, JAR_POS, BZ, tweens: [], time: 0, active: false, cellStyle: { value: 0 }, cellBuddy: { value: 1 },
+    setCellStyle(style, buddyFlav) { this.cellStyle.value = style; if (buddyFlav) this.cellBuddy.value = buddyFlav; this.dirty = true; },
     init(canvas) {
       this.canvas = canvas;
       const r = this.renderer = new T.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance', stencil: false });
