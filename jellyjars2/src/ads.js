@@ -52,15 +52,15 @@
   async function initNative() {
     const A = P();
     const L = (ev, fn) => { try { A.addListener(ev, fn); } catch (e) {} };
-    L('onRewardedVideoAdLoaded', () => { rvAt = Date.now(); st.rv.ready = true; st.rv.loading = false; st.rv.fails = 0; S.load.rv++; track('ad_loaded', { format: 'rewarded' }); });
-    L('onRewardedVideoAdFailedToLoad', e => { st.rv.loading = false; st.rv.fails++; S.fail.rv++; track('ad_load_failed', { format: 'rewarded', code: e && e.code }); retry('rv'); });
+    L('onRewardedVideoAdLoaded', () => { rvAt = Date.now(); st.rv.ready = true; st.rv.loading = false; st.rv.fails = 0; S.load.rv++; track('ad_loaded', { format: 'rewarded', ms: Date.now() - (st.rv.t0 || Date.now()) }); });
+    L('onRewardedVideoAdFailedToLoad', e => { st.rv.loading = false; st.rv.fails++; S.fail.rv++; track('ad_load_failed', { format: 'rewarded', code: String(e && e.code), msg: String(e && e.message || '').slice(0, 90), attempt: st.rv.fails }); retry('rv'); });
     L('onRewardedVideoAdShowed', () => { clearTimeout(showGuard); S.rvStart[S.cur] = (S.rvStart[S.cur] || 0) + 1; track('rv_start', { placement: S.cur }); });
     L('onRewardedVideoAdImpression', d => impression('rewarded', d));
     L('onRewardedVideoAdReward', () => { rvGot = true; });
     L('onRewardedVideoAdFailedToShow', e => { track('ad_show_failed', { format: 'rewarded', code: e && e.code }); endRv(); });
     L('onRewardedVideoAdDismissed', () => setTimeout(endRv, 400)); // a late reward callback still counts
-    L('interstitialAdLoaded', () => { st.int.ready = true; st.int.loading = false; st.int.fails = 0; S.load.int++; track('ad_loaded', { format: 'interstitial' }); });
-    L('interstitialAdFailedToLoad', e => { st.int.loading = false; st.int.fails++; S.fail.int++; track('ad_load_failed', { format: 'interstitial', code: e && e.code }); retry('int'); });
+    L('interstitialAdLoaded', () => { st.int.ready = true; st.int.loading = false; st.int.fails = 0; S.load.int++; track('ad_loaded', { format: 'interstitial', ms: Date.now() - (st.int.t0 || Date.now()) }); });
+    L('interstitialAdFailedToLoad', e => { st.int.loading = false; st.int.fails++; S.fail.int++; track('ad_load_failed', { format: 'interstitial', code: String(e && e.code), msg: String(e && e.message || '').slice(0, 90), attempt: st.int.fails }); retry('int'); });
     L('interstitialAdImpression', d => impression('interstitial', d));
     L('interstitialAdShowed', () => clearTimeout(showGuard));
     L('interstitialAdFailedToShow', e => { track('ad_show_failed', { format: 'interstitial', code: e && e.code }); endInt(); });
@@ -79,7 +79,7 @@
   }
   function load(k) {
     if (!cfg.ads_enabled || !units || st[k].ready || st[k].loading) return;
-    st[k].loading = true; S.req[k]++; track('ad_request', { format: k === 'rv' ? 'rewarded' : 'interstitial' });
+    st[k].loading = true; st[k].t0 = Date.now(); S.req[k]++; track('ad_request', { format: k === 'rv' ? 'rewarded' : 'interstitial', attempt: st[k].fails + 1 });
     if (native) { const A = P(), o = { adId: k === 'rv' ? units.rewarded : units.interstitial, isTesting: testAds }; (k === 'rv' ? A.prepareRewardVideoAd(o) : A.prepareInterstitial(o)).catch(() => {}); }
     else setTimeout(() => { // simulated (browser dev only). window.JJ_SIM_FAIL = 'rv' | 'int' | 'all' makes loads fail, for testing
       st[k].loading = false; const f = window.JJ_SIM_FAIL;
@@ -91,12 +91,15 @@
     const p = S.cur || '?', v = d && d.valueMicros ? d.valueMicros / 1e6 : 0;
     S.imp[p] = (S.imp[p] || 0) + 1; const r = S.rev[format === 'rewarded' ? 'rv' : 'int']; r[0]++; r[1] += v;
     if (!mem.firstAdT) mem.firstAdT = Date.now();
-    track('ad_shown', Object.assign({ format, placement: p, value: v, currency: d && d.currencyCode, precision: d && d.precision, network: d && d.networkName, secs_to_first_ad: Math.round((mem.firstAdT - mem.sessionStart) / 1000) }, pendingPlacement || {}));
+    // revenue per impression from AdMob's paid event. Named ad_paid with ad_value (not value): Firebase already logs its own
+    // automatic ad_impression with revenue (AdMob is linked), so GA revenue totals must come from that one only. No double count.
+    const since = mem.lastAd ? Math.round((Date.now() - mem.lastAd) / 1000) : -1; mem.lastAd = Date.now();
+    track('ad_paid', Object.assign({ ad_format: format, placement: p, ad_value: v, currency: d && d.currencyCode || '', precision: d ? d.precision : -1, network: d && d.networkName || '', since_ad: since, secs_to_first_ad: Math.round((mem.firstAdT - mem.sessionStart) / 1000) }, pendingPlacement || {}));
   }
   function endRv() {
     clearTimeout(showGuard); if (!rvResolve) return; const got = rvGot, res = rvResolve; rvResolve = null; rvGot = false; st.rv.ready = false; onFull(false);
-    if (got) { S.rvDone[S.cur] = (S.rvDone[S.cur] || 0) + 1; mem.lastRv = Date.now(); track('rv_complete', Object.assign({ placement: S.cur }, pendingPlacement)); }
-    else track('rv_closed_early', { placement: S.cur });
+    if (got) { S.rvDone[S.cur] = (S.rvDone[S.cur] || 0) + 1; mem.lastRv = Date.now(); track('rv_reward', Object.assign({ placement: S.cur }, pendingPlacement)); } // reward granted only here
+    else track('rv_closed_early', Object.assign({ placement: S.cur }, pendingPlacement));
     setTimeout(() => load('rv'), 1000); res({ rewarded: got });
   }
   function endInt() { clearTimeout(showGuard); if (!intResolve) return; const res = intResolve; intResolve = null; st.int.ready = false; onFull(false); setTimeout(() => load('int'), 1000); res(); }
@@ -133,13 +136,13 @@
     resumed() { if (!units) return; load('rv'); load('int'); },
     get testAds() { return testAds; },
     // player saw an offer
-    offer(placement, ctx) { S.rvOffer[placement] = (S.rvOffer[placement] || 0) + 1; track('rv_offer', Object.assign({ placement }, ctx)); },
+    offer(placement, ctx) { S.rvOffer[placement] = (S.rvOffer[placement] || 0) + 1; track('rv_offer', Object.assign({ placement, ready: st.rv.ready ? 1 : 0 }, ctx)); },
     declined(placement, ctx) { S.rvDeclined[placement] = (S.rvDeclined[placement] || 0) + 1; track('rv_declined', Object.assign({ placement }, ctx)); },
     showRewarded(placement, ctx) {
       return new Promise(res => {
         if (!this.rvReady()) { track('rv_unavailable', { placement }); load('rv'); return res({ rewarded: false, unavailable: true }); }
         S.cur = placement; pendingPlacement = ctx || {}; rvResolve = res; rvGot = false; onFull(true);
-        track('rv_show', Object.assign({ placement }, ctx));
+        track('rv_show', Object.assign({ placement, since_ad: mem.lastAd ? Math.round((Date.now() - mem.lastAd) / 1000) : -1 }, ctx));
         showGuard = setTimeout(() => { track('ad_show_timeout', { format: 'rewarded' }); endRv(); }, 10000); // never left hanging if the ad screen does not open
         if (native) P().showRewardVideoAd().then(it => { if (it && it.amount != null) rvGot = true; }).catch(() => endRv()); else simAd('rv');
       });
@@ -151,12 +154,13 @@
     transition(placement, ctx) {
       return new Promise(res => {
         const now = Date.now(), why = this.intBlock(now);
-        if (why) { if (why !== 'not_ready' || mem.results >= cfg.int_min_results) track('int_skipped', { placement, why }); return res(); }
+        if (why) { track('int_skipped', Object.assign({ placement, why, active_min: Math.round(mem.active / 6) / 10, results: mem.results }, ctx)); return res(); }
         mem.eligible++;
-        if (mem.eligible < cfg.int_every_n) { track('int_skipped', { placement, why: 'every_n', n: mem.eligible }); return res(); }
+        track('int_eligible', Object.assign({ placement, n: mem.eligible, every: cfg.int_every_n }, ctx));
+        if (mem.eligible < cfg.int_every_n) { track('int_skipped', Object.assign({ placement, why: 'every_n', n: mem.eligible }, ctx)); return res(); }
         mem.eligible = 0; mem.lastInt = now; mem.ints.push(now);
         S.cur = placement; pendingPlacement = ctx || {}; intResolve = res; onFull(true);
-        track('int_show', Object.assign({ placement, active_min: Math.round(mem.active / 6) / 10 }, ctx));
+        track('int_show', Object.assign({ placement, active_min: Math.round(mem.active / 6) / 10, since_ad: mem.lastAd ? Math.round((now - mem.lastAd) / 1000) : -1, results: mem.results }, ctx));
         showGuard = setTimeout(() => { track('ad_show_timeout', { format: 'interstitial' }); endInt(); }, 10000);
         if (native) P().showInterstitial().catch(() => endInt()); else simAd('int');
       });

@@ -12,7 +12,10 @@
   const fmt = n => Math.round(n).toLocaleString('en-US');
   let save = M.load();
   const events = []; // analytics buffer (Firebase in the app build)
-  function track(name, p) { if (window.JJNative) JJNative.track(name, p || {}); events.push([Date.now(), name, p || {}]); if (events.length > 300) events.shift(); if (Q.get('debug') === '1') console.log('[track]', name, JSON.stringify(p || {})); }
+  // Measurement plan: v2/ANALYTICS.md. Every event gets the current mode (and Journey level) unless it sets its own.
+  function track(name, p) { p = Object.assign({}, p || {}); if (p.mode == null) p.mode = G && screen === 'hud' ? G.mode : 'menu'; if (p.level == null && G && G.mode === 'level' && screen === 'hud') p.level = G.level;
+    if (window.JJNative) JJNative.track(name, p); events.push([Date.now(), name, p]); if (events.length > 300) events.shift(); if (Q.get('debug') === '1') console.log('[track]', name, JSON.stringify(p || {})); }
+  const beans = (n, source, extra) => { if (n > 0) track('earn_virtual_currency', Object.assign({ virtual_currency_name: 'beans', value: n, source }, extra || {})); }; // GA recommended event
   let saveTimer = 0; function persist(now) { clearTimeout(saveTimer); if (now) M.save(save); else saveTimer = later(() => M.save(save), 250); }
 
   // ---------- icons ----------
@@ -166,7 +169,7 @@
     } else {
       g.className = 'grid three';
       g.innerHTML = M.JARS.map(j => { const has = save.jars[j.id], isNew = has && !save.seenJars[j.id]; return `<button class="item panel ${has ? '' : 'locked'} ${isNew ? 'new' : ''}" data-jar="${j.id}">${jarSVG(j)}<b style="font-size:15px">${j.name}</b><span>${has ? (save.jar === j.id ? 'In use' : 'Tap to use') : j.price ? `<b class="price">${BEAN.replace('<svg', '<svg width="14" height="14"')} ${j.price}</b>` : j.how}</span>${save.jar === j.id ? '<i class="eq">ON</i>' : ''}</button>`; }).join('');
-      g.querySelectorAll('[data-jar]').forEach(b => b.onclick = () => { const id = b.dataset.jar, jd = M.JARS.find(x => x.id === id); if (!save.jars[id]) { if (jd.price && save.beans >= jd.price) { save.beans -= jd.price; save.jars[id] = true; save.seenJars[id] = true; A.unlock(); toast('New jar: ' + jd.name); track('jar_bought', { id, price: jd.price }); } else { A.bad(); toast(jd.price ? `${jd.price - save.beans} more beans needed` : jd.how); return; } } save.jar = id; applyJar(); A.click(); persist(); track('jar_equipped', { id }); buildCollection(); });
+      g.querySelectorAll('[data-jar]').forEach(b => b.onclick = () => { const id = b.dataset.jar, jd = M.JARS.find(x => x.id === id); if (!save.jars[id]) { if (jd.price && save.beans >= jd.price) { save.beans -= jd.price; save.jars[id] = true; save.seenJars[id] = true; A.unlock(); toast('New jar: ' + jd.name); track('jar_bought', { id, price: jd.price }); track('spend_virtual_currency', { virtual_currency_name: 'beans', value: jd.price, item_name: 'jar_' + id }); } else { A.bad(); toast(jd.price ? `${jd.price - save.beans} more beans needed` : jd.how); return; } } save.jar = id; applyJar(); A.click(); persist(); track('jar_equipped', { id }); buildCollection(); });
       for (const k in save.jars) save.seenJars[k] = true; persist();
     }
   }
@@ -236,8 +239,8 @@
       const d = m.prog >= m.n; return `<div class="mission"><div><b>${M.missionText(m)}</b><div class="bar"><i style="width:${Math.round(m.prog / m.n * 100)}%"></i></div></div>${m.claimed ? '<span class="sub">Done</span>' : d ? `<button class="btn small green" data-claim="${i}">${BEAN}${M.missionBeans(m)}</button>` : `<span class="pill">${BEAN}${M.missionBeans(m)}</span>`}</div>`;
     }).join('') + `<div class="sub">Finish all 3 for a bonus ${BEAN.replace('<svg', '<svg width="16" height="16"')} 50</div><button class="btn" data-close style="width:100%">Close</button>`;
     $('missionsBody').querySelectorAll('[data-claim]').forEach(b => b.onclick = () => {
-      const m = ms.list[+b.dataset.claim]; if (m.claimed) return; m.claimed = true; save.beans += M.missionBeans(m); save.stats.missions++; A.coin(); track('mission_claimed', { id: m.id });
-      if (!ms.bonus && ms.list.every(x => x.claimed)) { ms.bonus = true; save.beans += 50; A.unlock(); toast('All missions done! +50'); }
+      const m = ms.list[+b.dataset.claim]; if (m.claimed) return; m.claimed = true; save.beans += M.missionBeans(m); save.stats.missions++; A.coin(); track('mission_claimed', { id: m.id }); beans(M.missionBeans(m), 'mission');
+      if (!ms.bonus && ms.list.every(x => x.claimed)) { ms.bonus = true; save.beans += 50; beans(50, 'mission_bonus'); A.unlock(); toast('All missions done! +50'); }
       M.checkJars(save); M.checkAch(save); persist(); missionsModal();
     });
     openModal('mMissions');
@@ -276,10 +279,12 @@
     document.querySelector('#hud .score').style.display = mode === 'school' ? 'none' : '';
     if (mode === 'level' && !G.resumed) later(() => levelContext(LV.LEVELS[G.level - 1]), 900);
   }
+  let G0again = false;
   function startClassic() {
-    if (save.run && save.run.mode === 'classic') { try { begin('classic', save.run.state); track('run_resumed', { mode: 'classic' }); return; } catch (e) {} }
+    if (save.run && save.run.mode === 'classic') { try { begin('classic', save.run.state); track('run_resumed', { mode: 'classic', score: save.run.state.score }); return; } catch (e) {} }
     const first = !save.stats.games; begin('classic', L.create(Object.assign(classicCfg(), { friendlyStart: first })));
-    track('game_start', { mode: 'classic' });
+    if (window.JJSess) JJSess.classic++;
+    track('classic_start', { again: G0again ? 1 : 0, runs_total: save.stats.classicRuns = (save.stats.classicRuns || 0) + 1, best: save.best }); G0again = false;
   }
   const INTRO = {
     jar: { t: 'Jelly Pour', d: 'Every line you clear fills the jar. When it is full, tap it, pick a spot, and jelly fills the empty gaps there. Use it to finish lines!', ico: () => jarSVG(curJar()) },
@@ -306,9 +311,11 @@
     if (resume && save.run && save.run.mode === 'level' && save.run.level === id) { begin('level', save.run.state, { level: id, resumed: true }); return; }
     const ls = save.levelStats[id] = save.levelStats[id] || { att: 0, wins: 0, fails: 0, quits: 0, secs: 0 }; ls.att++;
     begin('level', L.create(Object.assign(LV.config(lv), knobCfg(), { jarCap: 8 }), LV.seedOf(lv)), { level: id, attempt: ls.att });
-    track('level_start', { level: id, attempt: ls.att });
+    if (window.JJSess) JJSess.levels++;
+    track('level_start', { level: id, attempt: ls.att, world: lv.world, replay: save.stars[id] ? 1 : 0, goal: lv.type, moves: (LV.config(lv).goal || {}).moves || 0 });
   }
-  function startDaily() { if (save.run && save.run.mode === 'daily' && save.run.day === M.dayKey()) { begin('daily', save.run.state, { target: M.dailyConfig().target }); return; } const dc = M.dailyConfig(); begin('daily', L.create(Object.assign({}, dc.cfg), dc.seed), { target: dc.target }); track('daily_start', { day: M.dayKey() }); }
+  const beansDaily = n => beans(n, 'daily');
+  function startDaily() { if (save.run && save.run.mode === 'daily' && save.run.day === M.dayKey()) { begin('daily', save.run.state, { target: M.dailyConfig().target }); return; } const dc = M.dailyConfig(); begin('daily', L.create(Object.assign({}, dc.cfg), dc.seed), { target: dc.target }); if (window.JJSess) JJSess.daily++; track('daily_start', { day: M.dayKey(), days_played: M.daily(save).total }); }
   function saveRun() { if (G && G.mode === 'school') return; if (!S || S.over) { if (save.run) { save.run = null; persist(); } return; } save.run = { mode: G.mode, level: G.level, day: M.dayKey(), state: S }; persist(); }
 
   function hudGoal(instant) {
@@ -446,6 +453,7 @@
 
   // ---------- end of game ----------
   function closeAll() { document.querySelectorAll('.modal').forEach(m => m.classList.remove('on')); coach(''); hand(null); }
+  const runSecs = () => G ? Math.round((performance.now() - G.startT) / 1000) : 0;
   function finishCommon() {
     save.stats.games++; save.stats.seconds += Math.round((performance.now() - G.startT) / 1000);
     done(M.progress(save, 'score', S.score, 'max'));
@@ -454,7 +462,7 @@
   }
   function unlockCards(extra) {
     const jars = M.checkJars(save), ach = M.checkAch(save);
-    jars.forEach(j => track('jar_unlocked', { id: j.id }));
+    jars.forEach(j => track('jar_unlocked', { id: j.id })); ach.forEach(a => { track('achievement_unlocked', { id: a.id }); beans(a.beans, 'achievement'); });
     return (extra || '') + jars.map(j => `<div class="unlockCard">${jarSVG(j)}<b>New jar: ${j.name}</b><span class="sub">Equip it in Collection</span></div>`).join('') + ach.map(a => `<div class="unlockCard"><div style="width:48px;height:48px">${STAR(true)}</div><b>${a.name}</b><span class="sub">${a.how} · +${a.beans}</span></div>`).join('');
   }
   function levelWin() {
@@ -465,7 +473,8 @@
     if (lv.id === 1) save.tut.level1 = true;
     const newWorld = lv.id % 10 === 0 && !prev && lv.id < 30;
     const lst = save.levelStats[lv.id]; if (lst) { lst.wins++; lst.secs += Math.round((performance.now() - G.startT) / 1000); }
-    track('level_complete', { level: lv.id, stars, moves_left: p.movesLeft, attempt: G.attempt, secs: Math.round((performance.now() - G.startT) / 1000) });
+    track('level_complete', { level: lv.id, stars, prev_stars: prev, moves_left: p.movesLeft, moves_used: S.placements, attempt: G.attempt, secs: runSecs(), score: S.score, lines: S.lines, best_combo: S.bestCombo, pours: S.pops, continued: G.continueUsed ? 1 : 0, replay: prev ? 1 : 0, beans: rw.beans });
+    beans(rw.beans, 'level_win', { level: lv.id });
     A.win(); V.celebrate(50); V.setMood(3); Ads.noteResult();
     const friends = M.checkChars(save, f => !!JJMascot.DEF[ART[f]]); friends.forEach(f => track('character_unlocked', { id: f, level: lv.id }));
     const friendCards = friends.map(f => `<div class="unlockCard friend"><img src="${charImg(f)}" alt=""><b>New friend: ${M.CHARS[f].name}!</b><span class="sub">${M.CHARS[f].bio}</span>${JJMascot.DEF[ART[f]] ? `<button class="btn small" data-buddy="${ART[f]}">Make jar buddy</button>` : ''}</div>`).join('');
@@ -484,7 +493,7 @@
       const b = $('rDouble'); if (!b || dbl === 'done' || !$('mResult').classList.contains('on')) return; b.innerHTML = `&#9654; Double your beans! ${BEAN}+${rw.beans}`; b.style.display = ''; dbl = 'offered'; Ads.offer('double_beans', rctx);
       b.onclick = () => { A.click(); b.disabled = true; Ads.showRewarded('double_beans', rctx).then(r => {
         if (!r.rewarded) { b.disabled = false; if (r.unavailable) { toast('No ad available right now'); b.remove(); } return; }
-        save.beans += rw.beans; persist(true); dbl = 'used'; track('beans_doubled', { level: lv.id, beans: rw.beans }); countUp('rBeans', rw.beans * 2, 900, () => A.coin()); b.textContent = 'Beans doubled!'; b.disabled = true; rctx.rv_here = 1;
+        save.beans += rw.beans; persist(true); dbl = 'used'; track('beans_doubled', { level: lv.id, beans: rw.beans }); beans(rw.beans, 'double_beans_ad'); countUp('rBeans', rw.beans * 2, 900, () => A.coin()); b.textContent = 'Beans doubled!'; b.disabled = true; rctx.rv_here = 1;
       }); };
     }, 2300);
     const leave = (action, fn) => () => { A.click(); if (dbl === 'offered') Ads.declined('double_beans', rctx); dbl = 'done'; closeModal('mResult'); Ads.transition('results_win', Object.assign({ action }, rctx)).then(() => V.wipeBoard(fn)); };
@@ -527,7 +536,7 @@
     G.ended = true;
     V.gameOverAnim(); A.over(); finishCommon(); Ads.noteResult();
     if (G.mode === 'level') {
-      const lv = LV.LEVELS[G.level - 1], p = L.progress(S); save.stats.fails++; const lsf = save.levelStats[lv.id]; if (lsf) { lsf.fails++; lsf.secs += Math.round((performance.now() - G.startT) / 1000); } track('level_failed', { attempt: G.attempt, level: lv.id, progress: p.v / p.n });
+      const lv = LV.LEVELS[G.level - 1], p = L.progress(S); save.stats.fails++; const lsf = save.levelStats[lv.id]; if (lsf) { lsf.fails++; lsf.secs += Math.round((performance.now() - G.startT) / 1000); } track('level_failed', { attempt: G.attempt, level: lv.id, progress: Math.round(p.v / p.n * 100) / 100, reason: p.movesLeft === 0 ? 'moves' : 'room', moves_used: S.placements, moves_left: p.movesLeft || 0, score: S.score, lines: S.lines, best_combo: S.bestCombo, pours: S.pops, secs: runSecs(), continued: G.continueUsed ? 1 : 0, continue_offered: G.continued ? 1 : 0 });
       persist(true);
       $('resultBody').innerHTML = `<div class="ribbon fail">${S.stuck || p.movesLeft > 0 ? 'Out of room' : 'Out of moves'}</div><div class="goal panel"><div class="gi">${goalIcon(lv.type)}</div><div style="text-align:left"><b>${Math.round(p.v) + ' / ' + Math.round(p.n)}</b><span>${goalText(lv.type, lv.n)}</span></div></div>
         <div class="sub">${p.v / p.n > 0.7 ? 'So close! You can do it.' : 'Try clearing lines early to keep the board open.'}</div>
@@ -539,8 +548,8 @@
       return;
     }
     let title = 'Out of moves', extra = '', isBest = false;
-    if (G.mode === 'classic') { isBest = S.score > save.best; if (isBest) save.best = S.score; done(M.progress(save, 'classic', 1)); title = isBest && S.score > 0 ? 'New best!' : 'Game over'; track('game_over', { mode: 'classic', score: S.score, best: isBest }); }
-    else { const d = M.daily(save), first = !d.played; d.played = true; isBest = S.score > d.best; d.best = Math.max(d.best, S.score); let beans = 0; if (first) { beans += 40; d.total++; } if (S.score >= G.target && !d.claimed) { d.claimed = true; beans += 30; } save.beans += beans; title = 'Daily done!'; extra = beans ? `<div class="rewards"><span class="pill">${BEAN}+${beans}</span></div>` : ''; track('daily_complete', { score: S.score }); }
+    if (G.mode === 'classic') { isBest = S.score > save.best; if (isBest) save.best = S.score; done(M.progress(save, 'classic', 1)); title = isBest && S.score > 0 ? 'New best!' : 'Game over'; track('classic_end', { score: S.score, best: isBest ? 1 : 0, lines: S.lines, best_combo: S.bestCombo, placements: S.placements, pours: S.pops, secs: runSecs(), continued: G.continueUsed ? 1 : 0, reason: 'room' }); }
+    else { const d = M.daily(save), first = !d.played; d.played = true; isBest = S.score > d.best; d.best = Math.max(d.best, S.score); let beans = 0; if (first) { beans += 40; d.total++; } if (S.score >= G.target && !d.claimed) { d.claimed = true; beans += 30; } save.beans += beans; title = 'Daily done!'; extra = beans ? `<div class="rewards"><span class="pill">${BEAN}+${beans}</span></div>` : ''; track('daily_complete', { score: S.score, target: G.target, target_hit: S.score >= G.target ? 1 : 0, first: first ? 1 : 0, best: isBest ? 1 : 0, lines: S.lines, best_combo: S.bestCombo, pours: S.pops, secs: runSecs(), days_played: d.total }); beansDaily(beans); }
     const cards = unlockCards(); persist(true);
     $('resultBody').innerHTML = `<div class="ribbon">${title}</div><div class="bigScore" id="rScore">0</div><div class="sub">${G.mode === 'classic' ? 'Best ' + fmt(save.best) : 'Best today ' + fmt(M.daily(save).best) + ' · target ' + fmt(G.target)}</div>
       <div class="statgrid"><div><b>${S.lines}</b><span>Lines</span></div><div><b>x${S.bestCombo}</b><span>Best combo</span></div><div><b>${S.pops}</b><span>Jelly pours</span></div><div><b>${S.placements}</b><span>Pieces placed</span></div></div>${extra}${cards}
@@ -548,7 +557,7 @@
     later(() => { openModal('mResult'); if (isBest && S.score > 0) { A.best(); V.celebrate(40); } }, 900);
     countUp('rScore', S.score, 900);
     const cctx = { mode: G.mode, result: G.mode === 'classic' ? 'loss' : 'daily', score: S.score, continued: !!G.continueUsed }, plc = G.mode === 'classic' ? 'results_classic' : 'results_daily';
-    $('rAgain').onclick = () => { A.click(); closeModal('mResult'); track('retry', { mode: G.mode }); Ads.transition(plc, Object.assign({ action: 'again' }, cctx)).then(() => V.wipeBoard(() => G.mode === 'classic' ? startClassic() : startDaily())); };
+    $('rAgain').onclick = () => { A.click(); closeModal('mResult'); track('retry', { mode: G.mode }); Ads.transition(plc, Object.assign({ action: 'again' }, cctx)).then(() => V.wipeBoard(() => { if (G.mode === 'classic') { G0again = true; startClassic(); } else startDaily(); })); };
     $('rHome').onclick = () => { A.click(); closeModal('mResult'); Ads.transition(plc, Object.assign({ action: 'home' }, cctx)).then(() => V.wipeBoard(() => show('home'))); };
   }
   function countUp(id, to, ms, tick) { const t0 = performance.now(); let last = 0; const step = () => { const k = Math.min(1, (performance.now() - t0) / ms), v = Math.round(to * (1 - Math.pow(1 - k, 3))); const el = $(id); if (!el) return; el.textContent = fmt(v); if (tick && v !== last && k < 1 && Math.random() < 0.3) tick(); last = v; if (k < 1) requestAnimationFrame(step); }; later(step, 300); }
@@ -556,8 +565,9 @@
   // pause
   $('pause').onclick = () => { A.click(); syncSettings(); openModal('mPause'); };
   $('resume').onclick = () => { A.click(); closeModal('mPause'); };
-  $('restart').onclick = () => { A.click(); closeModal('mPause'); save.run = null; V.wipeBoard(() => G.mode === 'level' ? startLevel(G.level) : G.mode === 'daily' ? startDaily() : (save.run = null, begin('classic', L.create(classicCfg())))); };
-  $('quit').onclick = () => { A.click(); closeModal('mPause'); if (G && G.mode === 'level') { const q = save.levelStats[G.level]; if (q) q.quits++; track('level_quit', { level: G.level, placements: S.placements }); } if (G && G.mode === 'school') track('tutorial_quit', { step: G.stage + 1 }); saveRun(); V.wipeBoard(() => show('home')); };
+  const progOf = () => { try { const p = L.progress(S); return p.n ? Math.round(p.v / p.n * 100) / 100 : 0; } catch (e) { return 0; } };
+  $('restart').onclick = () => { A.click(); closeModal('mPause'); if (G && G.mode === 'level') track('level_quit', { level: G.level, attempt: G.attempt, kind: 'restart', moves_used: S.placements, progress: progOf(), secs: runSecs() }); else if (G && G.mode !== 'school') track('run_quit', { mode: G.mode, kind: 'restart', score: S.score, secs: runSecs() }); save.run = null; V.wipeBoard(() => G.mode === 'level' ? startLevel(G.level) : G.mode === 'daily' ? startDaily() : (save.run = null, begin('classic', L.create(classicCfg())))); };
+  $('quit').onclick = () => { A.click(); closeModal('mPause'); if (G && G.mode === 'level') { const q = save.levelStats[G.level]; if (q) q.quits++; track('level_quit', { level: G.level, attempt: G.attempt, kind: 'quit', moves_used: S.placements, progress: progOf(), secs: runSecs() }); } else if (G && (G.mode === 'classic' || G.mode === 'daily')) track('run_quit', { mode: G.mode, kind: 'quit', score: S.score, secs: runSecs() }); if (G && G.mode === 'school') track('tutorial_quit', { step: G.stage + 1 }); saveRun(); V.wipeBoard(() => show('home')); };
 
   // ---------- tutorial (level 1): hand shows the first two drags, then the clear ----------
   const E8 = '........';
@@ -571,13 +581,14 @@
     { lead: 'You get 3 pieces. Use all 3 and new ones arrive.', trays: [[['3h', 3], ['l3a', 4], ['1', 6]], [['sq3', 1], ['2h', 5], ['o', 2]]],
       text: 'Place all 3 anywhere. Keep room for big pieces!', pulseTray: true, done: s => s.traysDealt >= 2, after: "New pieces! You're ready", last: true }
   ];
-  function skipSchool() { if (!G || G.mode !== 'school') return; track('tutorial_skip', { step: G.stage + 1 }); save.tut.basics = true; persist(true); $('skipTut').classList.remove('on'); hand(null); coach(''); V.hintOff(); V.wipeBoard(() => startLevel(1)); }
+  function skipSchool() { if (!G || G.mode !== 'school') return; track('tutorial_skip', { step: G.stage + 1, secs: Math.round((performance.now() - (G.schoolT || G.startT)) / 1000), replay: schoolReplay ? 1 : 0 }); save.tut.basics = true; persist(true); $('skipTut').classList.remove('on'); hand(null); coach(''); V.hintOff(); V.wipeBoard(() => startLevel(1)); }
   $('skipTut').onclick = () => { A.click(); skipSchool(); };
+  let schoolReplay = false;
   function startSchool(i) {
     i = i || 0; const st = SCHOOL[i];
     const t0 = G && G.schoolT || performance.now();
     begin('school', L.create({ preset: st.preset, trays: st.trays, jarCap: 99 }), { stage: i, wrong: 0, deferBoard: true, paused: true, schoolT: i ? t0 : performance.now() });
-    if (i === 0) track('tutorial_start', {});
+    if (i === 0) { schoolReplay = !!save.tut.basics; track('tutorial_start', { replay: schoolReplay ? 1 : 0 }); }
     if (st.lead) coach(st.lead, { top: true });            // say what is about to change...
     later(() => { V.loadBoard(S); later(() => { V.setTray(S.tray, L); later(showStage, 450); }, st.preset ? 600 : 100); }, st.lead ? 1100 : 300); // ...then change it
   }
@@ -596,7 +607,7 @@
     A.star(G.stage % 3); later(() => popText(st.after, 'info'), 350);
     later(() => V.wipeBoard(() => {
       if (!st.last) startSchool(G.stage + 1);
-      else { save.tut.basics = true; persist(true); track('tutorial_complete', { secs: Math.round((performance.now() - G.schoolT) / 1000) }); startLevel(1); }
+      else { save.tut.basics = true; persist(true); track('tutorial_complete', { secs: Math.round((performance.now() - G.schoolT) / 1000), replay: schoolReplay ? 1 : 0 }); startLevel(1); }
     }), st.last ? 1500 : 1100);
   }
   function coach(txt, o) {
@@ -677,9 +688,9 @@
   if (save.dprLock && save.dprLock !== 'auto') V.setDpr(+save.dprLock);
   $('kDpr').value = save.dprLock || 'auto'; syncKnobs(); syncSettings();
   applyJar(); makePortraits();
-  M.checkChars(save, f => !!JJMascot.DEF[ART[f]]); M.missions(save); M.daily(save); save.stats.sessions++; if (M.markDay(save)) track('day_active', { days: save.days.length }); persist();
+  M.checkChars(save, f => !!JJMascot.DEF[ART[f]]); M.missions(save); M.daily(save); save.stats.sessions++; if (M.markDay(save)) track('day_active', { days: save.days.length, day: Math.floor((Date.now() - (save.created || Date.now())) / 864e5) }); // day = days since first open (0 = install day) persist();
   if (Q.get('home')) save.homeVar = Q.get('home');
-  track(save.stats.sessions === 1 ? 'first_open' : 'session_start', { session: save.stats.sessions, home_variant: save.homeVar });
+  track('game_open', { first: save.stats.sessions === 1 ? 1 : 0, session: save.stats.sessions, home_variant: save.homeVar, from_v1: save.fromV1 ? 1 : 0 }); // first_open / session_start are Firebase's own (reserved)
   requestAnimationFrame(loop);
   const welcomeV1 = then => { // once, for players updating from Jelly Jars 1.0
     const f = save.fromV1; if (!f || f.shown) return then();
@@ -704,15 +715,48 @@
   Ads.init({ dev: DEV, track, onFull: on => A.pause(on) }); if (save.noAds) Ads.setNoAds(true);
   // ---- native app only (same Play app as 1.0) ----
   const NV = window.JJNative;
+  // ---- technical health: JS errors / promise rejections / WebGL loss -> analytics (js_error) + Crashlytics non-fatal ----
+  const errN = {};
+  function reportError(kind, msg, src, line, stack) {
+    const k = kind + msg; errN[k] = (errN[k] || 0) + 1; if (errN[k] > 1 || Object.keys(errN).length > 6) return; // once per distinct error, max 6 per session
+    const ctx = { mode: G && screen === 'hud' ? G.mode : screen, level: G && G.level || 0, gl: (V.renderer && V.renderer.capabilities && V.renderer.capabilities.isWebGL2) ? 2 : 1 };
+    track('js_error', Object.assign({ kind, msg: String(msg).slice(0, 95), src: String(src || '').split('/').pop().slice(0, 40), line: line || 0 }, ctx));
+    if (window.JJNative) JJNative.recordError(kind, msg, stack, ctx);
+  }
+  window.addEventListener('error', e => reportError('error', e.message || 'error', e.filename, e.lineno, e.error && e.error.stack));
+  window.addEventListener('unhandledrejection', e => { const r = e.reason || {}; reportError('promise', r.message || String(r), '', 0, r.stack); });
+  $('scene').addEventListener('webglcontextlost', () => reportError('webgl_lost', 'WebGL context lost', '', 0, ''));
+  // ---- session + performance summaries ----
+  const sess = { t0: performance.now(), levels: 0, classic: 0, daily: 0, sent: false };
+  window.JJSess = sess;
+  function sessionEnd(why) {
+    const secs = Math.round((performance.now() - sess.t0) / 1000); if (secs < 3) return;
+    track('session_summary', { secs, why, levels: sess.levels, classic_runs: sess.classic, daily: sess.daily, journey_max: maxLevel(), ads_rv: Ads._mem().lastRv ? 1 : 0 });
+    sess.t0 = performance.now(); sess.levels = sess.classic = sess.daily = 0;
+  }
+  const maxLevel = () => { let m = 0; for (const k of Object.keys(save.stars)) if (save.stars[k] > 0) m = Math.max(m, +k); return m; };
+  setTimeout(function perfSample() { // one sample 2 min into the app: catches slow devices (fps, frame spikes, memory)
+    const f = perf.frames.slice(-120); if (f.length < 30) return setTimeout(perfSample, 30000);
+    const avg = f.reduce((a, b) => a + b, 0) / f.length;
+    track('perf_sample', { fps: Math.round(1000 / avg), p95_ms: Math.round(pct(f, 0.95)), slow: perf.longFrames, dpr: +V.dpr.toFixed(2), heap_mb: performance.memory ? Math.round(performance.memory.usedJSHeapSize / 1048576) : -1, cores: navigator.hardwareConcurrency || 0, mem_gb: navigator.deviceMemory || 0, saver: save.settings.saver ? 1 : 0 });
+  }, 120000);
+  function userProps() {
+    if (!window.JJNative) return; const P2 = JJNative.setProp;
+    P2('app_gen', '2'); P2('home_var', save.homeVar); P2('from_v1', save.fromV1 ? '1' : '0'); P2('no_ads', save.noAds ? '1' : '0'); P2('buddy', save.buddy || 'rosie');
+    const ml = maxLevel(); P2('journey_band', ml >= 30 ? '30' : ml >= 20 ? '20-29' : ml >= 10 ? '10-19' : ml >= 5 ? '5-9' : ml >= 1 ? '1-4' : '0');
+    const cr = save.stats.classicRuns || 0; P2('classic_band', cr >= 20 ? '20+' : cr >= 5 ? '5-19' : cr >= 1 ? '1-4' : '0');
+    P2('daily_band', (M.daily(save).total || 0) >= 7 ? '7+' : String(M.daily(save).total || 0));
+  }
+  userProps();
   if (NV && NV.native) {
     NV.setProp('app_gen', '2'); NV.setProp('home_var', save.homeVar); if (save.fromV1) NV.setProp('from_v1', '1');
     if (!save.v1RemindersCleared) NV.clearOldReminders().then(n => { save.v1RemindersCleared = true; persist(); track('v1_reminders_cleared', { n }); });
     NV.restorePurchases().then(r => {
       if (r.noAds && !save.noAds) { save.noAds = true; Ads.setNoAds(true); persist(); track('no_ads_restored', {}); }
-      if (r.coins) { const b = Math.round(r.coins / 10); save.beans += b; persist(); toast(`Purchase restored: ${BEAN}+${b}`); track('iap_delivered_late', { coins: r.coins, beans: b }); }
+      if (r.coins) { const b = Math.round(r.coins / 10); save.beans += b; beans(b, 'iap_late'); persist(); toast(`Purchase restored: ${BEAN}+${b}`); track('iap_delivered_late', { coins: r.coins, beans: b }); }
     });
-    NV.onResume = () => Ads.resumed();
-    NV.onPause = () => { saveRun(); persist(true); };
+    NV.onResume = () => { Ads.resumed(); sess.t0 = performance.now(); };
+    NV.onPause = () => { saveRun(); persist(true); if (G && screen === 'hud' && !S.over && G.mode !== 'school') track('run_backgrounded', { mode: G.mode, level: G.level || 0, secs: runSecs(), moves_used: S.placements }); sessionEnd('background'); userProps(); };
     NV.onBack = () => { // Android back: close the top popup, pause a game, go home, or leave the app from home
       if (document.getElementById('simAd')) return;
       const open = [...document.querySelectorAll('.modal.on')];
@@ -727,7 +771,7 @@
   document.addEventListener('visibilitychange', () => { if (document.hidden) { saveRun(); persist(true); } });
 
   // ---------- test hooks + autoplay bot (?bot=1 classic, ?bot=journey) ----------
-  window.JJApp = { end: { over: () => gameOver(), win: () => levelWin() }, state: () => S, game: () => G, save: () => save, events, perf, perfText, check: () => { const bad = []; for (let k = 0; k < 64; k++) if (!!S.board[k] !== !!V.board[k]) bad.push(k); return bad; }, show, startLevel, startClassic, startDaily, demo: cfg => begin('classic', L.create(cfg)), rescue: r => rescuePour(r) };
+  window.JJApp = { end: { over: () => gameOver(), win: () => levelWin() }, state: () => S, game: () => G, save: () => save, events, perf, perfText, check: () => { const bad = []; for (let k = 0; k < 64; k++) if (!!S.board[k] !== !!V.board[k]) bad.push(k); return bad; }, show, startLevel, startClassic, startDaily, demo: cfg => begin('classic', L.create(cfg)), rescue: r => rescuePour(r), aim: (r, c) => { startAim(false); const q = V.cellPos(r, c), w = V.toScreen(q.x, q.y, V.BZ); aimAt(w.x, w.y); }, dailyIntro: () => dailyIntro(), hud: () => { setScore(S.score, true); hudGoal(true); }, levelIntro: n => levelIntro(LV.LEVELS[n - 1]), view: V };
   if (Q.get('bot')) {
     const speed = +(Q.get('speed') || 1), journey = Q.get('bot') === 'journey'; window.JJBotOn = true;
     const think = () => {

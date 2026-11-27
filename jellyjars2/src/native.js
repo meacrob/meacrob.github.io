@@ -11,7 +11,7 @@
   window.JJNative = N;
   const safe = p => { try { if (p && p.catch) p.catch(() => {}); } catch (e) {} return p; };
   const within = (p, ms) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))]);
-  if (!native) { N.track = () => {}; N.setProp = () => {}; return; }
+  if (!native) { N.track = () => {}; N.setProp = () => {}; N.recordError = () => {}; N.crumb = () => {}; return; }
 
   // ---- analytics ----
   const FA = P.FirebaseAnalytics, ME = P.MetaEvents;
@@ -24,10 +24,21 @@
     if (name === 'level_complete') { meta('fb_mobile_level_achieved', { fb_level: String(p.level) }); if (p.level <= 10) meta('lvl_win_' + p.level); if (MILESTONE.includes(p.level)) meta('reached_level_' + p.level); }
     else if ((name === 'level_start' || name === 'level_failed') && p.level <= 10) meta((name === 'level_start' ? 'lvl_start_' : 'lvl_fail_') + p.level);
     else if (name === 'tutorial_complete') meta('fb_mobile_tutorial_completion', { fb_success: 1 });
-    else if (name === 'ad_impression') meta('AdImpression', { fb_ad_type: p.format === 'rewarded' ? 'rewarded_video' : 'interstitial' }, p.value || 0);
-    else if (name === 'continue_used' || name === 'beans_doubled' || name === 'daily_complete' || name === 'game_over') meta(name);
+    else if (name === 'ad_paid') meta('AdImpression', { fb_ad_type: p.ad_format === 'rewarded' ? 'rewarded_video' : 'interstitial', fb_currency: p.currency || 'USD' }, p.ad_value || 0); // one per impression
+    else if (name === 'day_active' && [1, 3, 7, 14, 30].includes(p.day)) meta('ret_d' + p.day); // came back N days after install (1.0 used the same names)
+    else if (['continue_used', 'beans_doubled', 'daily_complete', 'classic_end', 'classic_start', 'character_unlocked'].includes(name)) meta(name);
   };
-  N.setProp = (key, value) => { if (FA) safe(FA.setUserProperty({ key, value: String(value) })); };
+  N.setProp = (key, value) => { if (FA) safe(FA.setUserProperty({ key, value: String(value).slice(0, 36) })); };
+
+  // ---- Crashlytics: Android crashes + ANRs are automatic; JS errors are sent as non-fatal exceptions ----
+  const CR = P.FirebaseCrashlytics;
+  N.crumb = (key, value) => { if (CR) safe(CR.setCustomKey({ key, value: String(value), type: 'string' })); };
+  N.recordError = (kind, msg, stack, ctx) => {
+    if (!CR) return;
+    const frames = String(stack || '').split('\n').map(l => { const m = l.match(/at (?:(.+?) \()?(.+?):(\d+):\d+\)?$/) || l.match(/^(.*?)@(.+?):(\d+):\d+$/); return m ? { functionName: m[1] || '?', fileName: (m[2] || '').replace(/^.*\/(src|vendor|art)\//, '$1/'), lineNumber: +m[3] } : null; }).filter(Boolean).slice(0, 20);
+    const kv = Object.entries(ctx || {}).slice(0, 10).map(([key, value]) => ({ key, value: String(value), type: 'string' }));
+    safe(CR.recordException(frames.length ? { message: (kind + ': ' + msg).slice(0, 300), stacktrace: frames, keysAndValues: kv } : { message: (kind + ': ' + msg).slice(0, 300), keysAndValues: kv }));
+  };
 
   // ---- app lifecycle ----
   const App = P.App;
