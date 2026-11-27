@@ -6,7 +6,8 @@
   const L = JJLogic, LV = JJLevels, M = JJMeta, V = JJView, A = JJAudio, B = window.JJBot;
   const $ = id => document.getElementById(id), Q = new URLSearchParams(location.search);
   if (Q.get('ts')) window.JJTS = +Q.get('ts');
-  const DEV = !!window.JJ_DEV || /github\.io$|localhost|127\.0\.0\.1/.test(location.hostname);
+  // dev tools: dev APK (JJ_DEV), the github.io test link, or a local dev server. A production app (https://localhost, no port) has none.
+  const DEV = window.JJ_DEV === true || /github\.io$/.test(location.hostname) || (/^(localhost|127\.0\.0\.1)$/.test(location.hostname) && !!location.port);
   const fmt = n => Math.round(n).toLocaleString('en-US');
   let save = M.load();
   const events = []; // analytics buffer (Firebase in the app build)
