@@ -69,7 +69,7 @@
       gl_Position = projectionMatrix * mv;
     }`;
   const FS = `
-    uniform float uStyle; uniform float uBuddy; uniform sampler2D uMatcap; uniform float uAlpha; uniform float uGloss; uniform float uSSS; uniform float uInvert; uniform float uTime;
+    uniform float uStyle; uniform float uBuddy; uniform float uTop; uniform sampler2D uMatcap; uniform float uAlpha; uniform float uGloss; uniform float uSSS; uniform float uInvert; uniform float uTime;
     varying vec3 vN; varying vec3 vV; varying vec3 vColor; varying vec3 vL; varying vec3 vON; varying vec3 vAF;
     float disc(vec2 p, vec2 c, float r){ return 1.0 - smoothstep(r - 0.01, r + 0.01, length(p - c)); }
     float ring(vec2 p, vec2 c, float r, float t){ return 1.0 - smoothstep(t - 0.008, t + 0.008, abs(length(p - c) - r)); }
@@ -125,12 +125,12 @@
             vec2 g = fract(f*6.5 + vec2(0.5, 0.25)) - 0.5;
             c = mix(c, vec3(1.0, 0.93, 0.62), step(length(g*vec2(1.0, 0.8)), 0.1) * face * step(f.y, 0.26) * 0.9);
             float lf = 0.0; for (int i = -2; i <= 2; i++) lf += disc(f, vec2(float(i)*0.085, 0.405 - abs(float(i))*0.02), 0.058);
-            c = mix(c, vec3(0.3, 0.74, 0.32), clamp(lf, 0.0, 1.0));
+            if (uTop < 0.5) c = mix(c, vec3(0.3, 0.74, 0.32), clamp(lf, 0.0, 1.0));
           } else if (fl < 2.5) { // Bluu: big 5-point crown + frosty bloom
             c = mix(c, vec3(1.0), step(0.86, hash(floor(f*40.0))) * 0.18 * face);
-            c = mix(c, base*0.42, star(f - vec2(0.0, 0.34), 0.115));
+            if (uTop < 0.5) c = mix(c, base*0.42, star(f - vec2(0.0, 0.34), 0.115));
           } else if (fl < 3.5) { // Sunny: sun sparkle + bigger leaf
-            c = mix(c, vec3(0.31, 0.75, 0.35), clamp(disc(f, vec2(0.12, 0.38), 0.085) + disc(f, vec2(0.2, 0.39), 0.07), 0.0, 1.0));
+            if (uTop < 0.5) c = mix(c, vec3(0.31, 0.75, 0.35), clamp(disc(f, vec2(0.12, 0.38), 0.085) + disc(f, vec2(0.2, 0.39), 0.07), 0.0, 1.0));
             c = mix(c, vec3(1.0, 0.98, 0.8), star(f - vec2(-0.3, 0.3), 0.07) * 0.9);
           } else if (fl < 4.5) { // Snooze: grape bumps + a little z
             float b = 0.0; for (int i = 0; i < 6; i++) { float a = float(i)*1.047 + 0.5; b += ring(f, vec2(cos(a), sin(a))*0.33, 0.085, 0.012); }
@@ -140,10 +140,9 @@
           } else if (fl < 5.5) { // Zest: lime-slice wedges + leaf
             float a = atan(f.y, f.x), r = length(f); float w = (1.0 - smoothstep(0.0, 0.06, abs(sin(a*4.0)) * r)) * step(0.27, r) * step(r, 0.44);
             c = mix(c, vec3(0.88, 1.0, 0.75), w * 0.55); c = mix(c, base*0.7, ring(f, vec2(0.0), 0.44, 0.02) * 0.5);
-            c = mix(c, vec3(0.2, 0.55, 0.22), disc(f, vec2(0.3, 0.33), 0.08));
+            if (uTop < 0.5) c = mix(c, vec3(0.2, 0.55, 0.22), disc(f, vec2(0.3, 0.33), 0.08));
           } else if (fl < 6.5) { // Pip: stem + leaf + happy sparkles
-            c = mix(c, vec3(0.45, 0.3, 0.15), seg(f, vec2(0.0, 0.33), vec2(0.02, 0.43), 0.018));
-            c = mix(c, vec3(0.31, 0.72, 0.3), disc(f, vec2(0.1, 0.4), 0.07));
+            if (uTop < 0.5) { c = mix(c, vec3(0.45, 0.3, 0.15), seg(f, vec2(0.0, 0.33), vec2(0.02, 0.43), 0.018)); c = mix(c, vec3(0.31, 0.72, 0.3), disc(f, vec2(0.1, 0.4), 0.07)); }
             c = mix(c, vec3(1.0, 0.97, 0.75), (star(f - vec2(-0.32, 0.28), 0.05) + star(f - vec2(0.33, -0.3), 0.045)) * 0.9);
           }
           f *= 0.86; // bigger, more expressive faces
@@ -192,7 +191,7 @@
     }`;
   function mat(o) {
     return new T.ShaderMaterial({
-      uniforms: { uStyle: View.cellStyle, uBuddy: View.cellBuddy, uTime: { value: 0 }, uBreath: { value: 1 }, uMatcap: { value: View.matcap }, uAlpha: { value: o.alpha || 1 }, uGloss: { value: o.gloss == null ? 1 : o.gloss }, uSSS: { value: o.sss == null ? 0.3 : o.sss }, uInvert: { value: o.invert ? 1 : 0 }, uColor: { value: lin(o.color || '#ffffff') } },
+      uniforms: { uStyle: View.cellStyle, uBuddy: View.cellBuddy, uTop: View.cellTop, uTime: { value: 0 }, uBreath: { value: 1 }, uMatcap: { value: View.matcap }, uAlpha: { value: o.alpha || 1 }, uGloss: { value: o.gloss == null ? 1 : o.gloss }, uSSS: { value: o.sss == null ? 0.3 : o.sss }, uInvert: { value: o.invert ? 1 : 0 }, uColor: { value: lin(o.color || '#ffffff') } },
       vertexShader: (o.instanced ? '' : 'uniform vec3 uColor;\n') + VS, fragmentShader: FS, defines: o.instanced ? { INST: 1 } : {},
       transparent: (o.alpha || 1) < 1, depthWrite: (o.alpha || 1) >= 1
     });
@@ -249,8 +248,32 @@
     };
   }
 
+  // ---------- small 3D toppers (prototype): each friend's signature sits on its own cell, inside the cell's footprint ----------
+  function bakeGeo(parts) { // parts: [geometry, hexColor] -> one non-indexed geometry with baked soft shading (cheap: no lights)
+    const P = [], C = [], L = new T.Vector3(-0.4, 0.6, 0.7).normalize(), n = new T.Vector3();
+    for (const [g0, hex] of parts) {
+      const g = g0.index ? g0.toNonIndexed() : g0; g.computeVertexNormals(); const pa = g.attributes.position, na = g.attributes.normal, col = new T.Color(hex).convertSRGBToLinear();
+      for (let i = 0; i < pa.count; i++) { P.push(pa.getX(i), pa.getY(i), pa.getZ(i)); n.set(na.getX(i), na.getY(i), na.getZ(i)); const k = 0.62 + 0.45 * Math.max(0, n.dot(L)) + 0.12 * Math.max(0, n.z); C.push(col.r * k, col.g * k, col.b * k); }
+    }
+    const g = new T.BufferGeometry(); g.setAttribute('position', new T.Float32BufferAttribute(P, 3)); g.setAttribute('color', new T.Float32BufferAttribute(C, 3)); return g;
+  }
+  function topperGeos() {
+    const G = '#45b84a', at = (g, x, y, z, rx, ry, rz, sx, sy, sz) => { g.scale(sx || 1, sy || 1, sz || 1); g.rotateX(rx || 0); g.rotateY(ry || 0); g.rotateZ(rz || 0); g.translate(x, y, z); return g; };
+    const leaf = (x, y, z, rz, s) => at(new T.SphereGeometry(0.07, 8, 6), x, y, z, 0.5, 0, rz, 0.55 * (s || 1), 1.25 * (s || 1), 0.35 * (s || 1));
+    const top = 0.47, row = 0.355;
+    return [null,
+      bakeGeo([[leaf(-0.13, row, top, 0.9), G], [leaf(-0.065, row + 0.02, top + 0.01, 0.45), G], [leaf(0, row + 0.03, top + 0.02, 0), '#52c457'], [leaf(0.065, row + 0.02, top + 0.01, -0.45), G], [leaf(0.13, row, top, -0.9), G], [at(new T.CylinderGeometry(0.018, 0.022, 0.08, 6), 0, row + 0.03, top + 0.05, 1.2), '#3f8f3a']]), // Rosie: leafy crown
+      bakeGeo([0, 1, 2, 3, 4].map(i => { const a = i / 5 * Math.PI * 2; return [at(new T.ConeGeometry(0.03, 0.085, 6), Math.sin(a) * 0.045, row - 0.02 + Math.cos(a) * 0.045, top + 0.01, 0, 0, -a, 1, 1, 0.55), '#2c4fb8']; }).concat([[at(new T.SphereGeometry(0.038, 8, 6), 0, row - 0.02, top, 0, 0, 0, 1, 1, 0.5), '#24409a']])), // Bluu: 5-point crown
+      bakeGeo([[leaf(0.1, row + 0.01, top + 0.01, -0.7, 1.15), G], [at(new T.CylinderGeometry(0.016, 0.02, 0.07, 6), 0.035, row, top + 0.03, 1.2, 0, 0.3), '#7a5a2e']]), // Sunny: leaf + stem
+      bakeGeo([[at(new T.ConeGeometry(0.1, 0.2, 10), -0.16, row - 0.01, top + 0.03, 0, 0, 0.75, 1, 1, 0.55), '#cfc4ff'], [at(new T.SphereGeometry(0.038, 8, 6), -0.24, row + 0.07, top + 0.04), '#ffffff']]), // Snooze: nightcap
+      bakeGeo([[leaf(0.2, row, top + 0.01, -1.0, 1.1), '#2f9a36'], [at(new T.TorusGeometry(0.03, 0.009, 4, 10, Math.PI * 1.3), 0.26, row + 0.04, top + 0.02), '#2f9a36']]), // Zest: leaf + curl
+      bakeGeo([[at(new T.CylinderGeometry(0.018, 0.022, 0.09, 6), 0, row + 0.01, top + 0.04, 1.1), '#6b4a22'], [leaf(0.075, row + 0.03, top + 0.03, -1.1, 1.0), G]]) // Pip: stem + leaf
+    ];
+  }
+
   const View = {
-    PAL, NAMES, N, TRAY_Y, TRAY_X, TRAY_S, JAR_POS, BZ, tweens: [], time: 0, active: false, cellStyle: { value: 0 }, cellBuddy: { value: 1 },
+    PAL, NAMES, N, TRAY_Y, TRAY_X, TRAY_S, JAR_POS, BZ, tweens: [], time: 0, active: false, cellStyle: { value: 0 }, cellBuddy: { value: 1 }, cellTop: { value: 0 },
+    setToppers(on) { this.toppersOn = !!on; this.cellTop.value = on ? 1 : 0; for (const m of this.toppers) if (m) { m.visible = this.toppersOn; m.count = 0; } this.dirty = true; },
     setCellStyle(style, buddyFlav) { this.cellStyle.value = style; if (buddyFlav) this.cellBuddy.value = buddyFlav; this.dirty = true; },
     init(canvas) {
       this.canvas = canvas;
@@ -276,6 +299,7 @@
       this.shadows = new T.InstancedMesh(new T.PlaneGeometry(1.25, 1.25), new T.MeshBasicMaterial({ map: this.shadowTex, transparent: true, depthWrite: false }), 200); this.shadows.frustumCulled = false; this.shadows.renderOrder = 1; this.scene.add(this.shadows);
       this.jellyMat = M({ instanced: true, gloss: 1, sss: 0.34 });
       this.jelly = Pool(roundedBox(BOX, BOX, BOX, 0.27, 5), this.jellyMat, 200); this.scene.add(this.jelly.mesh);
+      const tmat = new T.MeshBasicMaterial({ vertexColors: true }); this.toppers = topperGeos().map(g => { if (!g) return null; const m = new T.InstancedMesh(g, tmat, 120); m.frustumCulled = false; m.count = 0; m.visible = false; this.scene.add(m); return m; });
       this.ghostMat = M({ instanced: true, alpha: 0.5, gloss: 0.6, sss: 0.4 });
       this.ghost = Pool(roundedBox(BOX, BOX, BOX, 0.27, 3), this.ghostMat, 24); this.ghost.mesh.renderOrder = 2; this.scene.add(this.ghost.mesh);
       this.jar = this.buildJar(); this.scene.add(this.jar.group);
@@ -563,6 +587,13 @@
     },
     render() {
       this.jelly.sync(); this.ghost.sync(); this.sockets.sync();
+      if (this.toppersOn) { // follow each jelly's transform (board, tray and dragged pieces); 6 extra draw calls in total
+        const tp = this._tp || (this._tp = { m: new T.Matrix4(), q: new T.Quaternion(), e: new T.Euler(), p: new T.Vector3(), s: new T.Vector3(), n: [0, 0, 0, 0, 0, 0, 0] });
+        tp.n.fill(0);
+        for (const b of this.jelly.items) { if (!b.alive || b.fl < 1 || b.fl > 6 || b.flash > 0.6) continue; const m = this.toppers[b.fl]; if (tp.n[b.fl] >= 120) continue;
+          tp.p.set(b.x, b.y, b.z); tp.s.set(b.sx, b.sy, b.sz); tp.e.set(b.rx, b.ry, b.rz); tp.q.setFromEuler(tp.e); tp.m.compose(tp.p, tp.q, tp.s); m.setMatrixAt(tp.n[b.fl]++, tp.m); }
+        for (let k = 1; k <= 6; k++) { const m = this.toppers[k]; m.count = tp.n[k]; m.instanceMatrix.needsUpdate = true; }
+      }
       let n = 0; const m4 = this._m4 || (this._m4 = new T.Matrix4()), q = this._q || (this._q = new T.Quaternion()), p = this._p || (this._p = new T.Vector3()), s = this._s || (this._s = new T.Vector3()); // reused: no per-frame garbage
       for (const b of this.jelly.items) { if (!b.alive || !b.shadow || n >= 200) continue; const h = Math.max(0, b.z - BZ), k = Math.max(0.3, 1 - h * 0.35) * b.sx; if (b.big) { p.set(b.x + 0.15, b.y - b.sx * 0.5 - 0.1, -0.3); s.set(b.sx * 1.1, b.sx * 0.4, 1); } else { p.set(b.x + 0.12 + h * 0.25, b.y - 0.14 - h * 0.35, BZ - 0.42); s.set(k, k, 1); } m4.compose(p, q, s); this.shadows.setMatrixAt(n++, m4); }
       this.shadows.count = n; this.shadows.instanceMatrix.needsUpdate = true;

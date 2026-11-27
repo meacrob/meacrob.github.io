@@ -692,10 +692,11 @@
   const go2 = () => { if (!save.tut.basics && !save.stats.games && !Q.get('bot')) startSchool(0); else if (!save.stars[1] && !save.stats.games && !Q.get('bot')) startLevel(save.run && save.run.mode === 'level' ? save.run.level : 1, true); else show('home'); };
   (document.fonts ? document.fonts.load('800 20px Baloo').catch(() => {}) : Promise.resolve()).then(() => later(go, 350));
   if (DEV && Q.get('debug') === '1') togglePerf(true);
-  if (!DEV) for (const id of ['perfBtn', 'reportBtn', 'perf', 'styleBtn']) $(id).remove();
+  if (!DEV) for (const id of ['perfBtn', 'reportBtn', 'perf', 'styleBtn', 'topBtn']) $(id).remove();
   { // jelly cells: style 1 "Jelly Friends" for everyone (approved). Dev builds can cycle styles to compare on the phone.
     const SN = ['Current', 'Jelly Friends', 'Buddy skin'], FL = { rosie: 1, bluu: 2, sunny: 3, snooze: 4, zest: 5, pip: 6 };
     const applyStyle = () => { const st = DEV && save.cellStyle != null ? save.cellStyle : 1; V.setCellStyle(st, FL[save.buddy] || 1); if ($('styleBtn')) $('styleBtn').textContent = 'Jelly style: ' + SN[st]; };
+    if (DEV) { V.setToppers(!!save.toppers); $('topBtn').textContent = 'Toppers (prototype): ' + (save.toppers ? 'on' : 'off'); $('topBtn').onclick = () => { A.click(); save.toppers = !save.toppers; persist(); V.setToppers(save.toppers); $('topBtn').textContent = 'Toppers (prototype): ' + (save.toppers ? 'on' : 'off'); track('toppers', { on: save.toppers ? 1 : 0 }); }; }
     if (DEV) $('styleBtn').onclick = () => { A.click(); save.cellStyle = ((save.cellStyle == null ? 1 : save.cellStyle) + 1) % 3; persist(); applyStyle(); track('cell_style', { style: save.cellStyle }); };
     applyStyle();
   }
