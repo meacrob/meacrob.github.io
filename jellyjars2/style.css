@@ -8,12 +8,15 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 /* ---------- world backdrop ---------- */
 #bg{position:fixed;inset:0;background:linear-gradient(180deg,var(--sky1) 0%,var(--sky2) 55%,var(--sky1) 100%);transition:background .6s}
 #scene{position:absolute;inset:0}
-#scene .lay{position:absolute;inset:0 -5%;will-change:transform}
+#scene .lay{position:absolute;left:-3%;right:-3%;will-change:transform}
 #scene .lay svg{width:100%;height:100%;display:block}
-#scene .far{transform:translate3d(calc(var(--px,0)*-5px),calc(var(--py,0)*-3px),0);animation:drift2 40s ease-in-out infinite alternate}
-#scene .mid{transform:translate3d(calc(var(--px,0)*-10px),calc(var(--py,0)*-5px),0)}
-#scene .near{transform:translate3d(calc(var(--px,0)*-18px),calc(var(--py,0)*-8px),0)}
-@keyframes drift2{from{translate:-6px 0}to{translate:6px 0}}
+#scene .sky{top:0;height:30vh;transform:translate3d(calc(var(--px,0)*-4px),calc(var(--py,0)*-2px),0)}
+#scene .back{bottom:0;height:36vh;transform:translate3d(calc(var(--px,0)*-8px),calc(var(--py,0)*-4px),0)}
+#scene .front{bottom:0;height:36vh;transform:translate3d(calc(var(--px,0)*-16px),calc(var(--py,0)*-7px),0)}
+.drift{animation:drift2 26s ease-in-out infinite alternate}.drift.slow{animation-duration:38s}
+@keyframes drift2{from{transform:translateX(-14px)}to{transform:translateX(14px)}}
+.fly{animation:fly 9s ease-in-out infinite alternate}@keyframes fly{from{transform:translate(-10px,2px)}to{transform:translate(14px,-4px)}}
+.scuttle{animation:scuttle 5s ease-in-out infinite alternate}@keyframes scuttle{from{transform:translateX(-8px)}to{transform:translateX(8px)}}
 .sway{transform-box:fill-box;transform-origin:50% 100%;animation:sway 4.5s ease-in-out infinite alternate}
 .sway2{transform-box:fill-box;transform-origin:50% 100%;animation:sway 3.2s ease-in-out infinite alternate-reverse}
 .bob{animation:bob2 3s ease-in-out infinite alternate}
@@ -23,7 +26,7 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 @keyframes wave{from{transform:translateX(0)}to{transform:translateX(40px)}}
 .petal{position:absolute;top:-4%;width:9px;height:7px;border-radius:60% 0 60% 0;opacity:.75;animation:fall 16s linear infinite}
 @keyframes fall{0%{transform:translate(0,0) rotate(0)}50%{transform:translate(30px,55vh) rotate(200deg)}100%{transform:translate(-10px,110vh) rotate(400deg)}}
-body.saver .sway,body.saver .sway2,body.saver .bob,body.saver .wave,body.saver .petal,body.saver .far{animation:none}
+body.saver .sway,body.saver .sway2,body.saver .bob,body.saver .wave,body.saver .petal,body.saver .drift,body.saver .fly,body.saver .scuttle{animation:none}
 #bg .cloud{position:absolute;background:#fff;border-radius:50px;opacity:.75;filter:blur(.3px)}
 #bg .cloud:before,#bg .cloud:after{content:"";position:absolute;background:#fff;border-radius:50%}
 #bg .cloud:before{width:55%;height:150%;left:15%;top:-60%}#bg .cloud:after{width:40%;height:120%;right:12%;top:-40%}
@@ -150,8 +153,8 @@ h2{font-family:Baloo;font-size:30px;line-height:1.05}
 @keyframes rise{0%{opacity:0;transform:translate(-50%,-30%) scale(.6)}15%{opacity:1;transform:translate(-50%,-50%) scale(1.1)}100%{opacity:0;transform:translate(-50%,-160%)}}
 .hand{position:fixed;width:56px;height:56px;pointer-events:none;z-index:30;display:none;filter:drop-shadow(0 4px 6px rgba(0,0,0,.25))}
 .hand.on{display:block}
-.coach{position:fixed;left:50%;transform:translateX(-50%);padding:7px 14px;border-radius:16px;font-size:15px;line-height:1.25;text-align:center;z-index:29;display:none;max-width:86vw}
-.coach.on{display:block;animation:popc .35s cubic-bezier(.2,1.5,.4,1)}
+.coach{position:fixed;left:50%;transform:translateX(-50%);padding:8px 14px;border-radius:16px;font-size:14px;line-height:1.3;width:max-content;max-width:92vw;text-align:center;z-index:29;display:none;max-width:86vw}
+.coach #coachBtn{margin-top:8px}.coach.on{display:flex;flex-direction:column;align-items:center;animation:popc .35s cubic-bezier(.2,1.5,.4,1)}
 @keyframes popc{from{transform:translateX(-50%) scale(.6);opacity:0}}
 /* ---------- modals ---------- */
 .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(74,35,67,.35);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);z-index:40;padding:20px}

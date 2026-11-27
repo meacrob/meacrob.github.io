@@ -6,6 +6,7 @@
   const L = JJLogic, LV = JJLevels, M = JJMeta, V = JJView, A = JJAudio, B = window.JJBot;
   const $ = id => document.getElementById(id), Q = new URLSearchParams(location.search);
   if (Q.get('ts')) window.JJTS = +Q.get('ts');
+  const DEV = !!window.JJ_DEV || /github\.io$|localhost|127\.0\.0\.1/.test(location.hostname);
   const fmt = n => Math.round(n).toLocaleString('en-US');
   let save = M.load();
   const events = []; // analytics buffer (Firebase in the app build)
@@ -158,7 +159,7 @@
     document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === colTab));
     if (colTab === 'friends') {
       g.className = 'grid';
-      g.innerHTML = M.CHARS.slice(1).map((c, i) => { const f = i + 1, has = save.chars[f], id = ART[f], can = has && JJMascot.DEF[id]; return `<div class="item panel ${has ? '' : 'locked'}"><img src="${charImg(f)}" alt=""><b>${has ? c.name : '???'}</b><span>${has ? c.flav + ' · ' + c.bio : 'Joins at Journey level ' + M.CHAR_AT[f]}</span>${save.buddy === id ? '<i class="eq">In jar</i>' : can ? `<button class="btn small ghost" data-buddy="${id}">Jar buddy</button>` : ''}</div>`; }).join('');
+      g.innerHTML = M.CHARS.slice(1).map((c, i) => { const f = i + 1, has = save.chars[f], id = ART[f], can = has && JJMascot.DEF[id]; return `<div class="item panel ${has ? '' : 'locked'}"><img src="${charImg(f)}" alt=""><b>${has ? c.name : '???'}</b><span>${has ? c.flav + ' · ' + c.bio : JJMascot.DEF[id] ? 'Joins at Journey level ' + M.CHAR_AT[f] : 'Coming in a future update'}</span>${save.buddy === id ? '<i class="eq">In jar</i>' : can ? `<button class="btn small ghost" data-buddy="${id}">Jar buddy</button>` : ''}</div>`; }).join('');
       g.querySelectorAll('[data-buddy]').forEach(b => b.onclick = () => { setBuddy(b.dataset.buddy); buildCollection(); });
     } else {
       g.className = 'grid three';
@@ -213,7 +214,7 @@
   function playtestReport() {
     const ev = events.filter(e => /tutorial|drop_wrong|pour|level_|mechanic|home_tap/.test(e[1])).map(e => `${new Date(e[0]).toTimeString().slice(0, 8)} ${e[1]} ${JSON.stringify(e[2])}`);
     const ls = Object.entries(save.levelStats).map(([id, v]) => `L${id}: tries ${v.att}, wins ${v.wins}, fails ${v.fails}, quits ${v.quits}, ${v.secs}s`);
-    return `Jelly Jars playtest report\n${navigator.userAgent}\nhome variant: ${save.homeVar}\n\nLEVELS\n${ls.join('\n') || 'none'}\n\nEVENTS (this session)\n${ev.join('\n')}`;
+    return `Jelly Jars playtest report\n${navigator.userAgent}\nhome variant: ${save.homeVar}\n\nPERFORMANCE\n${perfText()}\n\nLEVELS\n${ls.join('\n') || 'none'}\n\nEVENTS (this session)\n${ev.join('\n')}`;
   }
   $('reportBtn').onclick = () => { const t = playtestReport(); (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => toast('Report copied')).catch(() => prompt('Copy this report:', t)); };
   $('tutBtn').onclick = () => { closeModal('mSettings'); A.click(); startSchool(0); };
@@ -261,7 +262,8 @@
     S = state; G = Object.assign({ mode, startT: performance.now(), lastPlace: 0, newFriends: [] }, extra || {});
     closeAll(); show('hud'); A.Music.play('game'); A.intensity(0);
     setWorld(mode === 'level' ? LV.LEVELS[G.level - 1].world : mode === 'daily' ? 2 : 0);
-    V.loadBoard(S); later(() => V.setTray(S.tray, L), 250);
+    if (G.deferBoard) V.clearAll(); else { V.loadBoard(S); later(() => V.setTray(S.tray, L), 250); }
+    V.jar.group.visible = mode !== 'school';
     V.setJar(S.popReady ? 1 : S.jar / S.cap, S.popReady);
     $('stuck').classList.remove('on'); $('jarTag').classList.remove('on'); aiming = false;
     hudGoal(true); setScore(S.score, true);
@@ -269,6 +271,7 @@
     if (S.popReady) showJarTag();
     saveRun();
     $('skipTut').classList.toggle('on', mode === 'school');
+    document.querySelector('#hud .score').style.display = mode === 'school' ? 'none' : '';
     if (mode === 'level' && !G.resumed) later(() => levelContext(LV.LEVELS[G.level - 1]), 900);
   }
   function startClassic() {
@@ -331,7 +334,7 @@
   document.addEventListener('pointerdown', () => A.init(), { capture: true, passive: true });
   cv.addEventListener('pointerdown', e => {
     if (screen === 'home') { if (V.mascotM) { const g = V.mascotM.group.position, p = V.toScreen(g.x, g.y, g.z); if (Math.hypot(e.clientX - p.x, e.clientY - p.y) < V.h * 0.14) { V.pokeMascot(); A.jelly(); } } return; }
-    if (screen !== 'hud' || !S || S.over || performance.now() < busyUntil) return;
+    if (screen !== 'hud' || !S || S.over || G.paused || performance.now() < busyUntil) return;
     if (S.popReady && V.jarHit(e.clientX, e.clientY)) { if (aiming) { cancelPour(); return; } startAim(); return; }
     if (aiming) { aimAt(e.clientX, e.clientY); return; }
     const i = V.trayHit(e.clientX, e.clientY); if (i < 0 || S.tray[i].used) return;
@@ -355,15 +358,24 @@
     handle(ev, { r: d.cell.r + 1, c: d.cell.c + 1 });
   }
   function bestPourSpot() { let b = null; for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) { const pv = L.pourPreview(S, r, c), sc = pv.lines * 100 + pv.poured.length; if (pv.poured.length && (!b || sc > b.sc)) b = { r, c, sc }; } return b; }
-  function startAim() {
+  // no legal move left but the jar is full: the pour starts by itself, already aimed at the best spot; the player can move it, then confirms
+  function rescuePour(reason) {
+    if (!S || S.over || !S.popReady || aiming || G.mode === 'school') return;
+    if (!bestPourSpot()) { after(L.giveUp(S)); return; } // completely full board: nothing to fill
+    track('pour_rescue', { reason, mode: G.mode }); A.ready();
+    startAim(true);
+    coach(reason === 'moves' ? 'Out of moves! Your jar gets one last pour. Move the spot or tap Pour here' : 'No room left! Your jar to the rescue. Move the spot or tap Pour here', { top: true });
+    const b = bestPourSpot(); if (b) { const p = V.cellPos(b.r, b.c), q = V.toScreen(p.x, p.y, V.BZ); aimAt(q.x, q.y); }
+  }
+  function startAim(forced) {
     aiming = true; aimCell = null; A.click(); $('jarTag').classList.remove('on'); hand(null);
-    G.aimT = performance.now();
-    const guide = !save.tut.pour && S.cfg.popMode === 'pour' ? bestPourSpot() : null;
-    coach(guide ? 'Tap the glowing spot. Jelly fills the empty gaps in a 3x3 area' : 'Tap the board to choose where to pour');
+    G.aimT = performance.now(); G.forcedPour = !!forced; $('pourCancel').style.display = forced ? 'none' : '';
+    const guide = !forced && !save.tut.pour && S.cfg.popMode === 'pour' ? bestPourSpot() : null;
+    coach(guide ? 'Tap the glowing spot. Jelly fills the empty gaps in a 3x3 area' : 'Tap the board to choose where to pour', { top: true });
     if (guide) { const p = V.cellPos(guide.r, guide.c); hand(V.toScreen(p.x, p.y, V.BZ)); V.hint(L.popCells(S, guide.r, guide.c), '#ff8fc4'); }
     $('pourBar').classList.add('on'); $('pourInfo').textContent = 'Choose a spot'; $('pourGo').disabled = true;
   }
-  function cancelPour() { aiming = false; aimCell = null; V.ghostHide(); V.hintOff(); hand(null); coach(''); $('pourBar').classList.remove('on'); if (S && S.popReady) showJarTag(); A.click(); track('pour_cancel', {}); }
+  function cancelPour() { if (G && G.forcedPour) return; aiming = false; aimCell = null; V.ghostHide(); V.hintOff(); hand(null); coach(''); $('pourBar').classList.remove('on'); if (S && S.popReady) showJarTag(); A.click(); track('pour_cancel', {}); }
   function aimAt(x, y) {
     const w = V.toWorld(x, y, V.BZ), c = Math.round(w.x + 3.5), r = Math.round(3.5 - w.y);
     if (r < 0 || r > 7 || c < 0 || c > 7) return;
@@ -372,7 +384,7 @@
     if (S.cfg.popMode !== 'pour') { V.ghostShow({ cells: L.popCells(S, r, c), rows: [], cols: [] }, 7, true); $('pourInfo').textContent = 'Bursts this area'; $('pourGo').disabled = false; return; }
     const pv = L.pourPreview(S, r, c); V.pourPreview(pv);
     $('pourInfo').innerHTML = pv.poured.length ? `Fills <b>${pv.poured.length}</b> gap${pv.poured.length > 1 ? 's' : ''}${pv.lines ? ` · clears <b>${pv.lines}</b> line${pv.lines > 1 ? 's' : ''}!` : ''}` : 'No gaps here';
-    $('pourGo').disabled = !pv.poured.length; coach(pv.lines ? 'Tap Pour here to finish those lines!' : 'Pour here, or tap another spot');
+    $('pourGo').disabled = !pv.poured.length; if (!G.forcedPour) coach(pv.lines ? 'Tap Pour here to finish those lines!' : 'Pour here, or tap another spot', { top: true });
   }
   $('pourGo').onclick = () => { if (aimCell) doPour(); };
   $('pourCancel').onclick = cancelPour;
@@ -393,7 +405,7 @@
     } else { A.pop(); V.popAnim(ev[0]); popText('Jelly Pop!', 'big'); V.setJar(0, false); later(() => { after(ev); busyUntil = 0; }, 300); }
   }
   $('giveUp').onclick = () => { A.click(); $('stuck').classList.remove('on'); after(L.giveUp(S)); };
-  function showJarTag() { const p = V.jarScreen(); $('jarTag').style.left = p.x + 'px'; $('jarTag').style.top = (p.y + V.h * 0.085) + 'px'; $('jarTag').classList.add('on'); }
+  function showJarTag() { const p = V.jarScreen(), e = V.toScreen(V.JAR_POS.x - V.jar.R * 1.25 * (V.jar.bs || 1), V.JAR_POS.y, V.JAR_POS.z); $('jarTag').style.left = Math.max(70, e.x - 50) + 'px'; $('jarTag').style.top = (p.y - 14) + 'px'; $('jarTag').classList.add('on'); }
 
   // ---------- logic events -> view / sound / rewards ----------
   function handle(ev, origin) {
@@ -404,7 +416,7 @@
         trayDelay = 0.4;
         later(() => A.clear(e.lines, e.combo), 50);
         V.clearLines(e, origin, () => { V.setJar(S.popReady ? 1 : S.jar / S.cap, S.popReady); V.buddyReact(e.combo >= 2 ? 'combo' : 'clear'); A.jelly(); if (e.charged) { A.ready(); showJarTag(); popText('Jar full!', 'combo'); track('jar_charged', { mode: G.mode }); A.intensity(1); if (!save.tut.pour) { coach('Your jar is full! Tap the jar to pour it'); handAt(V.jarScreen()); } } else if (S.jar / S.cap > 0.72 && !S.popReady) A.almost(); });
-        const words = e.boardClear ? 'Board clear!' : e.lines >= 4 ? 'Jelly-licious!' : e.lines === 3 ? 'Sweet!' : e.lines === 2 ? 'Double!' : '';
+        const words = e.boardClear && G.mode !== 'school' ? 'Board clear!' : e.lines >= 4 ? 'Jelly-licious!' : e.lines === 3 ? 'Sweet!' : e.lines === 2 ? 'Double!' : '';
         if (words) popText(words, 'big');
         if (e.combo >= 2) later(() => { popText('Combo x' + e.combo, 'combo'); A.combo(e.combo); }, words ? 280 : 0);
         A.intensity(e.combo >= 4 ? 2 : e.combo >= 2 ? 1 : 0);
@@ -416,7 +428,7 @@
       else if (e.type === 'comboLost') A.intensity(S.popReady ? 1 : 0);
       else if (e.type === 'score') setScore(e.score);
       else if (e.type === 'tray') later(() => V.setTray(S.tray, L), trayDelay * 1000 + 120);
-      else if (e.type === 'stuck') later(() => { $('stuckTxt').textContent = e.reason === 'moves' ? 'Out of moves! One last pour?' : 'No room! Pour your jar.'; $('stuck').classList.add('on'); V.setMood(1); showJarTag(); }, 500);
+      else if (e.type === 'stuck') later(() => rescuePour(e.reason), 650), later(() => { V.setMood(1); if (0) showJarTag(); }, 500);
       else if (e.type === 'win') later(levelWin, 900);
       else if (e.type === 'over' && G.mode !== 'school') later(gameOver, 700);
     }
@@ -425,7 +437,7 @@
     if (G.mode === 'school') schoolCheck();
     saveRun();
   }
-  function after(ev) { for (const e of ev) { if (e.type === 'over') later(gameOver, 500); if (e.type === 'win') later(levelWin, 700); if (e.type === 'stuck') $('stuck').classList.add('on'); } hudGoal(); saveRun(); }
+  function after(ev) { for (const e of ev) { if (e.type === 'over') later(gameOver, 500); if (e.type === 'win') later(levelWin, 700); if (e.type === 'stuck') later(() => rescuePour(e.reason), 400); } hudGoal(); saveRun(); }
   function gainsFx(g) { if (!g) return; if (g.stars.length) { V.flyTo(g.stars, goalPt(), '#ffcc33', 1); later(() => A.star(0), 600); } if (g.jam.length && S.cfg.goal && S.cfg.goal.type === 'jam') V.flyTo(g.jam, goalPt(), '#c7266a', 0); }
   function countFlavours() {}
   function done(list) { for (const m of list || []) { later(() => toast('Mission done: ' + M.missionText(m)), 900); track('mission_completed', { id: m.id }); } }
@@ -453,7 +465,7 @@
     const lst = save.levelStats[lv.id]; if (lst) { lst.wins++; lst.secs += Math.round((performance.now() - G.startT) / 1000); }
     track('level_complete', { level: lv.id, stars, moves_left: p.movesLeft, attempt: G.attempt, secs: Math.round((performance.now() - G.startT) / 1000) });
     A.win(); V.celebrate(50); V.setMood(3);
-    const friends = M.checkChars(save); friends.forEach(f => track('character_unlocked', { id: f, level: lv.id }));
+    const friends = M.checkChars(save, f => !!JJMascot.DEF[ART[f]]); friends.forEach(f => track('character_unlocked', { id: f, level: lv.id }));
     const friendCards = friends.map(f => `<div class="unlockCard friend"><img src="${charImg(f)}" alt=""><b>New friend: ${M.CHARS[f].name}!</b><span class="sub">${M.CHARS[f].bio}</span>${JJMascot.DEF[ART[f]] ? `<button class="btn small" data-buddy="${ART[f]}">Make jar buddy</button>` : ''}</div>`).join('');
     const cards = friendCards + unlockCards(newWorld ? `<div class="unlockCard"><b>${LV.WORLDS[lv.world + 1].name} unlocked!</b><span class="sub">A new world to explore</span></div>` : '');
     persist(true);
@@ -506,37 +518,60 @@
   // ---------- tutorial (level 1): hand shows the first two drags, then the clear ----------
   const E8 = '........';
   const SCHOOL = [
-    { trays: [[['o', 1]]], text: 'Each piece is a shape made of jelly cells. Drag it onto the board', hint: [[3, 3], [3, 4], [4, 3], [4, 4]], target: { ti: 0, r: 3, c: 3 }, done: s => s.placements >= 1, after: 'Nice!' },
-    { preset: [E8, E8, E8, E8, E8, E8, '123456..', E8], trays: [[['2h', 2]]], text: "Colours don't need to match! Fill the whole row to clear it", hint: [[6, 6], [6, 7]], target: { ti: 0, r: 6, c: 6 }, strict: true, done: s => s.lines >= 1, after: 'Row cleared!' },
-    { preset: ['..4.....', '..1.....', '..6.....', '..3.....', '..5.....', '..2.....', E8, E8], trays: [[['2v', 3]]], text: 'Columns clear too. Fill this one to the bottom', hint: [[6, 2], [7, 2]], target: { ti: 0, r: 6, c: 2 }, strict: true, done: s => s.lines >= 1, after: 'Column cleared!' },
-    { trays: [[['3h', 3], ['l3a', 4], ['1', 6]], [['2h', 1], ['3v', 5], ['o', 2]]], text: 'You get 3 pieces. Place all 3 and new ones arrive', handTray: true, done: s => s.traysDealt >= 2, after: 'New pieces!' },
-    { preset: ['1234.612', '34.61234', '6123.561', '23456.23', '4.612345', '....3456', '...456..', '...61234'], trays: [[['sq3', 2], ['1', 1], ['2h', 3]]], text: 'Big pieces need big spaces. Find room for this one!', hint: [[5, 0], [5, 1], [5, 2], [6, 0], [6, 1], [6, 2], [7, 0], [7, 1], [7, 2]], target: { ti: 0, r: 5, c: 0 }, done: s => s.tray[0].used, after: 'Always keep room for big pieces!' }
+    { intro: "Welcome to Jelly School! Pieces are shapes made of jelly cells. You drag the whole shape onto the board.", btn: "Let's go",
+      trays: [[['o', 1]]], text: 'Drag the piece onto the glowing spot', hint: [[3, 3], [3, 4], [4, 3], [4, 4]], target: { ti: 0, r: 3, c: 3 }, done: s => s.placements >= 1,
+      after: 'Nice! A placed piece stays where you put it.' },
+    { intro: "Next: clearing a row. I'll put a row of different jellies on the board for you.", btn: 'Show me',
+      preset: [E8, E8, E8, E8, E8, E8, '123456..', E8], trays: [[['2h', 2]]], text: "Colours don't need to match! Fill the last 2 slots to clear the row", hint: [[6, 6], [6, 7]], target: { ti: 0, r: 6, c: 6 }, strict: true, done: s => s.lines >= 1,
+      after: 'Row cleared! Any colours work. A full row is all you need.' },
+    { intro: "Columns clear the same way. I'll add a column that is almost full.", btn: 'Show me',
+      preset: ['..4.....', '..1.....', '..6.....', '..3.....', '..5.....', '..2.....', E8, E8], trays: [[['2v', 3]]], text: 'Fill the bottom 2 slots to clear the column', hint: [[6, 2], [7, 2]], target: { ti: 0, r: 6, c: 2 }, strict: true, done: s => s.lines >= 1,
+      after: 'Column cleared! Rows and columns both count.' },
+    { intro: 'You get 3 pieces at a time. When all 3 are placed, 3 new ones arrive.', btn: 'OK',
+      trays: [[['3h', 3], ['l3a', 4], ['1', 6]], [['2h', 1], ['3v', 5], ['o', 2]]], text: 'Place all 3 pieces anywhere you like', pulseTray: true, done: s => s.traysDealt >= 2,
+      after: 'See? 3 new pieces arrived. That happens every time the tray is empty.' },
+    { intro: "Last lesson: big pieces need big spaces. I'll fill most of the board so you can see why.", btn: 'Show me',
+      preset: ['1234.612', '34.61234', '6123.561', '23456.23', '4.612345', '....3456', '...456..', '...61234'], trays: [[['sq3', 2], ['1', 1], ['2h', 3]]], text: 'Only one spot fits the big square piece. Find it!', hint: [[5, 0], [5, 1], [5, 2], [6, 0], [6, 1], [6, 2], [7, 0], [7, 1], [7, 2]], target: { ti: 0, r: 5, c: 0 }, done: s => s.tray[0].used,
+      after: 'Great! Always keep room for big pieces, or you can run out of space.', last: true }
   ];
   function skipSchool() { if (!G || G.mode !== 'school') return; track('tutorial_skip', { step: G.stage + 1 }); save.tut.basics = true; persist(true); $('skipTut').classList.remove('on'); hand(null); coach(''); V.hintOff(); V.wipeBoard(() => startLevel(1)); }
   $('skipTut').onclick = () => { A.click(); skipSchool(); };
   function startSchool(i) {
     i = i || 0; const st = SCHOOL[i];
-    begin('school', L.create({ preset: st.preset, trays: st.trays, jarCap: 99 }), { stage: i, stageT: performance.now(), wrong: 0 });
+    begin('school', L.create({ preset: st.preset, trays: st.trays, jarCap: 99 }), { stage: i, wrong: 0, deferBoard: true, paused: true });
     if (i === 0) track('tutorial_start', {});
-    later(showStage, 800);
+    // explain first; the board only changes after the player taps the button
+    later(() => coach(`<b>Step ${i + 1} of ${SCHOOL.length}</b><br>${st.intro}`, { btn: st.btn, top: true, onBtn: () => { V.loadBoard(S); later(() => { V.setTray(S.tray, L); later(showStage, 550); }, st.preset ? 700 : 150); } }), 350);
   }
   function showStage() {
     if (!G || G.mode !== 'school') return; const st = SCHOOL[G.stage];
-    coach(st.text); if (st.hint) V.hint(st.hint, '#ffd84d');
-    if (st.target) { const t = st.target, sh = L.SHAPE[S.tray[t.ti].shape], from = V.toScreen(V.TRAY_X[t.ti], V.TRAY_Y, 0.3), pc = V.cellPos(t.r + (sh.h - 1) / 2, t.c + (sh.wd - 1) / 2); hand(from, V.toScreen(pc.x, pc.y, V.BZ)); }
-    else if (st.handTray) hand(V.toScreen(0, V.TRAY_Y + 1.2, 0.3));
+    G.paused = false; G.stageT = performance.now();
+    coach(st.text, { top: true }); if (st.hint) V.hint(st.hint, '#ffd84d');
+    if (st.pulseTray) V.trayPulse(true);
+    if (st.target) { const t = st.target, sh = L.SHAPE[S.tray[t.ti].shape], from = V.toScreen(V.TRAY_X[t.ti], V.TRAY_Y, 0.3), pc = V.cellPos(t.r + (sh.h - 1) / 2, t.c + (sh.wd - 1) / 2); V.trayPulse(t.ti); hand(from, V.toScreen(pc.x, pc.y, V.BZ)); }
   }
   function schoolCheck() {
-    const st = SCHOOL[G.stage]; if (!st.done(S) || G.stageDone) { if (st.handTray) { hand(null); coach(S.tray.filter(t => !t.used).length ? `${S.tray.filter(t => !t.used).length} left. Place them all!` : st.text); } return; }
-    G.stageDone = true; hand(null); V.hintOff(); coach('');
+    const st = SCHOOL[G.stage];
+    if (!st.done(S) || G.stageDone) { if (st.pulseTray) { hand(null); const left = S.tray.filter(t => !t.used).length; coach(left ? `${left} left. Place them all!` : st.text, { top: true }); } return; }
+    G.stageDone = true; G.paused = true; hand(null); V.hintOff(); V.trayPulse(false);
     track('tutorial_step', { step: G.stage + 1, secs: Math.round((performance.now() - G.stageT) / 1000), wrong: G.wrong });
-    later(() => { popText(st.after, 'info'); A.star(G.stage % 3); }, 500);
-    later(() => V.wipeBoard(() => {
-      if (G.stage + 1 < SCHOOL.length) startSchool(G.stage + 1);
+    A.star(G.stage % 3);
+    later(() => coach(st.after, { btn: st.last ? 'Start playing' : 'Next', top: true, onBtn: () => V.wipeBoard(() => {
+      if (!st.last) startSchool(G.stage + 1);
       else { save.tut.basics = true; persist(true); track('tutorial_complete', {}); popText("You're ready!", 'big'); later(() => startLevel(1), 900); }
-    }), 1900);
+    }) }), 900);
   }
-  function coach(txt) { if (txt) { const y = V.toScreen(0, -4.75, 0).y; $('coach').style.top = Math.round(y + 6) + 'px'; } $('coach').textContent = txt; $('coach').classList.toggle('on', !!txt); }
+  function coach(txt, o) {
+    o = o || {}; const el = $('coach'); el.classList.toggle('on', !!txt); if (!txt) { el.innerHTML = ''; return; }
+    el.innerHTML = `<div>${txt}</div>${o.btn ? `<button class="btn small green" id="coachBtn">${o.btn}</button>` : ''}`;
+    if (o.btn) $('coachBtn').onclick = () => { A.click(); el.classList.remove('on'); o.onBtn && o.onBtn(); };
+    const hb = document.querySelector('#hud .bar').getBoundingClientRect(), boardTop = V.toScreen(0, 4.75, 0).y, trayBot = V.toScreen(0, V.TRAY_Y - 1.35, 0).y, h = el.offsetHeight;
+    let y;
+    if (o.top || innerHeight - trayBot < h + 10) y = Math.max(hb.bottom + 4, Math.min(boardTop - h - 6, hb.bottom + 4)); // above the board
+    else y = trayBot + 4;                                                                                         // below the tray
+    el.style.top = Math.round(y) + 'px';
+  }
+
   let handAnim = 0;
   function hand(from, to) {
     cancelAnimationFrame(handAnim); const h = $('hand'); if (!from) { h.classList.remove('on'); return; } h.classList.add('on');
@@ -546,6 +581,8 @@
   // ---------- performance overlay (?debug=1 or Settings) ----------
   const perf = { cpu: [], frames: [], longFrames: 0, rendered: 0, runs: [], start: performance.now(), dprLog: [], lastAdapt: performance.now(), goodSince: performance.now(), first: 0 };
   let gpu = ''; try { const gl = V.renderer.getContext(), ext = gl.getExtension('WEBGL_debug_renderer_info'); gpu = ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER); } catch (e) {}
+  if (navigator.getBattery) navigator.getBattery().then(b => { perf.bat = b; perf.bat0 = { lv: b.level, t: performance.now() }; b.addEventListener('chargingchange', () => { perf.bat0 = { lv: b.level, t: performance.now() }; }); }).catch(() => {});
+  function batteryLine() { const b = perf.bat; if (!b) return 'battery n/a'; const hrs = (performance.now() - perf.bat0.t) / 3600000, drop = (perf.bat0.lv - b.level) * 100; return `battery ${Math.round(b.level * 100)}%${b.charging ? ' (charging)' : hrs > 0.05 ? `, drain ${(drop / hrs).toFixed(1)}%/h over ${Math.round(hrs * 60)} min` : ''}`; }
   function togglePerf(v) { const on = v == null ? !$('perf').classList.contains('on') : v; $('perf').classList.toggle('on', on); }
   const pct = (a, p) => { if (!a.length) return 0; const s = a.slice().sort((x, y) => x - y); return s[Math.min(s.length - 1, Math.floor(s.length * p))]; };
   function perfText() {
@@ -555,7 +592,7 @@
       `CPU ${cpuAvg.toFixed(1)}ms p95 ${pct(perf.cpu, 0.95).toFixed(1)} -> ${avg && cpuAvg < avg * 0.4 ? 'GPU/display bound' : 'CPU bound'}`,
       `slow frames >33ms: ${perf.longFrames}/${perf.rendered}`, `draw calls ${info.render.calls} tris ${info.render.triangles} particles ${V.parts.list.length}`,
       `DPR ${V.dpr.toFixed(2)}/${V.dprMax} canvas ${V.canvas.width}x${V.canvas.height}`, `warm-up ${perf.first.toFixed(0)}ms  heap ${mem}  geo ${info.memory.geometries} tex ${info.memory.textures}`,
-      `voices ${A.voices()}  ${V.active ? 'animating' : 'idle'}  cores ${navigator.hardwareConcurrency || '?'} RAM ${navigator.deviceMemory || '?'}GB`, `GPU ${gpu}`].join('\n');
+      batteryLine(), `voices ${A.voices()}  ${V.active ? 'animating' : 'idle'}  cores ${navigator.hardwareConcurrency || '?'} RAM ${navigator.deviceMemory || '?'}GB`, `GPU ${gpu}`].join('\n');
   }
   $('perfMin').onclick = () => { $('perf').classList.toggle('min'); $('perfMin').textContent = $('perf').classList.contains('min') ? 'more' : 'less'; };
   $('perfCopy').onclick = () => {
@@ -588,7 +625,7 @@
         }
       }
     }
-    if ($('perf').classList.contains('on') && now - lastUi > 500) { $('perfTxt').innerHTML = perfText().split('\n').map(l => '<div>' + l.replace(/</g, '&lt;') + '</div>').join(''); lastUi = now; }
+    const pe = $('perf'); if (pe && pe.classList.contains('on') && now - lastUi > 500) { $('perfTxt').innerHTML = perfText().split('\n').map(l => '<div>' + l.replace(/</g, '&lt;') + '</div>').join(''); lastUi = now; }
   }
 
   // ---------- boot ----------
@@ -596,17 +633,18 @@
   if (save.dprLock && save.dprLock !== 'auto') V.setDpr(+save.dprLock);
   $('kDpr').value = save.dprLock || 'auto'; syncKnobs(); syncSettings();
   applyJar(); makePortraits();
-  M.missions(save); M.daily(save); save.stats.sessions++; if (M.markDay(save)) track('day_active', { days: save.days.length }); persist();
+  M.checkChars(save, f => !!JJMascot.DEF[ART[f]]); M.missions(save); M.daily(save); save.stats.sessions++; if (M.markDay(save)) track('day_active', { days: save.days.length }); persist();
   if (Q.get('home')) save.homeVar = Q.get('home');
   track(save.stats.sessions === 1 ? 'first_open' : 'session_start', { session: save.stats.sessions, home_variant: save.homeVar });
   requestAnimationFrame(loop);
   const go = () => { $('boot').classList.add('gone'); if (!save.tut.basics && !save.stats.games && !Q.get('bot')) startSchool(0); else if (!save.stars[1] && !save.stats.games && !Q.get('bot')) startLevel(save.run && save.run.mode === 'level' ? save.run.level : 1, true); else show('home'); };
   (document.fonts ? document.fonts.load('800 20px Baloo').catch(() => {}) : Promise.resolve()).then(() => later(go, 350));
-  if (Q.get('debug') === '1') togglePerf(true);
+  if (DEV && Q.get('debug') === '1') togglePerf(true);
+  if (!DEV) for (const id of ['perfBtn', 'reportBtn', 'perf']) $(id).remove();
   document.addEventListener('visibilitychange', () => { if (document.hidden) { saveRun(); persist(true); } });
 
   // ---------- test hooks + autoplay bot (?bot=1 classic, ?bot=journey) ----------
-  window.JJApp = { state: () => S, game: () => G, save: () => save, events, perf, perfText, check: () => { const bad = []; for (let k = 0; k < 64; k++) if (!!S.board[k] !== !!V.board[k]) bad.push(k); return bad; }, show, startLevel, startClassic, startDaily, demo: cfg => begin('classic', L.create(cfg)) };
+  window.JJApp = { state: () => S, game: () => G, save: () => save, events, perf, perfText, check: () => { const bad = []; for (let k = 0; k < 64; k++) if (!!S.board[k] !== !!V.board[k]) bad.push(k); return bad; }, show, startLevel, startClassic, startDaily, demo: cfg => begin('classic', L.create(cfg)), rescue: r => rescuePour(r) };
   if (Q.get('bot')) {
     const speed = +(Q.get('speed') || 1), journey = Q.get('bot') === 'journey'; window.JJBotOn = true;
     const think = () => {
@@ -617,7 +655,7 @@
       if (screen === 'home') { journey ? playJourney() : startClassic(); return later(think, 900 / speed); }
       if (screen !== 'hud' || !S || S.over || V.tweens.length > 3 || performance.now() < busyUntil) return later(think, 150 / speed);
       if (S.popReady && (S.stuck || Math.random() < 0.1)) { const p = B.bestPop(S); aiming = true; aimCell = { r: p.r, c: p.c }; doPour(); return later(think, 1800 / speed); }
-      if (S.stuck) { $('giveUp').click(); return later(think, 600 / speed); }
+      if (S.stuck) { if (!aiming) rescuePour('room'); return later(think, 600 / speed); }
       const bm = B.bestMove(S, 4); if (!bm || !V.trayB[bm.ti].length) return later(think, 300 / speed);
       drag = { i: bm.ti, id: -1, lift: 0 }; V.dragStart(bm.ti); A.pick();
       const sh = L.SHAPE[S.tray[bm.ti].shape], p = V.cellPos(bm.r + (sh.h - 1) / 2, bm.c + (sh.wd - 1) / 2), tgt = V.toScreen(p.x, p.y, V.BZ), from = V.toScreen(V.TRAY_X[bm.ti], V.TRAY_Y, 0.3); let k = 0;

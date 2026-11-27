@@ -57,7 +57,8 @@
     // newly met jar conditions -> list of jar defs (and marks them owned)
     // jelly friends join at Journey milestones (Rosie from the start): a real collectible, not tied to board colours
     CHAR_AT: [0, 0, 5, 10, 15, 20, 25],
-    checkChars(s) { const out = []; for (let f = 1; f <= 6; f++) if (!s.chars[f] && (this.CHAR_AT[f] === 0 || done(s, this.CHAR_AT[f]))) { s.chars[f] = true; out.push(f); } return out; },
+    // ready(f): is this friend's 3D model finished? Unfinished friends are never awarded; they arrive later for players already past their level
+    checkChars(s, ready) { const out = []; for (let f = 1; f <= 6; f++) if (!s.chars[f] && (!ready || ready(f)) && (this.CHAR_AT[f] === 0 || done(s, this.CHAR_AT[f]))) { s.chars[f] = true; out.push(f); } return out; },
     checkJars(s) { const out = []; for (const j of JARS) if (!s.jars[j.id] && j.test(s)) { s.jars[j.id] = true; out.push(j); } return out; },
     nextJarHint(s) { const j = JARS.find(j => !s.jars[j.id]); return j ? j : null; },
     // ---- daily missions: 3 per day, picked from the date, achievable in normal play ----

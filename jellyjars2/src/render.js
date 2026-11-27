@@ -236,7 +236,7 @@
       this.trayMat = M({ color: '#fff3f7', gloss: 0.35, sss: 0.1 });
       this.boardGroup.add(new T.Mesh(tg, this.trayMat));
       this.sockets = Pool(roundedBox(0.94, 0.94, 0.2, 0.13, 4), M({ instanced: true, gloss: 0.25, sss: 0.05, invert: true }), N * N); this.boardGroup.add(this.sockets.mesh);
-      this.slotColor = lin('#f7dce8'); this.jamColor = lin('#c7266a');
+      this.slotColor = lin('#f7dce8'); this.jamColor = lin('#e0457f');
       for (let rr = 0; rr < N; rr++) for (let c = 0; c < N; c++) { const p = this.cellPos(rr, c); this.sockets.add({ x: p.x, y: p.y, z: -0.12, c: this.slotColor.clone(), shadow: false }); }
       this.shadowTex = blobTex('rgba(120,40,80,0.42)', 'rgba(120,40,80,0)');
       this.shadows = new T.InstancedMesh(new T.PlaneGeometry(1.25, 1.25), new T.MeshBasicMaterial({ map: this.shadowTex, transparent: true, depthWrite: false }), 200); this.shadows.frustumCulled = false; this.shadows.renderOrder = 1; this.scene.add(this.shadows);
@@ -397,7 +397,7 @@
     placePiece(ev) {
       const arr = this.trayB[ev.ti]; this.trayB[ev.ti] = []; this.drag = null; this.ghostHide();
       ev.cells.forEach(([r, c], n) => {
-        const b = arr[n] || this.jelly.add({ x: 0, y: TRAY_Y, z: 0.3, sx: TRAY_S, sy: TRAY_S, sz: TRAY_S, c: this.colors[ev.flav].clone(), fl: ev.flav }), p = this.cellPos(r, c), fx = b.x, fy = b.y, fz = b.z, fs = b.sx; b.rz = 0; this.board[r * N + c] = b;
+        const b = arr[n] || this.jelly.add({ x: 0, y: TRAY_Y, z: 0.3, sx: TRAY_S, sy: TRAY_S, sz: TRAY_S, c: this.colors[ev.flav].clone(), fl: ev.flav }), p = this.cellPos(r, c), fx = b.x, fy = b.y, fz = b.z, fs = b.sx; b.rz = 0; b.flash = 0; this.board[r * N + c] = b;
         this.tween(0.08, k => { b.x = fx + (p.x - fx) * k; b.y = fy + (p.y - fy) * k; b.z = fz + (BZ - fz) * k; b.sx = b.sy = b.sz = fs + (1 - fs) * k; }, 0, () => {
           b.mood = 0; this.tween(0.34, k => { const sq = Math.sin(k * Math.PI) * (1 - k); b.sz = 1 - 0.4 * sq; b.sx = b.sy = 1 + 0.22 * sq; }, 0, () => { b.sx = b.sy = b.sz = 1; }); b.wob = 0.12;
         });
@@ -462,6 +462,7 @@
     },
     flyTo(cells, pt, color, type) { const w = this.toWorld(pt.x, pt.y, 1.5); for (const [r, c] of cells) { const p = this.cellPos(r, c); this.parts.emit({ sx: p.x, sy: p.y, sz: 1, x: p.x, y: p.y, z: 1, target: w, arc: 1.5, life: 0.75, s: 0.6, c: new T.Color(color || '#ffcc33'), type: type == null ? 1 : type }); } },
     celebrate(n) { for (let q = 0; q < (n || 40); q++) { const a = Math.random() * 6.28, sp = 5 + Math.random() * 7; this.parts.emit({ x: (Math.random() - 0.5) * 6, y: 2 + Math.random() * 2, z: 2, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp + 4, g: -9, life: 1.4, s: 0.45 + Math.random() * 0.3, c: this.colors[1 + q % 6].clone(), type: 1 + q % 3 }); } },
+    trayPulse(v) { this.pulse = v; if (v === false) for (const arr of this.trayB) for (const b of arr) b.flash = 0; this.dirty = true; },
     hint(cells, color) { this.hintOff(); this.hints = cells.map(([r, c]) => r * N + c); this.hintColor = lin(color || '#ffd84d'); this.dirty = true; },
     hintOff() { if (!this.hints) return; for (const k of this.hints) { const s = this.sockets.items[k]; s.c.copy(s.jam ? this.jamColor : this.slotColor); } this.hints = null; this.dirty = true; },
     pourPreview(pv) { // area tinted, jelly ghosts in the gaps, lines that would clear glowing
@@ -514,12 +515,13 @@
       }
       if (this.mascot && !busy) { const b = this.mascot; b.y = b.home + Math.abs(Math.sin(this.time * 2.2)) * 0.18; b.sz = 3.2 * (1 - 0.05 * Math.max(0, Math.cos(this.time * 4.4))); }
       if (this.shakeAmp > 0.001) { this.shakeAmp *= Math.pow(0.002, dt); this.cam.position.x = (Math.random() - 0.5) * this.shakeAmp; } else if (this.shakeAmp) { this.shakeAmp = 0; this.cam.position.x = 0; }
+      if (this.pulse !== false && this.pulse != null) { const k = 0.18 + 0.16 * Math.sin(this.time * 6); this.trayB.forEach((arr, i) => { if (this.pulse === true || this.pulse === i) for (const b of arr) if (!this.drag || this.drag.i !== i) b.flash = k; }); }
       if (this.hints) { const k = 0.45 + 0.35 * Math.sin(this.time * 6); for (const i of this.hints) { const s = this.sockets.items[i]; s.c.copy(s.jam ? this.jamColor : this.slotColor).lerp(this.hintColor, k); } }
       if (this.mascotM) this.mascotM.update(dt); if (this.buddy) { this.buddy.update(dt); if (J.ready && this.buddy.jumpT < 0 && Math.random() < dt * 0.8) this.buddy.jump(); }
       const np = this.parts.update(dt);
       for (const m of this.mats) { m.uniforms.uTime.value = this.time; m.uniforms.uBreath.value = idleAnim ? 1 : 0; }
       J.glassMat.uniforms.uTime.value = J.fillMat.uniforms.uTime.value = J.bubMat.uniforms.uTime.value = this.time;
-      const active = busy || wob || np > 0 || Math.abs(J.shown - J.target) > 0.002 || J.ready || J.slosh > 0.02 || J.squash > 0.02 || this.dirty || this.shakeAmp > 0 || this.glowing || !!this.hints || (this.mascotM && this.mascotM.jumpT >= 0) || (this.buddy && this.buddy.jumpT >= 0);
+      const active = busy || wob || np > 0 || Math.abs(J.shown - J.target) > 0.002 || J.ready || J.slosh > 0.02 || J.squash > 0.02 || this.dirty || this.shakeAmp > 0 || this.glowing || !!this.hints || (this.pulse != null && this.pulse !== false) || (this.mascotM && this.mascotM.jumpT >= 0) || (this.buddy && this.buddy.jumpT >= 0);
       this.active = active; return active;
     },
     render() {
