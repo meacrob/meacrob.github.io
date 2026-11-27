@@ -26,8 +26,8 @@
   const goalIcon = t => t === 'jar' ? jarSVG(curJar()) : GOAL_ICON[t];
   function goalText(t, n, short) {
     const N = Math.round(n);
-    if (short) return { lines: 'Lines', score: 'Points', stars: 'Stars', jar: 'Jelly', combo: 'Combo', jam: 'Jam', crates: 'Crates' }[t];
-    return { lines: `Clear ${N} lines`, score: `Score ${fmt(N)} points`, stars: `Collect ${N} star jellies`, jar: n > 9 ? 'Fill the jar twice' : 'Fill the jar', combo: `Reach a x${N} combo`, jam: `Wipe up all ${N} jam spots`, crates: `Break all ${N} crates` }[t];
+    if (short) return { lines: 'Lines', score: 'Points', stars: 'Stars', jar: 'Pours', combo: 'Combo', jam: 'Jam', crates: 'Crates' }[t];
+    return { lines: `Clear ${N} lines`, score: `Score ${fmt(N)} points`, stars: `Collect ${N} star jellies`, jar: n > 1 ? 'Fill and pour the jar twice' : 'Fill the jar and pour it', combo: `Reach a x${N} combo`, jam: `Wipe up all ${N} jam spots`, crates: `Break all ${N} crates` }[t];
   }
   const curJar = () => M.JARS.find(j => j.id === save.jar) || M.JARS[0];
 
@@ -90,8 +90,8 @@
     const rl = save.run && save.run.mode === 'level' ? LV.LEVELS[save.run.level - 1] : null;
     $('hPlay').firstChild.textContent = rl ? 'Continue' : allDone ? 'Replay Journey' : 'Level ' + next.id; $('hPlaySub').textContent = rl ? 'Level ' + rl.id + ' in progress' : goalText(next.type, next.n);
     $('hStars').textContent = M.starCount(save); $('hBeans').textContent = fmt(save.beans);
-    const pl = M.playerLevel(save); $('plv').textContent = 'Lv ' + pl.lv; $('avatarImg').src = portraits[LV.WORLDS[next.world].hero] || '';
-    const nj = M.nextJarHint(save); $('hNext').innerHTML = nj ? `${jarSVG(nj)}<span>Next: <b>${nj.name}</b> · ${nj.how}</span>` : '<span>All jars collected!</span>';
+    $('avatarImg').src = portraits[LV.WORLDS[next.world].hero] || '';
+    $('hNext').innerHTML = nextGoalHTML();
     $('cClassicSub').textContent = save.run && save.run.mode === 'classic' ? 'Continue run' : 'Best ' + fmt(save.best);
     const d = M.daily(save); $('dIco').textContent = new Date().getDate();
     $('cDailySub').textContent = save.run && save.run.mode === 'daily' ? 'Continue' : d.played ? `Best ${fmt(d.best)} · ${hoursLeft()}` : 'New puzzle!';
@@ -99,6 +99,17 @@
     $('cMissionsSub').textContent = unclaimed ? 'Reward ready!' : `${dn}/3 done`;
     $('colBadge').style.display = Object.keys(save.jars).some(k => !save.seenJars[k]) ? 'grid' : 'none';
   }
+  // the single most meaningful next goal, with progress (world gate by stars, or the next jar to buy with beans)
+  function nextGoalHTML() {
+    const st = M.starCount(save), goals = [];
+    const nw = LV.WORLDS.find(w => w.need > st); if (nw) goals.push({ ico: GOAL_ICON.stars, txt: `<b>${nw.name}</b> opens at ${nw.need} stars`, v: st, n: nw.need });
+    const jar = M.JARS.filter(j => j.price && !save.jars[j.id]).sort((a, b) => a.price - b.price)[0]; if (jar) goals.push({ ico: jarSVG(jar), txt: save.beans >= jar.price ? `<b>${jar.name}</b> ready to buy!` : `<b>${jar.name}</b> · ${jar.price} beans`, v: save.beans, n: jar.price });
+    if (!goals.length) return '<span>Everything unlocked. Legend!</span>';
+    const g = goals.sort((a, b) => b.v / b.n - a.v / a.n)[0];
+    return `${g.ico}<span>${g.txt}<i class="gbar"><i style="width:${Math.min(100, Math.round(g.v / g.n * 100))}%"></i></i></span>`;
+  }
+  const worldOpen = wi => M.starCount(save) >= LV.WORLDS[wi].need;
+  const levelOpen = l => M.unlocked(save, l.id) && worldOpen(l.world);
   const hoursLeft = () => { const ms = M.msToMidnight(), h = Math.floor(ms / 3600000), m = Math.floor(ms / 60000) % 60; return h ? `${h}h ${m}m left` : `${m}m left`; };
 
   // ---------- Journey map ----------
@@ -107,18 +118,18 @@
     const map = $('map'); let html = '';
     const next = M.nextLevel(save, LV.LEVELS);
     LV.WORLDS.forEach((w, wi) => {
-      const lv = LV.LEVELS.filter(l => l.world === wi), unlocked = M.unlocked(save, lv[0].id);
+      const lv = LV.LEVELS.filter(l => l.world === wi), unlocked = levelOpen(lv[0]);
       const stars = lv.reduce((a, l) => a + (save.stars[l.id] || 0), 0);
       let pts = '', nodes = '';
       lv.forEach((l, i) => {
         const y = 600 - i * 60, x = 50 + Math.sin(i * 1.1) * 30; pts += `${i ? 'L' : 'M'}${x * 4} ${y}`;
-        const st = save.stars[l.id] || 0, open = M.unlocked(save, l.id), cur = l.id === next.id && !st;
+        const st = save.stars[l.id] || 0, open = levelOpen(l), cur = l.id === next.id && !st;
         nodes += `<button class="node ${open ? '' : 'lock'} ${cur ? 'cur' : ''} ${l.boss ? 'boss' : ''}" style="left:${x}%;top:${y}px" data-lv="${l.id}">${open ? l.id : '<svg viewBox="0 0 24 24" width="22"><rect x="6" y="10" width="12" height="10" rx="3" fill="#fff"/><path d="M8.5 10V8a3.5 3.5 0 017 0v2" stroke="#fff" stroke-width="2.5" fill="none"/></svg>'}${st ? `<span class="st">${[0, 1, 2].map(k => `<i>${STAR(k < st)}</i>`).join('')}</span>` : ''}</button>`;
       });
-      html = `<div class="worldBlock" style="background:linear-gradient(180deg,${w.hill[2]},${w.hill[0]} 60%,${w.sky[0]})"><h3>${w.name}</h3><div class="wsub">${unlocked ? `${stars}/30 stars` : 'Finish the previous world to unlock'}</div><div class="path"><svg viewBox="0 0 400 640" preserveAspectRatio="none"><path d="${pts}" stroke="rgba(255,255,255,.75)" stroke-width="14" fill="none" stroke-linecap="round" stroke-dasharray="2 22"/></svg>${nodes}</div></div>` + html;
+      html = `<div class="worldBlock" style="background:linear-gradient(180deg,${w.hill[2]},${w.hill[0]} 60%,${w.sky[0]})"><h3>${w.name}</h3><div class="wsub">${unlocked ? `${stars}/30 stars` : worldOpen(wi) ? 'Finish the previous world to unlock' : `Collect ${w.need} stars to open (you have ${M.starCount(save)}). Replay levels for more stars!`}</div><div class="path"><svg viewBox="0 0 400 640" preserveAspectRatio="none"><path d="${pts}" stroke="rgba(255,255,255,.75)" stroke-width="14" fill="none" stroke-linecap="round" stroke-dasharray="2 22"/></svg>${nodes}</div></div>` + html;
     });
     map.innerHTML = html;
-    map.querySelectorAll('.node').forEach(n => n.onclick = () => { A.click(); const l = LV.LEVELS[+n.dataset.lv - 1]; if (!M.unlocked(save, l.id)) { toast('Finish level ' + (l.id - 1) + ' first'); return; } levelIntro(l); });
+    map.querySelectorAll('.node').forEach(n => n.onclick = () => { A.click(); const l = LV.LEVELS[+n.dataset.lv - 1]; if (!levelOpen(l)) { toast(worldOpen(l.world) ? 'Finish level ' + (l.id - 1) + ' first' : `Need ${LV.WORLDS[l.world].need} stars`); return; } levelIntro(l); });
     requestAnimationFrame(() => { const cur = map.querySelector('.node.cur') || map.querySelector('.node:not(.lock)'); if (cur) cur.scrollIntoView({ block: 'center' }); });
   }
   function levelIntro(l) {
@@ -143,8 +154,8 @@
       g.innerHTML = M.CHARS.slice(1).map((c, i) => { const f = i + 1, has = save.chars[f]; return `<div class="item panel ${has ? '' : 'locked'}"><img src="${portraits[f]}" alt=""><b>${has ? c.name : '???'}</b><span>${has ? c.flav + ' · ' + c.bio : 'Clear a line with ' + (/^[AEIOU]/.test(c.flav) ? 'an ' : 'a ') + c.flav.toLowerCase() + ' jelly to meet them'}</span></div>`; }).join('');
     } else {
       g.className = 'grid three';
-      g.innerHTML = M.JARS.map(j => { const has = save.jars[j.id], isNew = has && !save.seenJars[j.id]; return `<button class="item panel ${has ? '' : 'locked'} ${isNew ? 'new' : ''}" data-jar="${j.id}">${jarSVG(j)}<b style="font-size:15px">${j.name}</b><span>${has ? (save.jar === j.id ? 'In use' : 'Tap to use') : j.how}</span>${save.jar === j.id ? '<i class="eq">ON</i>' : ''}</button>`; }).join('');
-      g.querySelectorAll('[data-jar]').forEach(b => b.onclick = () => { const id = b.dataset.jar; if (!save.jars[id]) { A.bad(); return; } save.jar = id; applyJar(); A.click(); persist(); track('jar_equipped', { id }); buildCollection(); });
+      g.innerHTML = M.JARS.map(j => { const has = save.jars[j.id], isNew = has && !save.seenJars[j.id]; return `<button class="item panel ${has ? '' : 'locked'} ${isNew ? 'new' : ''}" data-jar="${j.id}">${jarSVG(j)}<b style="font-size:15px">${j.name}</b><span>${has ? (save.jar === j.id ? 'In use' : 'Tap to use') : j.price ? `<b class="price">${BEAN.replace('<svg', '<svg width="14" height="14"')} ${j.price}</b>` : j.how}</span>${save.jar === j.id ? '<i class="eq">ON</i>' : ''}</button>`; }).join('');
+      g.querySelectorAll('[data-jar]').forEach(b => b.onclick = () => { const id = b.dataset.jar, jd = M.JARS.find(x => x.id === id); if (!save.jars[id]) { if (jd.price && save.beans >= jd.price) { save.beans -= jd.price; save.jars[id] = true; save.seenJars[id] = true; A.unlock(); toast('New jar: ' + jd.name); track('jar_bought', { id, price: jd.price }); } else { A.bad(); toast(jd.price ? `${jd.price - save.beans} more beans needed` : jd.how); return; } } save.jar = id; applyJar(); A.click(); persist(); track('jar_equipped', { id }); buildCollection(); });
       for (const k in save.jars) save.seenJars[k] = true; persist();
     }
   }
@@ -152,8 +163,8 @@
   function applyJar() { const j = curJar(); V.setJarStyle({ lid: j.lid, jelly: j.jelly, glass: j.glass, accent: j.lid }); }
 
   function buildAwards() {
-    const s = save.stats, pl = M.playerLevel(save);
-    $('stats').innerHTML = [['Player level', pl.lv], ['Classic best', fmt(save.best)], ['Best combo', 'x' + save.bestCombo], ['Lines cleared', fmt(s.lines)], ['Jelly pours', fmt(s.pours)], ['Levels won', Object.keys(save.stars).length + '/30'], ['Stars', M.starCount(save) + '/90'], ['Games played', fmt(s.games)]].map(([k, v]) => `<div><b>${v}</b><span>${k}</span></div>`).join('');
+    const s = save.stats;
+    $('stats').innerHTML = [['Classic best', fmt(save.best)], ['Best combo', 'x' + save.bestCombo], ['Lines cleared', fmt(s.lines)], ['Jelly pours', fmt(s.pours)], ['Levels won', Object.keys(save.stars).length + '/30'], ['Stars', M.starCount(save) + '/90'], ['Games played', fmt(s.games)]].map(([k, v]) => `<div><b>${v}</b><span>${k}</span></div>`).join('');
     $('achList').innerHTML = M.ACH.map(a => `<div class="achRow panel ${save.ach[a.id] ? '' : 'locked'}"><div class="ai">${STAR(!!save.ach[a.id])}</div><div><b>${a.name}</b><span class="sub">${a.how}</span></div><span class="pill">${BEAN}${a.beans}</span></div>`).join('');
   }
 
@@ -172,6 +183,7 @@
   $('pSfx').onclick = () => { save.settings.sfx = !save.settings.sfx; syncSettings(); A.click(); persist(); };
   $('gear').onclick = () => { A.click(); syncSettings(); openModal('mSettings'); };
   $('resetBtn').onclick = () => { if (confirm('Reset ALL progress? This cannot be undone.')) { save = M.reset(); persist(true); location.reload(); } };
+  $('tutBtn').onclick = () => { closeModal('mSettings'); A.click(); startSchool(0); };
   $('perfBtn').onclick = () => { togglePerf(); closeModal('mSettings'); };
   document.querySelectorAll('#nav button').forEach(b => b.onclick = () => { A.click(); show(b.dataset.go); });
   document.querySelectorAll('.back').forEach(b => b.onclick = () => { A.click(); show('home'); });
@@ -219,31 +231,52 @@
     V.setJar(S.popReady ? 1 : S.jar / S.cap, S.popReady);
     $('stuck').classList.remove('on'); $('jarTag').classList.remove('on'); aiming = false;
     hudGoal(true); setScore(S.score, true);
-    $('scoreSub').textContent = mode === 'classic' ? 'Best ' + fmt(save.best) : mode === 'daily' ? 'Today ' + fmt(M.daily(save).best) : 'Score';
+    $('scoreSub').textContent = mode === 'school' ? 'Score' : mode === 'classic' ? 'Best ' + fmt(save.best) : mode === 'daily' ? 'Today ' + fmt(M.daily(save).best) : 'Score';
     if (S.popReady) showJarTag();
     saveRun();
-    if (mode === 'level' && G.level === 1 && !save.tut.level1) setTimeout(tutorialStep, 900);
+    if (mode === 'level' && !G.resumed) setTimeout(() => levelContext(LV.LEVELS[G.level - 1]), 900);
   }
   function startClassic() {
     if (save.run && save.run.mode === 'classic') { try { begin('classic', save.run.state); track('run_resumed', { mode: 'classic' }); return; } catch (e) {} }
     const first = !save.stats.games; begin('classic', L.create(Object.assign(classicCfg(), { friendlyStart: first })));
     track('game_start', { mode: 'classic' });
   }
+  const INTRO = {
+    jar: { t: 'Jelly Pour', d: 'Every line you clear fills the jar. When it is full, tap it, pick a spot, and jelly fills the empty gaps there. Use it to finish lines!', ico: () => jarSVG(curJar()) },
+    combo: { t: 'Combos', d: 'Clear lines on back-to-back moves. Every clear in a row is worth more points.', ico: () => GOAL_ICON.combo },
+    stars: { t: 'Star jellies', d: 'Jellies with a gold star. Clear their row or column to collect them.', ico: () => GOAL_ICON.stars },
+    jam: { t: 'Sticky jam', d: 'Jam sits in empty slots. Place jellies on top, then clear that line to wipe the jam away.', ico: () => GOAL_ICON.jam },
+    crates: { t: 'Crates', d: 'Crates take up a slot like a jelly. Clear their row or column to break them.', ico: () => GOAL_ICON.crates }
+  };
+  function introCard(lv, go) {
+    const m = INTRO[lv.intro];
+    $('infoBody').innerHTML = `<div class="ribbon" style="background:linear-gradient(#7fd0ff,#3f9cff)">New: ${m.t}</div><div class="introIco">${m.ico()}</div><div style="font-size:17px;line-height:1.4">${m.d}</div><button class="btn green" id="introGo" style="width:100%">Got it!</button>`;
+    openModal('mInfo'); $('introGo').onclick = () => { A.click(); closeModal('mInfo'); save.seenIntro = save.seenIntro || {}; save.seenIntro[lv.intro] = 1; persist(); track('mechanic_intro', { id: lv.intro }); go(); };
+  }
+  function levelContext(lv) { // first time a mechanic appears: point at it on the board
+    if (!lv.intro || !S || (save.ctxShown || {})[lv.intro]) return; save.ctxShown = save.ctxShown || {}; save.ctxShown[lv.intro] = 1; persist();
+    const cells = []; for (let k = 0; k < 64; k++) { if (lv.intro === 'stars' && S.mark[k]) cells.push([k >> 3, k & 7]); if (lv.intro === 'jam' && S.jam[k]) cells.push([k >> 3, k & 7]); if (lv.intro === 'crates' && S.board[k] === 8) cells.push([k >> 3, k & 7]); }
+    const txt = { stars: 'Clear these star jellies\' lines', jam: 'Wipe up the jam by clearing lines over it', crates: 'Break crates by clearing their lines', jar: 'Clear lines to fill the jar', combo: 'Clear on back-to-back moves!' }[lv.intro];
+    coach(txt); if (cells.length) V.hint(cells, lv.intro === 'jam' ? '#ff5c8a' : '#ffd84d'); if (lv.intro === 'jar') hand(V.jarScreen());
+    G.ctxUntilPlace = true;
+  }
   function startLevel(id, resume) {
     const lv = LV.LEVELS[id - 1];
-    if (resume && save.run && save.run.mode === 'level' && save.run.level === id) { begin('level', save.run.state, { level: id }); return; }
+    if (!resume && lv.intro && !(save.seenIntro || {})[lv.intro]) { introCard(lv, () => startLevel(id, true)); return; }
+    if (resume && save.run && save.run.mode === 'level' && save.run.level === id) { begin('level', save.run.state, { level: id, resumed: true }); return; }
     begin('level', L.create(Object.assign(LV.config(lv), knobCfg(), { jarCap: 8 }), 1000 + id * 7919 + (save.stats.fails % 50)), { level: id });
     track('level_start', { level: id });
   }
   function startDaily() { if (save.run && save.run.mode === 'daily' && save.run.day === M.dayKey()) { begin('daily', save.run.state, { target: M.dailyConfig().target }); return; } const dc = M.dailyConfig(); begin('daily', L.create(Object.assign({}, dc.cfg), dc.seed), { target: dc.target }); track('daily_start', { day: M.dayKey() }); }
-  function saveRun() { if (!S || S.over) { if (save.run) { save.run = null; persist(); } return; } save.run = { mode: G.mode, level: G.level, day: M.dayKey(), state: S }; persist(); }
+  function saveRun() { if (G && G.mode === 'school') return; if (!S || S.over) { if (save.run) { save.run = null; persist(); } return; } save.run = { mode: G.mode, level: G.level, day: M.dayKey(), state: S }; persist(); }
 
   function hudGoal(instant) {
     const g = S.cfg.goal, p = L.progress(S);
+    if (G.mode === 'school') { $('goalIco').innerHTML = GOAL_ICON.stars; $('goalVal').textContent = `${G.stage + 1}/${SCHOOL.length}`; $('goalTxt').textContent = 'Jelly School'; $('movesBox').style.display = 'none'; return; }
     if (G.mode === 'classic') { $('goalIco').innerHTML = GOAL_ICON.lines; $('goalVal').textContent = fmt(S.lines); $('goalTxt').textContent = 'Lines'; $('movesBox').style.display = 'none'; return; }
     $('movesBox').style.display = '';
     if (G.mode === 'daily') { $('goalIco').innerHTML = GOAL_ICON.score; $('goalVal').textContent = fmt(G.target); $('goalTxt').textContent = S.score >= G.target ? 'Target reached!' : 'Daily target'; }
-    else { $('goalIco').innerHTML = goalIcon(g.type); $('goalVal').textContent = g.type === 'score' ? `${fmt(p.v)}/${fmt(g.n)}` : g.type === 'jar' ? Math.floor(p.v / g.n * 100) + '%' : `${Math.round(p.v)}/${Math.round(g.n)}`; $('goalTxt').textContent = goalText(g.type, g.n, true); }
+    else { $('goalIco').innerHTML = goalIcon(g.type); $('goalVal').textContent = g.type === 'score' ? `${fmt(p.v)}/${fmt(g.n)}` : `${Math.round(p.v)}/${Math.round(g.n)}`; $('goalTxt').textContent = goalText(g.type, g.n, true); }
     $('moves').textContent = p.movesLeft; $('movesBox').classList.toggle('low', p.movesLeft <= 5);
     if (!instant) { $('goal').classList.remove('bumpG'); void $('goal').offsetWidth; }
   }
@@ -263,14 +296,14 @@
   cv.addEventListener('pointerdown', e => {
     if (screen === 'home') { if (V.mascot) { const p = V.toScreen(V.mascot.x, V.mascot.y, 1); if (Math.hypot(e.clientX - p.x, e.clientY - p.y) < V.h * 0.12) { V.pokeMascot(); A.jelly(); } } return; }
     if (screen !== 'hud' || !S || S.over || performance.now() < busyUntil) return;
-    if (S.popReady && V.jarHit(e.clientX, e.clientY)) { aiming = !aiming; aimCell = null; V.ghostHide(); A.click(); coach(aiming ? 'Now tap the board where the jelly should go' : ''); if (aiming) { hand(null); } return; }
+    if (S.popReady && V.jarHit(e.clientX, e.clientY)) { if (aiming) { cancelPour(); return; } startAim(); return; }
     if (aiming) { aimAt(e.clientX, e.clientY); return; }
     const i = V.trayHit(e.clientX, e.clientY); if (i < 0 || S.tray[i].used) return;
     drag = { i, id: e.pointerId, lift: Math.min(150, V.h * 0.14) }; try { cv.setPointerCapture(e.pointerId); } catch (er) {}
     V.dragStart(i); A.pick(); onDragMove(e.clientX, e.clientY);
   });
   cv.addEventListener('pointermove', e => { if (drag && e.pointerId === drag.id) onDragMove(e.clientX, e.clientY); else if (aiming && e.buttons) aimAt(e.clientX, e.clientY); });
-  cv.addEventListener('pointerup', e => { if (drag && e.pointerId === drag.id) onDrop(); else if (aiming && aimCell) doPour(); });
+  cv.addEventListener('pointerup', e => { if (drag && e.pointerId === drag.id) onDrop(); });
   cv.addEventListener('pointercancel', () => { if (drag) { V.dragBack(); drag = null; } });
   function onDragMove(x, y) {
     if (!drag) return;
@@ -281,19 +314,37 @@
   function onDrop() {
     const d = drag; drag = null;
     if (!d.ok) { V.dragBack(); A.bad(); return; }
+    if (G.mode === 'school') { const t = SCHOOL[G.stage].target; if (SCHOOL[G.stage].strict && t && (d.i !== t.ti || d.cell.r !== t.r || d.cell.c !== t.c)) { V.dragBack(); A.bad(); G.wrong++; track('drop_wrong', { step: G.stage + 1 }); coach('Try the glowing spot!'); setTimeout(showStage, 1200); return; } }
     const ev = L.place(S, d.i, d.cell.r, d.cell.c); if (!ev) { V.dragBack(); return; }
     handle(ev, { r: d.cell.r + 1, c: d.cell.c + 1 });
   }
+  function bestPourSpot() { let b = null; for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) { const pv = L.pourPreview(S, r, c), sc = pv.lines * 100 + pv.poured.length; if (pv.poured.length && (!b || sc > b.sc)) b = { r, c, sc }; } return b; }
+  function startAim() {
+    aiming = true; aimCell = null; A.click(); $('jarTag').classList.remove('on'); hand(null);
+    G.aimT = performance.now();
+    const guide = !save.tut.pour && S.cfg.popMode === 'pour' ? bestPourSpot() : null;
+    coach(guide ? 'Tap the glowing spot. Jelly fills the empty gaps in a 3x3 area' : 'Tap the board to choose where to pour');
+    if (guide) { const p = V.cellPos(guide.r, guide.c); hand(V.toScreen(p.x, p.y, V.BZ)); V.hint(L.popCells(S, guide.r, guide.c), '#ff8fc4'); }
+    $('pourBar').classList.add('on'); $('pourInfo').textContent = 'Choose a spot'; $('pourGo').disabled = true;
+  }
+  function cancelPour() { aiming = false; aimCell = null; V.ghostHide(); V.hintOff(); hand(null); coach(''); $('pourBar').classList.remove('on'); if (S && S.popReady) showJarTag(); A.click(); track('pour_cancel', {}); }
   function aimAt(x, y) {
     const w = V.toWorld(x, y, V.BZ), c = Math.round(w.x + 3.5), r = Math.round(3.5 - w.y);
-    if (r < 0 || r > 7 || c < 0 || c > 7) { aimCell = null; V.ghostHide(); return; }
-    aimCell = { r, c }; const cells = L.popCells(S, r, c), show = S.cfg.popMode === 'pour' ? cells.filter(([rr, cc]) => !S.board[rr * 8 + cc]) : cells;
-    V.ghostShow({ cells: show, rows: [], cols: [] }, 7, true);
+    if (r < 0 || r > 7 || c < 0 || c > 7) return;
+    if (aimCell && aimCell.r === r && aimCell.c === c) return;
+    aimCell = { r, c }; hand(null);
+    if (S.cfg.popMode !== 'pour') { V.ghostShow({ cells: L.popCells(S, r, c), rows: [], cols: [] }, 7, true); $('pourInfo').textContent = 'Bursts this area'; $('pourGo').disabled = false; return; }
+    const pv = L.pourPreview(S, r, c); V.pourPreview(pv);
+    $('pourInfo').innerHTML = pv.poured.length ? `Fills <b>${pv.poured.length}</b> gap${pv.poured.length > 1 ? 's' : ''}${pv.lines ? ` · clears <b>${pv.lines}</b> line${pv.lines > 1 ? 's' : ''}!` : ''}` : 'No gaps here';
+    $('pourGo').disabled = !pv.poured.length; coach(pv.lines ? 'Tap Pour here to finish those lines!' : 'Pour here, or tap another spot');
   }
+  $('pourGo').onclick = () => { if (aimCell) doPour(); };
+  $('pourCancel').onclick = cancelPour;
   function doPour() {
-    const { r, c } = aimCell; aiming = false; aimCell = null; coach(''); $('stuck').classList.remove('on'); V.ghostHide(); $('jarTag').classList.remove('on');
+    const { r, c } = aimCell; aiming = false; aimCell = null; coach(''); hand(null); $('stuck').classList.remove('on'); V.ghostHide(); V.hintOff(); $('pourBar').classList.remove('on'); $('jarTag').classList.remove('on');
+    track('pour_aim_secs', { secs: Math.round((performance.now() - (G.aimT || 0)) / 100) / 10 });
     const ev = L.pop(S, r, c); if (!ev) return;
-    busyUntil = performance.now() + 1500; save.stats.pours++; done(M.progress(save, 'pours', 1)); track('pour', { mode: G.mode, lines: ev[0].lines || 0 });
+    busyUntil = performance.now() + 1500; A.intensity(0); save.stats.pours++; done(M.progress(save, 'pours', 1)); track('pour', { mode: G.mode, lines: ev[0].lines || 0 });
     if (!save.tut.pour) { save.tut.pour = true; persist(); }
     if (ev[0].type === 'pour') {
       A.pour();
@@ -312,29 +363,30 @@
   function handle(ev, origin) {
     let trayDelay = 0;
     for (const e of ev) {
-      if (e.type === 'place') { V.placePiece(e); A.place(e.cells.length); save.stats.placed++; done(M.progress(save, 'place', 1)); if (G.tutStep) tutorialAfterPlace(); }
+      if (e.type === 'place') { if (G.ctxUntilPlace) { G.ctxUntilPlace = false; setTimeout(() => { if (G.mode !== 'school') { V.hintOff(); hand(null); coach(''); } }, 1200); } V.placePiece(e); A.place(e.cells.length); save.stats.placed++; done(M.progress(save, 'place', 1)); }
       else if (e.type === 'clear') {
         trayDelay = 0.4;
         setTimeout(() => A.clear(e.lines, e.combo), 50);
-        V.clearLines(e, origin, () => { V.setJar(S.popReady ? 1 : S.jar / S.cap, S.popReady); A.jelly(); if (e.charged) { A.ready(); showJarTag(); popText('Jar full!', 'combo'); track('jar_charged', { mode: G.mode }); if (!save.tut.pour) { coach('Your jar is full! Tap it, then tap the board to pour'); handAt(V.jarScreen()); } } else if (S.jar / S.cap > 0.72 && !S.popReady) A.almost(); });
+        V.clearLines(e, origin, () => { V.setJar(S.popReady ? 1 : S.jar / S.cap, S.popReady); A.jelly(); if (e.charged) { A.ready(); showJarTag(); popText('Jar full!', 'combo'); track('jar_charged', { mode: G.mode }); A.intensity(1); if (!save.tut.pour) { coach('Your jar is full! Tap the jar to pour it'); handAt(V.jarScreen()); } } else if (S.jar / S.cap > 0.72 && !S.popReady) A.almost(); });
         const words = e.boardClear ? 'Board clear!' : e.lines >= 4 ? 'Jelly-licious!' : e.lines === 3 ? 'Sweet!' : e.lines === 2 ? 'Double!' : '';
         if (words) popText(words, 'big');
         if (e.combo >= 2) setTimeout(() => { popText('Combo x' + e.combo, 'combo'); A.combo(e.combo); }, words ? 280 : 0);
         A.intensity(e.combo >= 4 ? 2 : e.combo >= 2 ? 1 : 0);
         floatScore('+' + e.points, origin); gainsFx(e.gains); countFlavours(e.cleared);
-        save.stats.lines += e.lines; save.bestCombo = Math.max(save.bestCombo, e.combo); save.xp += e.lines;
+        save.stats.lines += e.lines; save.bestCombo = Math.max(save.bestCombo, e.combo);
         done(M.progress(save, 'lines', e.lines)); done(M.progress(save, 'combo', e.combo, 'max'));
         track('lines_cleared', { n: e.lines, combo: e.combo, mode: G.mode });
       }
-      else if (e.type === 'comboLost') A.intensity(0);
+      else if (e.type === 'comboLost') A.intensity(S.popReady ? 1 : 0);
       else if (e.type === 'score') setScore(e.score);
       else if (e.type === 'tray') setTimeout(() => V.setTray(S.tray, L), trayDelay * 1000 + 120);
       else if (e.type === 'stuck') setTimeout(() => { $('stuckTxt').textContent = e.reason === 'moves' ? 'Out of moves! One last pour?' : 'No room! Pour your jar.'; $('stuck').classList.add('on'); V.setMood(1); showJarTag(); }, 500);
       else if (e.type === 'win') setTimeout(levelWin, 900);
-      else if (e.type === 'over') setTimeout(gameOver, 700);
+      else if (e.type === 'over' && G.mode !== 'school') setTimeout(gameOver, 700);
     }
     hudGoal();
     const fill = S.board.filter(Boolean).length / 64; if (!S.over) V.setMood(fill > 0.72 ? 1 : 0);
+    if (G.mode === 'school') schoolCheck();
     saveRun();
   }
   function after(ev) { for (const e of ev) { if (e.type === 'over') setTimeout(gameOver, 500); if (e.type === 'win') setTimeout(levelWin, 700); if (e.type === 'stuck') $('stuck').classList.add('on'); } hudGoal(); saveRun(); }
@@ -360,7 +412,7 @@
   function levelWin() {
     if (G.ended) return; G.ended = true;
     const lv = LV.LEVELS[G.level - 1], p = L.progress(S), stars = LV.starsFor(lv, p.movesLeft), prev = save.stars[lv.id] || 0;
-    const rw = M.levelReward(lv, stars, prev); save.stars[lv.id] = Math.max(prev, stars); save.beans += rw.beans; save.xp += rw.xp; save.stats.wins++;
+    const rw = M.levelReward(lv, stars, prev); save.stars[lv.id] = Math.max(prev, stars); save.beans += rw.beans; save.stats.wins++;
     finishCommon(); if (stars > prev) done(M.progress(save, 'stars', stars - prev)); done(M.progress(save, 'levels', 1));
     if (lv.id === 1) save.tut.level1 = true;
     const newWorld = lv.id % 10 === 0 && !prev && lv.id < 30;
@@ -370,7 +422,7 @@
     persist(true);
     const hasNext = lv.id < LV.LEVELS.length;
     $('resultBody').innerHTML = `<div class="ribbon">Level ${lv.id} complete!</div><div class="bigstars">${[0, 1, 2].map(k => STAR(k < stars, 'bs' + k)).join('')}</div>
-      <div class="bigScore" id="rScore">0</div><div class="rewards"><span class="pill">${BEAN}+<span id="rBeans">0</span></span><span class="pill">XP +${rw.xp}</span></div>${cards}
+      <div class="bigScore" id="rScore">0</div><div class="rewards"><span class="pill">${BEAN}+<span id="rBeans">0</span></span></div>${cards}
       <button class="btn green" id="rNext" style="width:100%">${hasNext ? 'Next level' : 'Journey complete!'}</button><div class="row"><button class="btn small ghost" id="rReplay">Replay</button><button class="btn small ghost" id="rHome">Home</button></div>`;
     setTimeout(() => openModal('mResult'), 600);
     [0, 1, 2].forEach(k => setTimeout(() => { if (k < stars) { $('bs' + k).classList.add('on'); A.star(k); } else $('bs' + k).classList.add('on'); }, 1000 + k * 380));
@@ -385,7 +437,7 @@
     if (G.mode === 'level') {
       const lv = LV.LEVELS[G.level - 1], p = L.progress(S); save.stats.fails++; track('level_failed', { level: lv.id, progress: p.v / p.n });
       persist(true);
-      $('resultBody').innerHTML = `<div class="ribbon fail">${S.stuck || p.movesLeft > 0 ? 'Out of room' : 'Out of moves'}</div><div class="goal panel"><div class="gi">${goalIcon(lv.type)}</div><div style="text-align:left"><b>${lv.type === 'jar' ? Math.floor(p.v / p.n * 100) + '%' : Math.round(p.v) + ' / ' + Math.round(p.n)}</b><span>${goalText(lv.type, lv.n)}</span></div></div>
+      $('resultBody').innerHTML = `<div class="ribbon fail">${S.stuck || p.movesLeft > 0 ? 'Out of room' : 'Out of moves'}</div><div class="goal panel"><div class="gi">${goalIcon(lv.type)}</div><div style="text-align:left"><b>${Math.round(p.v) + ' / ' + Math.round(p.n)}</b><span>${goalText(lv.type, lv.n)}</span></div></div>
         <div class="sub">${p.v / p.n > 0.7 ? 'So close! You can do it.' : 'Try clearing lines early to keep the board open.'}</div>
         <button class="btn green" id="rRetry" style="width:100%">Try again</button><button class="btn small ghost" id="rHome">Home</button>`;
       setTimeout(() => openModal('mResult'), 900);
@@ -396,7 +448,6 @@
     let title = 'Out of moves', extra = '', isBest = false;
     if (G.mode === 'classic') { isBest = S.score > save.best; if (isBest) save.best = S.score; done(M.progress(save, 'classic', 1)); title = isBest && S.score > 0 ? 'New best!' : 'Game over'; track('game_over', { mode: 'classic', score: S.score, best: isBest }); }
     else { const d = M.daily(save), first = !d.played; d.played = true; isBest = S.score > d.best; d.best = Math.max(d.best, S.score); let beans = 0; if (first) { beans += 40; d.total++; } if (S.score >= G.target && !d.claimed) { d.claimed = true; beans += 30; } save.beans += beans; title = 'Daily done!'; extra = beans ? `<div class="rewards"><span class="pill">${BEAN}+${beans}</span></div>` : ''; track('daily_complete', { score: S.score }); }
-    save.xp += Math.round(S.score / 200);
     const cards = unlockCards(); persist(true);
     $('resultBody').innerHTML = `<div class="ribbon">${title}</div><div class="bigScore" id="rScore">0</div><div class="sub">${G.mode === 'classic' ? 'Best ' + fmt(save.best) : 'Best today ' + fmt(M.daily(save).best) + ' · target ' + fmt(G.target)}</div>
       <div class="statgrid"><div><b>${S.lines}</b><span>Lines</span></div><div><b>x${S.bestCombo}</b><span>Best combo</span></div><div><b>${S.pops}</b><span>Jelly pours</span></div><div><b>${S.placements}</b><span>Pieces placed</span></div></div>${extra}${cards}
@@ -415,23 +466,43 @@
   $('quit').onclick = () => { A.click(); closeModal('mPause'); saveRun(); V.wipeBoard(() => show('home')); };
 
   // ---------- tutorial (level 1): hand shows the first two drags, then the clear ----------
-  function coach(txt) { $('coach').textContent = txt; $('coach').classList.toggle('on', !!txt); }
+  const E8 = '........';
+  const SCHOOL = [
+    { trays: [[['o', 1]]], text: 'Drag a jelly onto the board', hint: [[3, 3], [3, 4], [4, 3], [4, 4]], target: { ti: 0, r: 3, c: 3 }, done: s => s.placements >= 1, after: 'Nice!' },
+    { preset: [E8, E8, E8, E8, E8, E8, '123456..', E8], trays: [[['2h', 2]]], text: "Colours don't need to match! Fill the whole row to clear it", hint: [[6, 6], [6, 7]], target: { ti: 0, r: 6, c: 6 }, strict: true, done: s => s.lines >= 1, after: 'Row cleared!' },
+    { preset: ['..4.....', '..1.....', '..6.....', '..3.....', '..5.....', '..2.....', E8, E8], trays: [[['2v', 3]]], text: 'Columns clear too. Fill this one to the bottom', hint: [[6, 2], [7, 2]], target: { ti: 0, r: 6, c: 2 }, strict: true, done: s => s.lines >= 1, after: 'Column cleared!' },
+    { trays: [[['3h', 3], ['l3a', 4], ['1', 6]], [['2h', 1], ['3v', 5], ['o', 2]]], text: 'You get 3 pieces. Place all 3 and new ones arrive', handTray: true, done: s => s.traysDealt >= 2, after: 'New pieces!' },
+    { preset: ['1234.612', '34.61234', '6123.561', '23456.23', '4.612345', '....3456', '...456..', '...61234'], trays: [[['sq3', 2], ['1', 1], ['2h', 3]]], text: 'Big pieces need big spaces. Find room for this one!', hint: [[5, 0], [5, 1], [5, 2], [6, 0], [6, 1], [6, 2], [7, 0], [7, 1], [7, 2]], target: { ti: 0, r: 5, c: 0 }, done: s => s.tray[0].used, after: 'Always keep room for big pieces!' }
+  ];
+  function startSchool(i) {
+    i = i || 0; const st = SCHOOL[i];
+    begin('school', L.create({ preset: st.preset, trays: st.trays, jarCap: 99 }), { stage: i, stageT: performance.now(), wrong: 0 });
+    if (i === 0) track('tutorial_start', {});
+    setTimeout(showStage, 800);
+  }
+  function showStage() {
+    if (!G || G.mode !== 'school') return; const st = SCHOOL[G.stage];
+    coach(st.text); if (st.hint) V.hint(st.hint, '#ffd84d');
+    if (st.target) { const t = st.target, sh = L.SHAPE[S.tray[t.ti].shape], from = V.toScreen(V.TRAY_X[t.ti], V.TRAY_Y, 0.3), pc = V.cellPos(t.r + (sh.h - 1) / 2, t.c + (sh.wd - 1) / 2); hand(from, V.toScreen(pc.x, pc.y, V.BZ)); }
+    else if (st.handTray) hand(V.toScreen(0, V.TRAY_Y + 1.2, 0.3));
+  }
+  function schoolCheck() {
+    const st = SCHOOL[G.stage]; if (!st.done(S) || G.stageDone) { if (st.handTray) { hand(null); coach(S.tray.filter(t => !t.used).length ? `${S.tray.filter(t => !t.used).length} left. Place them all!` : st.text); } return; }
+    G.stageDone = true; hand(null); V.hintOff(); coach('');
+    track('tutorial_step', { step: G.stage + 1, secs: Math.round((performance.now() - G.stageT) / 1000), wrong: G.wrong });
+    setTimeout(() => { popText(st.after, 'info'); A.star(G.stage % 3); }, 500);
+    setTimeout(() => V.wipeBoard(() => {
+      if (G.stage + 1 < SCHOOL.length) startSchool(G.stage + 1);
+      else { save.tut.basics = true; persist(true); track('tutorial_complete', {}); popText("You're ready!", 'big'); setTimeout(() => startLevel(1), 900); }
+    }), 1900);
+  }
+  function coach(txt) { if (txt) { const y = V.toScreen(0, -4.75, 0).y; $('coach').style.top = Math.round(y + 6) + 'px'; } $('coach').textContent = txt; $('coach').classList.toggle('on', !!txt); }
   let handAnim = 0;
   function hand(from, to) {
     cancelAnimationFrame(handAnim); const h = $('hand'); if (!from) { h.classList.remove('on'); return; } h.classList.add('on');
     const t0 = performance.now(); const step = () => { const k = ((performance.now() - t0) / 1600) % 1, e = Math.min(1, Math.max(0, (k - 0.15) / 0.6)), ee = e * e * (3 - 2 * e); const x = to ? from.x + (to.x - from.x) * ee : from.x, y = to ? from.y + (to.y - from.y) * ee : from.y + Math.sin(k * 6.28) * 8; h.style.left = (x - 14) + 'px'; h.style.top = (y - 6) + 'px'; h.style.opacity = to ? (k > 0.85 ? 0 : 1) : 1; handAnim = requestAnimationFrame(step); }; step();
   }
   const handAt = p => hand(p);
-  function tutorialStep() {
-    if (!S || G.mode !== 'level' || G.level !== 1) return;
-    const s = S.placements; G.tutStep = s + 1;
-    const plan = [[0, 7, 0], [2, 7, 4]][s]; // first tray is 4h, o, 4h: two bars complete the bottom row
-    if (!plan || S.tray[plan[0]].used) { coach(s === 2 ? 'Nice! Keep filling rows and columns' : ''); hand(null); G.tutStep = 0; return; }
-    const sh = L.SHAPE[S.tray[plan[0]].shape], from = V.toScreen(V.TRAY_X[plan[0]], V.TRAY_Y, 0.3), pc = V.cellPos(plan[1], plan[2] + (sh.wd - 1) / 2), to = V.toScreen(pc.x, pc.y, V.BZ);
-    coach(s === 0 ? 'Drag the jelly onto the board' : 'Fill the whole row to clear it!'); hand(from, to);
-  }
-  function tutorialAfterPlace() { hand(null); setTimeout(tutorialStep, 700); }
-
   // ---------- performance overlay (?debug=1 or Settings) ----------
   const perf = { cpu: [], frames: [], longFrames: 0, rendered: 0, runs: [], start: performance.now(), dprLog: [], lastAdapt: performance.now(), goodSince: performance.now(), first: 0 };
   let gpu = ''; try { const gl = V.renderer.getContext(), ext = gl.getExtension('WEBGL_debug_renderer_info'); gpu = ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER); } catch (e) {}
@@ -488,7 +559,7 @@
   M.missions(save); M.daily(save); save.stats.sessions++; if (M.markDay(save)) track('day_active', { days: save.days.length }); persist();
   track(save.stats.sessions === 1 ? 'first_open' : 'session_start', { session: save.stats.sessions });
   requestAnimationFrame(loop);
-  const go = () => { $('boot').classList.add('gone'); if (!save.stars[1] && !save.stats.games && !Q.get('bot')) { startLevel(save.run && save.run.mode === 'level' ? save.run.level : 1, true); } else show('home'); };
+  const go = () => { $('boot').classList.add('gone'); if (!save.tut.basics && !save.stats.games && !Q.get('bot')) startSchool(0); else if (!save.stars[1] && !save.stats.games && !Q.get('bot')) startLevel(save.run && save.run.mode === 'level' ? save.run.level : 1, true); else show('home'); };
   (document.fonts ? document.fonts.load('800 20px Baloo').catch(() => {}) : Promise.resolve()).then(() => setTimeout(go, 350));
   if (Q.get('debug') === '1') togglePerf(true);
   document.addEventListener('visibilitychange', () => { if (document.hidden) { saveRun(); persist(true); } });
@@ -504,9 +575,9 @@
       if (rm) { const b = $('rNext') || $('rRetry') || $('rAgain'); if (b) b.click(); return setTimeout(think, 1200 / speed); }
       if (screen === 'home') { journey ? $('hPlay').click() : $('cClassic').click(); return setTimeout(think, 900 / speed); }
       if (screen !== 'hud' || !S || S.over || V.tweens.length > 3 || performance.now() < busyUntil) return setTimeout(think, 150 / speed);
-      if (S.popReady && (S.stuck || Math.random() < 0.1)) { const p = B.bestPop(S); aimCell = { r: p.r, c: p.c }; aiming = true; doPour(); return setTimeout(think, 1800 / speed); }
+      if (S.popReady && (S.stuck || Math.random() < 0.1)) { const p = B.bestPop(S); aiming = true; aimCell = { r: p.r, c: p.c }; doPour(); return setTimeout(think, 1800 / speed); }
       if (S.stuck) { $('giveUp').click(); return setTimeout(think, 600 / speed); }
-      const bm = B.bestMove(S, 4); if (!bm) return setTimeout(think, 300 / speed);
+      const bm = B.bestMove(S, 4); if (!bm || !V.trayB[bm.ti].length) return setTimeout(think, 300 / speed);
       drag = { i: bm.ti, id: -1, lift: 0 }; V.dragStart(bm.ti); A.pick();
       const sh = L.SHAPE[S.tray[bm.ti].shape], p = V.cellPos(bm.r + (sh.h - 1) / 2, bm.c + (sh.wd - 1) / 2), tgt = V.toScreen(p.x, p.y, V.BZ), from = V.toScreen(V.TRAY_X[bm.ti], V.TRAY_Y, 0.3); let k = 0;
       const mv = () => { if (!drag) return; k += 0.25; onDragMove(from.x + (tgt.x - from.x) * Math.min(1, k), from.y + (tgt.y - from.y) * Math.min(1, k)); if (k < 1) setTimeout(mv, 30 / speed); else { drag.cell = { r: bm.r, c: bm.c }; drag.ok = true; onDrop(); setTimeout(think, 420 / speed); } };

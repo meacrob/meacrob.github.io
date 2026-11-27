@@ -112,6 +112,12 @@ h2{font-family:Baloo;font-size:30px;line-height:1.05}
 .jarTag{position:fixed;transform:translate(-50%,0);font-family:Baloo;font-size:16px;color:#fff;background:var(--pink);padding:3px 12px;border-radius:999px;box-shadow:0 4px 10px rgba(232,61,114,.4);opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap}
 .jarTag.on{opacity:1;animation:nudge 1s infinite}
 @keyframes nudge{50%{transform:translate(-50%,0) scale(1.1)}}
+.pourBar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(9% + var(--safe-b));padding:8px 8px 8px 14px;border-radius:20px;display:none;align-items:center;gap:8px;font-size:15px;white-space:nowrap;z-index:31}
+.pourBar.on{display:flex}.pourBar #pourInfo{min-width:120px}.pourBar button:disabled{opacity:.45}
+.gbar{display:block;height:6px;border-radius:9px;background:#f3dbe6;margin-top:3px;overflow:hidden;width:180px}.gbar i{display:block;height:100%;background:linear-gradient(90deg,#ffb3cb,var(--pink));border-radius:9px}
+.introIco{width:96px;height:96px;display:grid;place-items:center;background:#fff3f8;border-radius:28px}.introIco svg{width:70px;height:70px}
+.price{display:inline-flex;align-items:center;gap:3px;color:var(--pink2)}
+#plv{display:none}
 .banner{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(27% + var(--safe-b));padding:10px 16px;border-radius:20px;display:none;align-items:center;gap:10px;font-size:15px;white-space:nowrap}
 .banner.on{display:flex}
 #fx{position:fixed;inset:0;pointer-events:none;overflow:hidden}
@@ -125,7 +131,7 @@ h2{font-family:Baloo;font-size:30px;line-height:1.05}
 @keyframes rise{0%{opacity:0;transform:translate(-50%,-30%) scale(.6)}15%{opacity:1;transform:translate(-50%,-50%) scale(1.1)}100%{opacity:0;transform:translate(-50%,-160%)}}
 .hand{position:fixed;width:56px;height:56px;pointer-events:none;z-index:30;display:none;filter:drop-shadow(0 4px 6px rgba(0,0,0,.25))}
 .hand.on{display:block}
-.coach{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(25% + var(--safe-b));padding:8px 16px;border-radius:18px;font-size:16px;text-align:center;z-index:29;display:none;max-width:86vw}
+.coach{position:fixed;left:50%;transform:translateX(-50%);padding:7px 14px;border-radius:16px;font-size:15px;line-height:1.25;text-align:center;z-index:29;display:none;max-width:86vw}
 .coach.on{display:block;animation:popc .35s cubic-bezier(.2,1.5,.4,1)}
 @keyframes popc{from{transform:translateX(-50%) scale(.6);opacity:0}}
 /* ---------- modals ---------- */

@@ -105,17 +105,21 @@
           c = mix(c, base*0.55, star(f - vec2(0.0, 0.33), 0.075));
         } else if (fl < 3.5) { // mango: ripe blush
           c = mix(c, vec3(1.0, 0.45, 0.25), smoothstep(0.1, 0.55, f.x - f.y*0.8) * 0.45);
+          c = mix(c, vec3(0.31, 0.75, 0.35), clamp(disc(f, vec2(0.1, 0.36), 0.07) + disc(f, vec2(0.17, 0.37), 0.06), 0.0, 1.0));
         } else if (fl < 4.5) { // grape: bubbly highlights
           c += (disc(f, vec2(-0.27, 0.27), 0.06) + disc(f, vec2(-0.17, 0.33), 0.04) + disc(f, vec2(0.3, -0.28), 0.04)) * 0.25;
+          c = mix(c, vec3(0.35, 0.65, 0.29), ring(f, vec2(0.03, 0.33), 0.05, 0.014) * step(0.31, f.y));
         } else if (fl < 5.5) { // lime: citrus specks + side leaf
           vec2 g = fract(f*11.0) - 0.5; c += step(length(g), 0.06) * 0.08;
           c = mix(c, vec3(0.2, 0.55, 0.22), disc(f, vec2(0.3, 0.32), 0.06));
         } else if (fl < 6.5) { // orange: peel dimples
           vec2 g = fract(f*13.0 + 0.3) - 0.5; c *= 1.0 - step(length(g), 0.08) * 0.08;
+          c = mix(c, base*0.7, ring(f, vec2(0.02, 0.34), 0.05, 0.016) * step(f.x, 0.06));
         }
         vec2 eL = vec2(-0.13, 0.06), eR = vec2(0.13, 0.06);
         float eyes = 0.0, shine = 0.0, lines = 0.0, er = 0.062, m = mood;
         bool happyEyes = (m > 2.5) || (fl > 2.5 && fl < 3.5 && m < 0.5) || fl > 6.5;
+        bool wink = fl < 1.5 && m < 0.5 && blink < 0.5;
         bool sleepyEyes = (fl > 3.5 && fl < 4.5 && m < 0.5);
         if (m > 1.5 && m < 2.5) { lines = seg(f, eL - vec2(0.05, 0.0), eL + vec2(0.05, 0.0), 0.016) + seg(f, eR - vec2(0.05, 0.0), eR + vec2(0.05, 0.0), 0.016); }
         else if (happyEyes) { lines = ring(f, eL - vec2(0.0, 0.03), 0.05, 0.016) * step(eL.y - 0.02, f.y) + ring(f, eR - vec2(0.0, 0.03), 0.05, 0.016) * step(eR.y - 0.02, f.y); }
@@ -123,7 +127,8 @@
         else {
           if (fl > 5.5 && fl < 6.5) er = 0.078; if (fl > 1.5 && fl < 2.5) er = 0.05; if (m > 0.5 && m < 1.5) er = 0.075;
           vec2 look = (fl > 1.5 && fl < 2.5) ? vec2(0.01, -0.02) : vec2(0.0);
-          eyes = disc(f, eL, er) + disc(f, eR, er);
+          eyes = (wink ? 0.0 : disc(f, eL, er)) + disc(f, eR, er);
+          if (wink) lines += ring(f, eL - vec2(0.0, 0.03), 0.05, 0.016) * step(eL.y - 0.02, f.y);
           shine = disc(f, eL + look + vec2(0.022, 0.025), er*0.38) + disc(f, eR + look + vec2(0.022, 0.025), er*0.38);
           if (fl > 5.5 && fl < 6.5) shine += disc(f, eL + vec2(-0.025, -0.025), 0.013) + disc(f, eR + vec2(-0.025, -0.025), 0.013);
           if (fl > 4.5 && fl < 5.5) { eyes *= step(f.y, eL.y + 0.02); lines += seg(f, vec2(0.07, 0.15), vec2(0.2, 0.18), 0.014); }
@@ -331,7 +336,7 @@
     toScreen(x, y, z) { const v = new T.Vector3(x, y, z).project(this.cam); return { x: (v.x + 1) / 2 * this.w, y: (1 - v.y) / 2 * this.h }; },
     tween(dur, fn, delay, done) { this.tweens.push({ t: -(delay || 0), dur, fn, done }); this.dirty = true; },
 
-    clearAll() { for (const b of this.jelly.items) b.alive = false; this.jelly.items.length = 0; this.board.fill(null); this.trayB = [[], [], []]; this.ghostHide(); this.mascot = null; for (const s of this.sockets.items) { s.jam = 0; s.c.copy(this.slotColor); s.sz = 1; } },
+    clearAll() { for (const b of this.jelly.items) b.alive = false; this.jelly.items.length = 0; this.board.fill(null); this.trayB = [[], [], []]; this.ghostHide(); this.hintOff(); this.mascot = null; for (const s of this.sockets.items) { s.jam = 0; s.c.copy(this.slotColor); s.sz = 1; } },
     addJelly(r, c, v, mark, pop) {
       const p = this.cellPos(r, c), b = this.jelly.add({ x: p.x, y: p.y, z: BZ, c: this.colors[v].clone(), fl: v, mark: mark ? 1 : 0, sx: pop ? 0.01 : 1, sy: pop ? 0.01 : 1, sz: pop ? 0.01 : 1 });
       this.board[r * N + c] = b; if (pop) this.tween(0.4, k => { b.sx = b.sy = b.sz = backOut(k); }, pop, () => { b.wob = 0.1; }); return b;
@@ -383,7 +388,7 @@
     placePiece(ev) {
       const arr = this.trayB[ev.ti]; this.trayB[ev.ti] = []; this.drag = null; this.ghostHide();
       ev.cells.forEach(([r, c], n) => {
-        const b = arr[n], p = this.cellPos(r, c), fx = b.x, fy = b.y, fz = b.z, fs = b.sx; b.rz = 0; this.board[r * N + c] = b;
+        const b = arr[n] || this.jelly.add({ x: 0, y: TRAY_Y, z: 0.3, sx: TRAY_S, sy: TRAY_S, sz: TRAY_S, c: this.colors[ev.flav].clone(), fl: ev.flav }), p = this.cellPos(r, c), fx = b.x, fy = b.y, fz = b.z, fs = b.sx; b.rz = 0; this.board[r * N + c] = b;
         this.tween(0.08, k => { b.x = fx + (p.x - fx) * k; b.y = fy + (p.y - fy) * k; b.z = fz + (BZ - fz) * k; b.sx = b.sy = b.sz = fs + (1 - fs) * k; }, 0, () => {
           b.mood = 0; this.tween(0.34, k => { const sq = Math.sin(k * Math.PI) * (1 - k); b.sz = 1 - 0.4 * sq; b.sx = b.sy = 1 + 0.22 * sq; }, 0, () => { b.sx = b.sy = b.sz = 1; }); b.wob = 0.12;
         });
@@ -447,6 +452,16 @@
     },
     flyTo(cells, pt, color, type) { const w = this.toWorld(pt.x, pt.y, 1.5); for (const [r, c] of cells) { const p = this.cellPos(r, c); this.parts.emit({ sx: p.x, sy: p.y, sz: 1, x: p.x, y: p.y, z: 1, target: w, arc: 1.5, life: 0.75, s: 0.6, c: new T.Color(color || '#ffcc33'), type: type == null ? 1 : type }); } },
     celebrate(n) { for (let q = 0; q < (n || 40); q++) { const a = Math.random() * 6.28, sp = 5 + Math.random() * 7; this.parts.emit({ x: (Math.random() - 0.5) * 6, y: 2 + Math.random() * 2, z: 2, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp + 4, g: -9, life: 1.4, s: 0.45 + Math.random() * 0.3, c: this.colors[1 + q % 6].clone(), type: 1 + q % 3 }); } },
+    hint(cells, color) { this.hintOff(); this.hints = cells.map(([r, c]) => r * N + c); this.hintColor = lin(color || '#ffd84d'); this.dirty = true; },
+    hintOff() { if (!this.hints) return; for (const k of this.hints) { const s = this.sockets.items[k]; s.c.copy(s.jam ? this.jamColor : this.slotColor); } this.hints = null; this.dirty = true; },
+    pourPreview(pv) { // area tinted, jelly ghosts in the gaps, lines that would clear glowing
+      this.ghostHide(); this.hint(pv.area, '#ff8fc4');
+      const stay = new Set(pv.stays.map(([r, c]) => r * N + c));
+      for (const [r, c] of pv.poured) { const p = this.cellPos(r, c); this.ghost.add({ x: p.x, y: p.y, z: BZ - 0.05, sx: 0.92, sy: 0.92, sz: stay.has(r * N + c) ? 0.8 : 0.55, c: this.colors[7].clone(), fl: 0, flash: stay.has(r * N + c) ? 0.1 : 0.45 }); }
+      const glow = new Set(pv.clearsCells.map(([r, c]) => r * N + c));
+      for (let k = 0; k < N * N; k++) { const b = this.board[k]; if (b) { b.flash = glow.has(k) ? 0.35 : 0; b.mood = glow.has(k) ? 3 : b.baseMood || 0; } }
+      this.glowing = true; this.dirty = true;
+    },
     shake(a) { this.shakeAmp = Math.max(this.shakeAmp || 0, a); },
     setMood(m) { for (const b of this.board) if (b) { b.baseMood = m; if (!this.glowing) b.mood = m; } this.dirty = true; },
     gameOverAnim() { for (let r = N - 1; r >= 0; r--) for (let c = 0; c < N; c++) { const b = this.board[r * N + c]; if (!b) continue; const from = b.c.clone(); this.tween(0.35, k => { b.c.copy(from).lerp(new T.Color(0.55, 0.5, 0.58), k * 0.6); b.mood = 2; b.baseMood = 2; }, (N - 1 - r) * 0.06 + c * 0.012, () => { b.wob = 0.05; }); } },
@@ -483,10 +498,11 @@
       }
       if (this.mascot && !busy) { const b = this.mascot; b.y = b.home + Math.abs(Math.sin(this.time * 2.2)) * 0.18; b.sz = 3.2 * (1 - 0.05 * Math.max(0, Math.cos(this.time * 4.4))); }
       if (this.shakeAmp > 0.001) { this.shakeAmp *= Math.pow(0.002, dt); this.cam.position.x = (Math.random() - 0.5) * this.shakeAmp; } else if (this.shakeAmp) { this.shakeAmp = 0; this.cam.position.x = 0; }
+      if (this.hints) { const k = 0.45 + 0.35 * Math.sin(this.time * 6); for (const i of this.hints) { const s = this.sockets.items[i]; s.c.copy(s.jam ? this.jamColor : this.slotColor).lerp(this.hintColor, k); } }
       const np = this.parts.update(dt);
       for (const m of this.mats) { m.uniforms.uTime.value = this.time; m.uniforms.uBreath.value = idleAnim ? 1 : 0; }
       J.glassMat.uniforms.uTime.value = J.fillMat.uniforms.uTime.value = J.bubMat.uniforms.uTime.value = this.time;
-      const active = busy || wob || np > 0 || Math.abs(J.shown - J.target) > 0.002 || J.ready || J.slosh > 0.02 || J.squash > 0.02 || this.dirty || this.shakeAmp > 0 || this.glowing;
+      const active = busy || wob || np > 0 || Math.abs(J.shown - J.target) > 0.002 || J.ready || J.slosh > 0.02 || J.squash > 0.02 || this.dirty || this.shakeAmp > 0 || this.glowing || !!this.hints;
       this.active = active; return active;
     },
     render() {

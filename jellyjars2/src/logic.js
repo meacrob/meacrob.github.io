@@ -14,6 +14,7 @@
     friendlyStart: false,// first tray sets up an easy clear (tutorial / first ever run only)
     fixedSeq: false,     // daily challenge: trays depend only on the seed, so every player gets the same sequence
     goal: null,          // levels: { type: 'lines'|'score'|'stars'|'jar'|'combo'|'jam'|'crates', n, moves }
+    trays: null,         // tutorial: scripted trays [[[shapeId, flavour], ...], ...]
     preset: null         // levels: array of 8 strings. '.' empty, 1-6 jelly, 'x' crate, '*' star jelly, 'j' jam (empty), 'J' jam under jelly
   };
 
@@ -108,6 +109,8 @@
       let x = R() * tot; for (let i = 0; i < SHAPES.length; i++) { x -= ws[i]; if (x <= 0) return SHAPES[i]; } return SHAPES[0];
     };
     let tray = null;
+    const script = s.cfg.trays && s.cfg.trays[s.traysDealt]; // tutorial: exact pieces and flavours
+    if (script) { s.tray = script.map(([id, f]) => ({ shape: id, flav: f, used: false })); s.traysDealt++; return; }
     if (s.traysDealt === 0 && s.cfg.friendlyStart) tray = [SHAPE['4h'], SHAPE.o, SHAPE['4h']];
     for (let t = 0; !tray && t < s.cfg.fairTries; t++) {
       const cand = [pick(), pick(), pick()];
@@ -143,7 +146,7 @@
 
   function progress(s) {
     const g = s.cfg.goal; if (!g) return null;
-    const v = { lines: s.lines, score: s.score, stars: s.starsGot, jar: s.jarTotal, combo: s.bestCombo, jam: s.jamCleaned, crates: s.cratesCleared }[g.type] || 0;
+    const v = { lines: s.lines, score: s.score, stars: s.starsGot, jar: s.pops, combo: s.bestCombo, jam: s.jamCleaned, crates: s.cratesCleared }[g.type] || 0;
     return { v: Math.min(v, g.n), n: g.n, movesLeft: g.moves ? Math.max(0, g.moves - s.placements) : null };
   }
 
@@ -244,6 +247,15 @@
     return [{ type: 'revive', cleared }, { type: 'tray' }];
   }
 
+  // what a pour at (r,c) would do, without changing the state: for the confirm preview
+  function pourPreview(s, r, c) {
+    const N = s.cfg.size, area = popCells(s, r, c), b = s.board.slice(), poured = [];
+    for (const [rr, cc] of area) if (!b[rr * N + cc]) { b[rr * N + cc] = 7; poured.push([rr, cc]); }
+    const { rows, cols } = fullLines(b, N), gone = new Set();
+    for (const i of rows) for (let j = 0; j < N; j++) gone.add(i * N + j);
+    for (const i of cols) for (let j = 0; j < N; j++) gone.add(j * N + i);
+    return { area, poured, rows, cols, lines: rows.length + cols.length, stays: poured.filter(([rr, cc]) => !gone.has(rr * N + cc)), clearsCells: [...gone].map(k => [Math.floor(k / N), k % N]) };
+  }
   function preview(s, ti, r, c) {
     const t = s.tray[ti]; if (!t || t.used || !canPlace(s, SHAPE[t.shape], r, c)) return null;
     const N = s.cfg.size, b = s.board.slice(), sh = SHAPE[t.shape];
@@ -252,6 +264,6 @@
     return { cells: sh.cells.map(([dr, dc]) => [r + dr, c + dc]), rows, cols };
   }
 
-  const API = { DEFAULTS, SHAPES, SHAPE, POP, create, place, pop, giveUp, revive, canPlace, preview, popCells, fitsAnywhere, anyMove, mulberry, placeOn, progress, shapeOf };
+  const API = { DEFAULTS, SHAPES, SHAPE, POP, create, place, pop, giveUp, revive, canPlace, preview, pourPreview, popCells, fitsAnywhere, anyMove, mulberry, placeOn, progress, shapeOf };
   if (typeof module !== 'undefined' && module.exports) module.exports = API; else root.JJLogic = API;
 })(typeof window !== 'undefined' ? window : globalThis);

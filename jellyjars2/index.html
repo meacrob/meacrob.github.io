@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex,nofollow">
 <meta name="theme-color" content="#ffd9e8">
 <title>Jelly Jars</title>
-<link rel="stylesheet" href="style.css?v=2">
+<link rel="stylesheet" href="style.css?v=3">
 </head>
 <body>
 <div id="bg"><div class="cloud c1"></div><div class="cloud c2"></div><svg id="hills" viewBox="0 0 400 300" preserveAspectRatio="none"></svg></div>
@@ -71,7 +71,8 @@
       <div class="moves panel" id="movesBox"><b id="moves">20</b><span>Moves</span></div>
     </div>
   </div>
-  <div class="jarTag" id="jarTag">Tap to pour!</div>
+  <div class="jarTag" id="jarTag">Tap the jar!</div>
+  <div class="pourBar panel" id="pourBar"><span id="pourInfo">Choose a spot</span><button class="btn small ghost" id="pourCancel">Cancel</button><button class="btn small" id="pourGo">Pour here</button></div>
   <div class="banner panel" id="stuck"><span id="stuckTxt">No room! Pour your jar.</span><button class="btn small ghost" id="giveUp">End</button></div>
 </section>
 
@@ -94,6 +95,7 @@
   <button class="toggle" data-set="sfx">Sound effects<i></i></button>
   <button class="toggle" data-set="haptics">Vibration<i></i></button>
   <button class="toggle" data-set="saver">Battery saver<i></i></button>
+  <button class="btn small ghost" id="tutBtn">Replay tutorial</button>
   <button class="btn small ghost" id="perfBtn">Performance overlay</button>
   <button class="btn small ghost" id="resetBtn">Reset progress</button>
   <button class="btn" data-close style="width:100%">Done</button>
@@ -115,12 +117,12 @@
 <div id="boot"><h1>Jelly<br>Jars</h1></div>
 
 <script src="vendor/three.min.js"></script>
-<script src="src/logic.js?v=2"></script>
-<script src="src/bot.js?v=2"></script>
-<script src="src/levels.js?v=2"></script>
-<script src="src/meta.js?v=2"></script>
-<script src="src/audio.js?v=2"></script>
-<script src="src/render.js?v=2"></script>
-<script src="src/app.js?v=2"></script>
+<script src="src/logic.js?v=3"></script>
+<script src="src/bot.js?v=3"></script>
+<script src="src/levels.js?v=3"></script>
+<script src="src/meta.js?v=3"></script>
+<script src="src/audio.js?v=3"></script>
+<script src="src/render.js?v=3"></script>
+<script src="src/app.js?v=3"></script>
 </body>
 </html>

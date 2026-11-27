@@ -13,17 +13,17 @@
   // 12 jar designs and how to get each (no randomness, no paid gacha)
   const JARS = [
     { id: 'grove', name: 'Berry Jar', lid: '#ff7aa8', jelly: '#ff6aa8', glass: '#e4f1ff', how: 'Starter jar', test: () => true },
-    { id: 'mint', name: 'Mint Jar', lid: '#2fc79a', jelly: '#7be6c4', glass: '#e4fff6', how: 'Complete level 5', test: s => done(s, 5) },
+    { id: 'mint', name: 'Mint Jar', lid: '#2fc79a', jelly: '#7be6c4', glass: '#e4fff6', how: 'Buy for 150 beans', price: 150, test: () => false },
     { id: 'bay', name: 'Bay Jar', lid: '#3f8cff', jelly: '#6db6ff', glass: '#e0f0ff', how: 'Finish Strawberry Grove', test: s => done(s, 10) },
-    { id: 'grape', name: 'Grape Jar', lid: '#8e5cff', jelly: '#b08cff', glass: '#efe6ff', how: 'Complete level 15', test: s => done(s, 15) },
+    { id: 'grape', name: 'Grape Jar', lid: '#8e5cff', jelly: '#b08cff', glass: '#efe6ff', how: 'Buy for 250 beans', price: 250, test: () => false },
     { id: 'isle', name: 'Mango Jar', lid: '#ff9f1c', jelly: '#ffc93c', glass: '#fff6dc', how: 'Finish Blueberry Bay', test: s => done(s, 20) },
     { id: 'gold', name: 'Golden Jar', lid: '#e8a800', jelly: '#ffd84d', glass: '#fff3c4', how: 'Finish Mango Island', test: s => done(s, 30) },
-    { id: 'sunset', name: 'Sunset Jar', lid: '#ff6a4d', jelly: '#ffa36b', glass: '#fff0e6', how: 'Collect 30 stars', test: s => starCount(s) >= 30 },
-    { id: 'frost', name: 'Frost Jar', lid: '#52c6f2', jelly: '#bdefff', glass: '#ecfbff', how: 'Collect 60 stars', test: s => starCount(s) >= 60 },
-    { id: 'cocoa', name: 'Cocoa Jar', lid: '#8a5a3b', jelly: '#c88a5e', glass: '#fbf0e8', how: 'Clear 300 lines', test: s => s.stats.lines >= 300 },
-    { id: 'night', name: 'Midnight Jar', lid: '#3b3f8f', jelly: '#7d84ff', glass: '#dfe1ff', how: 'Score 8,000 in Classic', test: s => s.best >= 8000 },
-    { id: 'lemon', name: 'Lemon Jar', lid: '#f2c400', jelly: '#fff07a', glass: '#fffbe0', how: 'Finish 3 Daily Challenges', test: s => s.daily.total >= 3 },
-    { id: 'gum', name: 'Bubblegum Jar', lid: '#ff6fcf', jelly: '#ffb3e6', glass: '#ffeefa', how: 'Complete 12 daily missions', test: s => s.stats.missions >= 12 }
+    { id: 'sunset', name: 'Sunset Jar', lid: '#ff6a4d', jelly: '#ffa36b', glass: '#fff0e6', how: 'Buy for 300 beans', price: 300, test: () => false },
+    { id: 'frost', name: 'Frost Jar', lid: '#52c6f2', jelly: '#bdefff', glass: '#ecfbff', how: 'Buy for 400 beans', price: 400, test: () => false },
+    { id: 'cocoa', name: 'Cocoa Jar', lid: '#8a5a3b', jelly: '#c88a5e', glass: '#fbf0e8', how: 'Buy for 450 beans', price: 450, test: () => false },
+    { id: 'night', name: 'Midnight Jar', lid: '#3b3f8f', jelly: '#7d84ff', glass: '#dfe1ff', how: 'Buy for 500 beans', price: 500, test: () => false },
+    { id: 'lemon', name: 'Lemon Jar', lid: '#f2c400', jelly: '#fff07a', glass: '#fffbe0', how: 'Buy for 600 beans', price: 600, test: () => false },
+    { id: 'gum', name: 'Bubblegum Jar', lid: '#ff6fcf', jelly: '#ffb3e6', glass: '#ffeefa', how: 'Buy for 700 beans', price: 700, test: () => false }
   ];
   const MISSIONS = [
     { id: 'lines', text: n => `Clear ${n} lines`, n: [15, 25], beans: 40 },
